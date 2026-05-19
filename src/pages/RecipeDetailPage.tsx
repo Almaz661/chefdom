@@ -152,7 +152,22 @@ export function RecipeDetailPage() {
             </button>
           </div>
         </div>
-        {subline && <p className="text-ink-soft mb-5">{subline}</p>}
+        {subline && <p className="text-ink-soft mb-2">{subline}</p>}
+
+        {/* Источник, если рецепт импортирован */}
+        {recipe.sourceUrl && recipe.source && (
+          <p className="text-ink-muted text-sm mb-5">
+            Источник:{" "}
+            <a
+              href={recipe.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-primary"
+            >
+              {recipe.source}
+            </a>
+          </p>
+        )}
 
         {/* Факты */}
         <div className="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm">

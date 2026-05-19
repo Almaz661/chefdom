@@ -4,6 +4,7 @@ import { and, desc, eq, ilike, lt, type SQL } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { client, db } from '../db/index';
 import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
+import { scrapeRecipe } from '../services/recipeScraper';
 
 const PAGE_SIZE = 20;
 
@@ -286,5 +287,71 @@ export const recipesRouter = router({
         });
       }
       return { id: input.id };
+    }),
+
+  // Импорт по URL: скрейп с сайта → сохранение в БД одной транзакцией.
+  importFromUrl: publicProcedure
+    .input(z.object({ url: z.string().url('Некорректный URL') }))
+    .mutation(async ({ input }) => {
+      let scraped;
+      try {
+        scraped = await scrapeRecipe(input.url);
+      } catch (err) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'Не удалось импортировать рецепт',
+        });
+      }
+
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(recipes)
+          .values({
+            title: scraped.title,
+            description: scraped.description,
+            imageUrl: scraped.imageUrl,
+            servings: scraped.servings,
+            prepTime: scraped.prepTime,
+            cookTime: scraped.cookTime,
+            totalTime: scraped.totalTime,
+            sourceUrl: scraped.sourceUrl,
+            source: scraped.source,
+            category: scraped.category,
+            cuisine: scraped.cuisine,
+            difficulty: scraped.difficulty,
+            calories: scraped.calories,
+          })
+          .returning({ id: recipes.id });
+
+        if (scraped.ingredients.length > 0) {
+          await tx.insert(recipeIngredients).values(
+            scraped.ingredients.map((ing, idx) => ({
+              recipeId: created.id,
+              name: ing.name,
+              amount: ing.amount !== null ? String(ing.amount) : null,
+              unit: ing.unit,
+              groupName: ing.groupName,
+              sortOrder: idx,
+            })),
+          );
+        }
+
+        if (scraped.steps.length > 0) {
+          await tx.insert(recipeSteps).values(
+            scraped.steps.map((s, idx) => ({
+              recipeId: created.id,
+              stepNumber: idx + 1,
+              instruction: s.instruction,
+              imageUrl: s.imageUrl,
+              timerMinutes: s.timerMinutes,
+            })),
+          );
+        }
+
+        return { id: created.id };
+      });
     }),
 });

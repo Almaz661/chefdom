@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Search, Plus, Download, ChefHat, BookOpen } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { RecipeImportDialog } from "../components/RecipeImportDialog";
 
 // Пустое состояние когда в БД ровно 0 рецептов.
-function EmptyState() {
+function EmptyState({ onImport }: { onImport: () => void }) {
   return (
     <div className="bg-paper border border-line border-dashed rounded-2xl p-10 text-center">
       <BookOpen
@@ -29,12 +30,11 @@ function EmptyState() {
         </Link>
         <button
           type="button"
-          disabled
-          title="Появится в Блоке 6"
-          className="inline-flex items-center gap-2 bg-paper text-ink-soft border border-line px-4 py-2.5 rounded-lg font-medium opacity-60 cursor-not-allowed"
+          onClick={onImport}
+          className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 py-2.5 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
         >
           <Download size={18} />
-          Импорт с сайта (Блок 6)
+          Импорт с сайта
         </button>
       </div>
     </div>
@@ -101,6 +101,7 @@ export function RecipesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>();
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -180,9 +181,8 @@ export function RecipesPage() {
           </Link>
           <button
             type="button"
-            disabled
-            title="Появится в Блоке 6"
-            className="inline-flex items-center gap-2 bg-paper text-ink-soft border border-line px-4 h-12 rounded-lg font-medium opacity-60 cursor-not-allowed"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
           >
             <Download size={18} />
             Импорт
@@ -228,7 +228,7 @@ export function RecipesPage() {
       {stats.isLoading ? (
         <div className="text-ink-muted text-sm">Загрузка...</div>
       ) : isEmpty ? (
-        <EmptyState />
+        <EmptyState onImport={() => setImportOpen(true)} />
       ) : items.length === 0 && !list.isLoading ? (
         <div className="text-center text-ink-soft py-12">
           Ничего не найдено. Попробуй другой запрос или фильтр.
@@ -252,6 +252,11 @@ export function RecipesPage() {
           )}
         </>
       )}
+
+      <RecipeImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+      />
     </div>
   );
 }
