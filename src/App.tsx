@@ -5,6 +5,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { Dashboard } from "./pages/Dashboard";
 import { RecipesPage } from "./pages/RecipesPage";
 import { RecipeDetailPage } from "./pages/RecipeDetailPage";
+import { AddRecipePage } from "./pages/AddRecipePage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -24,6 +25,14 @@ export default function App() {
       <Route
         path="/recipes"
         element={<PrivatePage><RecipesPage /></PrivatePage>}
+      />
+      <Route
+        path="/recipes/add"
+        element={<PrivatePage><AddRecipePage /></PrivatePage>}
+      />
+      <Route
+        path="/recipes/:id/edit"
+        element={<PrivatePage><AddRecipePage /></PrivatePage>}
       />
       <Route
         path="/recipes/:id"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Clock,
@@ -7,11 +7,12 @@ import {
   Flame,
   ChefHat,
   Timer,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 // Форматирование числа в российском формате: 1.5 → "1,5", 2 → "2".
-// Если null — возвращает пустую строку (отображается «по вкусу»).
 function formatAmount(n: number | null): string {
   if (n === null || Number.isNaN(n)) return "";
   const rounded = Math.round(n * 100) / 100;
@@ -23,19 +24,32 @@ const PORTION_OPTIONS = [1, 2, 4];
 
 export function RecipeDetailPage() {
   const params = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const id = Number(params.id);
   const [multiplier, setMultiplier] = useState(1);
   const [imgError, setImgError] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
+  const utils = trpc.useUtils();
   const query = trpc.recipes.getById.useQuery(
     { id },
     { enabled: Number.isFinite(id) && id > 0 },
   );
 
+  const del = trpc.recipes.delete.useMutation({
+    onSuccess: () => {
+      utils.recipes.invalidate();
+      navigate("/recipes");
+    },
+  });
+
   if (!Number.isFinite(id) || id <= 0) {
     return (
       <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <Link to="/recipes" className="text-primary inline-flex items-center gap-1">
+        <Link
+          to="/recipes"
+          className="text-primary inline-flex items-center gap-1"
+        >
           <ArrowLeft size={18} /> К рецептам
         </Link>
         <p className="text-ink-soft mt-6">Некорректный ID рецепта.</p>
@@ -100,11 +114,7 @@ export function RecipeDetailPage() {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ChefHat
-              size={80}
-              className="text-line-strong"
-              strokeWidth={1.5}
-            />
+            <ChefHat size={80} className="text-line-strong" strokeWidth={1.5} />
           </div>
         )}
         <Link
@@ -117,13 +127,32 @@ export function RecipeDetailPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 lg:px-10 mt-6">
-        {/* Заголовок и подпись */}
-        <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink mb-2 leading-tight">
-          {recipe.title}
-        </h1>
-        {subline && (
-          <p className="text-ink-soft mb-5">{subline}</p>
-        )}
+        {/* Заголовок + кнопки управления */}
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink leading-tight">
+            {recipe.title}
+          </h1>
+          <div className="flex gap-2 flex-shrink-0">
+            <Link
+              to={`/recipes/${recipe.id}/edit`}
+              aria-label="Редактировать"
+              title="Редактировать"
+              className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft hover:text-primary hover:border-primary flex items-center justify-center transition-colors"
+            >
+              <Pencil size={18} />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowConfirmDelete(true)}
+              aria-label="Удалить"
+              title="Удалить"
+              className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft hover:text-alert hover:border-alert flex items-center justify-center transition-colors"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+        {subline && <p className="text-ink-soft mb-5">{subline}</p>}
 
         {/* Факты */}
         <div className="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm">
@@ -181,9 +210,7 @@ export function RecipeDetailPage() {
             </div>
           </div>
           {ingredients.length === 0 ? (
-            <p className="text-ink-muted text-sm">
-              Ингредиенты не указаны.
-            </p>
+            <p className="text-ink-muted text-sm">Ингредиенты не указаны.</p>
           ) : (
             <div className="space-y-5">
               {[...groups.entries()].map(([groupName, list]) => (
@@ -271,6 +298,47 @@ export function RecipeDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Модалка подтверждения удаления */}
+      {showConfirmDelete && (
+        <div
+          className="fixed inset-0 bg-ink/50 flex items-center justify-center p-6 z-50"
+          onClick={() => !del.isPending && setShowConfirmDelete(false)}
+        >
+          <div
+            className="bg-paper rounded-2xl p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-serif text-xl font-semibold text-ink mb-2">
+              Удалить рецепт?
+            </h3>
+            <p className="text-ink-soft mb-6">
+              «{recipe.title}» будет удалён. Действие необратимо.
+            </p>
+            {del.error && (
+              <p className="text-alert text-sm mb-4">{del.error.message}</p>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDelete(false)}
+                disabled={del.isPending}
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={() => del.mutate({ id })}
+                disabled={del.isPending}
+                className="px-4 h-11 rounded-lg bg-alert text-paper font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {del.isPending ? "Удаляю..." : "Удалить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

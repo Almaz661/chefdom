@@ -7,9 +7,62 @@ import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
 
 const PAGE_SIZE = 20;
 
+// --- Reusable input schemas ---
+
+const ingredientInput = z.object({
+  name: z.string().min(1, 'Название ингредиента не может быть пустым').max(200),
+  amount: z.number().nullable(),
+  unit: z.string().max(50).nullable().optional(),
+  groupName: z.string().max(100).nullable().optional(),
+});
+
+const stepInput = z.object({
+  instruction: z.string().min(1, 'Инструкция шага не может быть пустой'),
+  imageUrl: z.string().max(2000).nullable().optional(),
+  timerMinutes: z.number().int().positive().nullable(),
+});
+
+const recipeFields = z.object({
+  title: z.string().min(1, 'Название обязательно').max(300),
+  description: z.string().nullable().optional(),
+  imageUrl: z.string().max(2000).nullable().optional(),
+  servings: z.number().int().min(1).max(100),
+  prepTime: z.number().int().min(0).max(10000).nullable().optional(),
+  cookTime: z.number().int().min(0).max(10000).nullable().optional(),
+  totalTime: z.number().int().min(0).max(10000).nullable().optional(),
+  sourceUrl: z.string().max(2000).nullable().optional(),
+  source: z.string().max(200).nullable().optional(),
+  category: z.string().max(100).nullable().optional(),
+  cuisine: z.string().max(100).nullable().optional(),
+  difficulty: z.string().max(50).nullable().optional(),
+  calories: z.number().int().min(0).max(20000).nullable().optional(),
+  ingredients: z.array(ingredientInput).max(200),
+  steps: z.array(stepInput).max(100),
+});
+
+// Хелпер для конвертации payload → row для recipes.
+// amount хранится как numeric (строка) — конвертим из number → string.
+function toRecipeRow(input: z.infer<typeof recipeFields>) {
+  return {
+    title: input.title,
+    description: input.description ?? null,
+    imageUrl: input.imageUrl ?? null,
+    servings: input.servings,
+    prepTime: input.prepTime ?? null,
+    cookTime: input.cookTime ?? null,
+    totalTime: input.totalTime ?? null,
+    sourceUrl: input.sourceUrl ?? null,
+    source: input.source ?? null,
+    category: input.category ?? null,
+    cuisine: input.cuisine ?? null,
+    difficulty: input.difficulty ?? null,
+    calories: input.calories ?? null,
+  };
+}
+
 export const recipesRouter = router({
-  // Список рецептов с поиском, фильтрами и cursor-based пагинацией.
-  // Используется через useInfiniteQuery — tRPC сам подставит cursor.
+  // --- READ ---
+
   list: publicProcedure
     .input(
       z.object({
@@ -32,7 +85,6 @@ export const recipesRouter = router({
 
       const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-      // Берём PAGE_SIZE+1 — если пришло больше, значит есть следующая страница.
       const rows = await db
         .select({
           id: recipes.id,
@@ -58,7 +110,6 @@ export const recipesRouter = router({
       return { items: rows, nextCursor };
     }),
 
-  // Деталь рецепта: рецепт + ингредиенты (по sortOrder) + шаги (по stepNumber)
   getById: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
@@ -90,7 +141,6 @@ export const recipesRouter = router({
       return { recipe, ingredients, steps };
     }),
 
-  // Категории с количеством — для фильтр-чипов.
   getCategories: publicProcedure.query(async () => {
     const rows = await client<{ category: string; count: number }[]>`
       SELECT category, COUNT(*)::int AS count
@@ -102,7 +152,6 @@ export const recipesRouter = router({
     return rows;
   }),
 
-  // То же по кухне.
   getCuisines: publicProcedure.query(async () => {
     const rows = await client<{ cuisine: string; count: number }[]>`
       SELECT cuisine, COUNT(*)::int AS count
@@ -114,11 +163,128 @@ export const recipesRouter = router({
     return rows;
   }),
 
-  // Общее количество — нужно чтобы отличить «БД пуста» от «фильтр ничего не нашёл».
   getStats: publicProcedure.query(async () => {
     const rows = await client<{ count: number }[]>`
       SELECT COUNT(*)::int AS count FROM recipes
     `;
     return { total: rows[0]?.count ?? 0 };
   }),
+
+  // --- WRITE ---
+
+  // Создание: вставка recipe + ингредиентов + шагов в одной транзакции.
+  create: publicProcedure
+    .input(recipeFields)
+    .mutation(async ({ input }) => {
+      return await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(recipes)
+          .values(toRecipeRow(input))
+          .returning({ id: recipes.id });
+
+        if (input.ingredients.length > 0) {
+          await tx.insert(recipeIngredients).values(
+            input.ingredients.map((ing, idx) => ({
+              recipeId: created.id,
+              name: ing.name,
+              amount: ing.amount !== null ? String(ing.amount) : null,
+              unit: ing.unit ?? null,
+              groupName: ing.groupName ?? null,
+              sortOrder: idx,
+            })),
+          );
+        }
+
+        if (input.steps.length > 0) {
+          await tx.insert(recipeSteps).values(
+            input.steps.map((s, idx) => ({
+              recipeId: created.id,
+              stepNumber: idx + 1,
+              instruction: s.instruction,
+              imageUrl: s.imageUrl ?? null,
+              timerMinutes: s.timerMinutes,
+            })),
+          );
+        }
+
+        return { id: created.id };
+      });
+    }),
+
+  // Обновление: ингредиенты и шаги перезаписываются полностью (DELETE + INSERT).
+  // Это проще и безопаснее чем diff'ить, для домашнего приложения подходит.
+  update: publicProcedure
+    .input(recipeFields.extend({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      return await db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select({ id: recipes.id })
+          .from(recipes)
+          .where(eq(recipes.id, input.id))
+          .limit(1);
+
+        if (!existing) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Рецепт не найден',
+          });
+        }
+
+        await tx
+          .update(recipes)
+          .set({ ...toRecipeRow(input), updatedAt: new Date() })
+          .where(eq(recipes.id, input.id));
+
+        await tx
+          .delete(recipeIngredients)
+          .where(eq(recipeIngredients.recipeId, input.id));
+        await tx
+          .delete(recipeSteps)
+          .where(eq(recipeSteps.recipeId, input.id));
+
+        if (input.ingredients.length > 0) {
+          await tx.insert(recipeIngredients).values(
+            input.ingredients.map((ing, idx) => ({
+              recipeId: input.id,
+              name: ing.name,
+              amount: ing.amount !== null ? String(ing.amount) : null,
+              unit: ing.unit ?? null,
+              groupName: ing.groupName ?? null,
+              sortOrder: idx,
+            })),
+          );
+        }
+
+        if (input.steps.length > 0) {
+          await tx.insert(recipeSteps).values(
+            input.steps.map((s, idx) => ({
+              recipeId: input.id,
+              stepNumber: idx + 1,
+              instruction: s.instruction,
+              imageUrl: s.imageUrl ?? null,
+              timerMinutes: s.timerMinutes,
+            })),
+          );
+        }
+
+        return { id: input.id };
+      });
+    }),
+
+  // Удаление: каскадно удаляет ингредиенты и шаги (FK ON DELETE CASCADE).
+  delete: publicProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const result = await db
+        .delete(recipes)
+        .where(eq(recipes.id, input.id))
+        .returning({ id: recipes.id });
+      if (result.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Рецепт не найден',
+        });
+      }
+      return { id: input.id };
+    }),
 });
