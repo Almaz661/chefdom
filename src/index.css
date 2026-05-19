@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  /* Палитра — тёплая «кухня шефа», не корпоративный sleek */
+  --color-primary: #c44e12;
+  --color-primary-dark: #8c2f08;
+  --color-primary-light: #fff1e8;
+
+  --color-cream: #faf6f0;
+  --color-paper: #ffffff;
+
+  --color-ink: #1f1a14;
+  --color-ink-soft: #6b5b47;
+  --color-ink-muted: #a0907b;
+
+  --color-fresh: #4a7c59;
+  --color-warning: #d9962e;
+  --color-alert: #b53a2d;
+  --color-cool: #4a6b7c;
+
+  --color-line: #e8dfd3;
+  --color-line-strong: #c9b89e;
+
+  /* Шрифты — serif для заголовков (как в кулинарной книге), sans для тела */
+  --font-serif: "Lora", "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum"; /* tabular numbers — для граммов, цен, КБЖУ */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+}

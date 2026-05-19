@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
-// Заготовка под Блок 2.
-// На Блоке 1 фронт ещё не подключён — этот файл не запускается в production.
+// Vite-конфиг для фронтенда.
+// В production: `npm run build` собирает в dist/, который раздаётся express-сервером.
+// Локально: `npm run dev:client` запускает dev-сервер на :5173, проксируя /api и /trpc на :3000.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
     proxy: {

@@ -10,7 +10,7 @@ services:
     region: frankfurt
     autoDeploy: false
     branch: main
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

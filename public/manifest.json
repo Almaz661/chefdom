@@ -1,0 +1,19 @@
+{
+  "name": "ШефДом!",
+  "short_name": "ШефДом!",
+  "description": "Личное приложение домашней кухни",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAF6F0",
+  "theme_color": "#C44E12",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
