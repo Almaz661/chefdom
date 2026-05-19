@@ -71,8 +71,10 @@ async function start(): Promise<void> {
   console.log("[boot] запуск seed...");
   await runSeed();
 
-  app.listen(PORT, () => {
-    console.log(`[boot] сервер слушает порт ${PORT}`);
+  // Явный bind на 0.0.0.0 — Render port-scanner иногда не видит дефолтный bind Node
+  // (который может уйти на IPv6 ::1). Принуждаем все IPv4 интерфейсы.
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[boot] сервер слушает 0.0.0.0:${PORT}`);
   });
 }
 
