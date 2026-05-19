@@ -1,0 +1,22 @@
+# ШефДом! — Render Blueprint (документация конфигурации сервиса)
+# Сервис уже создан вручную в Render Dashboard, autoDeploy: false.
+# Этот файл — для прозрачности и для возможного Blueprint Sync в будущем.
+
+services:
+  - type: web
+    name: chefdom
+    runtime: node
+    plan: free
+    region: frankfurt
+    autoDeploy: false
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        # Установлено вручную в Render Dashboard → Environment.
+        # sync: false означает «render.yaml не перезаписывает значение».
+        sync: false
