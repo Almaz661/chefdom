@@ -616,15 +616,31 @@ function parseMicrodata(
 
 // --- Strategy 4: Generic ---
 
+// Убирает суффикс «| Имя сайта» / «— Имя сайта» / «- Имя сайта» из title,
+// если он совпадает с og:site_name. Это спасает от «Рецепт X | Меню недели».
+function stripSiteNameSuffix(title: string, siteName: string): string {
+  if (!siteName) return title;
+  for (const sep of [" | ", " — ", " – ", " - ", " · "]) {
+    const suffix = `${sep}${siteName}`;
+    if (title.endsWith(suffix)) {
+      return title.slice(0, -suffix.length).trim();
+    }
+  }
+  return title;
+}
+
 function parseGeneric(
   $: cheerio.CheerioAPI,
   baseUrl: string,
 ): Partial<ScrapedRecipe> {
+  const siteName =
+    $('meta[property="og:site_name"]').attr("content")?.trim() || "";
+  const rawTitle =
+    $('meta[property="og:title"]').attr("content")?.trim() ||
+    $("h1").first().text().trim() ||
+    $("title").text().trim();
   return {
-    title:
-      $('meta[property="og:title"]').attr("content")?.trim() ||
-      $("h1").first().text().trim() ||
-      $("title").text().trim(),
+    title: stripSiteNameSuffix(rawTitle, siteName),
     description:
       $('meta[property="og:description"]').attr("content")?.trim() ||
       $('meta[name="description"]').attr("content")?.trim() ||
