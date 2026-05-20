@@ -68,3 +68,28 @@ export const recipeSteps = pgTable('recipe_steps', {
   imageUrl: text('image_url'),
   timerMinutes: integer('timer_minutes'),
 });
+
+// Меню недели. weekStartDate — понедельник этой недели (YYYY-MM-DD).
+export const menus = pgTable('menus', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  weekStartDate: text('week_start_date').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Слот в меню: день × приём пищи → рецепт.
+// dayOfWeek: 0=Пн, 1=Вт ... 6=Вс
+// mealType: 'breakfast' | 'lunch' | 'dinner'
+export const menuItems = pgTable('menu_items', {
+  id: serial('id').primaryKey(),
+  menuId: integer('menu_id')
+    .notNull()
+    .references(() => menus.id, { onDelete: 'cascade' }),
+  dayOfWeek: integer('day_of_week').notNull(),
+  mealType: text('meal_type').notNull(),
+  recipeId: integer('recipe_id')
+    .notNull()
+    .references(() => recipes.id, { onDelete: 'cascade' }),
+});

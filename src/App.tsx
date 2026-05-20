@@ -6,6 +6,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { RecipesPage } from "./pages/RecipesPage";
 import { RecipeDetailPage } from "./pages/RecipeDetailPage";
 import { AddRecipePage } from "./pages/AddRecipePage";
+import { MenuPage } from "./pages/MenuPage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -37,6 +38,10 @@ export default function App() {
       <Route
         path="/recipes/:id"
         element={<PrivatePage><RecipeDetailPage /></PrivatePage>}
+      />
+      <Route
+        path="/menu"
+        element={<PrivatePage><MenuPage /></PrivatePage>}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

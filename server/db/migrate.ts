@@ -78,6 +78,36 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '003_menus',
+    up: async (sql) => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS menus (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          week_start_date TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_menus_user_week
+        ON menus(user_id, week_start_date)
+      `;
+      await sql`
+        CREATE TABLE IF NOT EXISTS menu_items (
+          id SERIAL PRIMARY KEY,
+          menu_id INTEGER NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+          day_of_week INTEGER NOT NULL,
+          meal_type TEXT NOT NULL,
+          recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_menu_items_menu_id
+        ON menu_items(menu_id)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
