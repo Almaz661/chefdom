@@ -94,6 +94,24 @@ export const menuItems = pgTable('menu_items', {
     .references(() => recipes.id, { onDelete: 'cascade' }),
 });
 
+// Инвентарь (что есть дома).
+// storageType: 'fridge' | 'freezer' | 'pantry'
+// expiryDate: YYYY-MM-DD или null если не скоропортящееся.
+export const inventory = pgTable('inventory', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  productName: text('product_name').notNull(),
+  quantity: numeric('quantity'),
+  unit: text('unit'),
+  storageType: text('storage_type').notNull().default('fridge'),
+  expiryDate: text('expiry_date'),
+  minQuantity: numeric('min_quantity'),
+  category: text('category'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Список покупок.
 // isChecked: 0 = не куплено, 1 = куплено.
 // recipeSource: название рецепта откуда добавлено (null если вручную).

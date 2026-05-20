@@ -132,6 +132,29 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '005_inventory',
+    up: async (sql) => {
+      await sql`
+        CREATE TABLE IF NOT EXISTS inventory (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          product_name TEXT NOT NULL,
+          quantity NUMERIC,
+          unit TEXT,
+          storage_type TEXT NOT NULL DEFAULT 'fridge',
+          expiry_date TEXT,
+          min_quantity NUMERIC,
+          category TEXT,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_inventory_user_id
+        ON inventory(user_id)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
