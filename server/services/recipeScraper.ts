@@ -60,20 +60,24 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   // Стратегия 1: JSON-LD
   const jsonLd = parseJsonLd($, url);
   if (jsonLd && isValidRecipe(jsonLd)) {
-    // Если title из JSON-LD мусорный — подменить на h1 или og:title или из URL
+    // Если title из JSON-LD мусорный — подменить
     if (jsonLd.title && isJunkTitle(jsonLd.title)) {
-      const h1 = $("h1").first().text().trim();
-      const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
-      if (h1 && !isJunkTitle(h1)) {
-        jsonLd.title = h1;
-      } else if (ogTitle && !isJunkTitle(ogTitle)) {
-        // Убираем суффикс сайта из og:title
-        const siteName = $('meta[property="og:site_name"]').attr("content")?.trim() || "";
-        jsonLd.title = stripSiteNameSuffix(ogTitle, siteName);
-      } else {
-        // Последний fallback — из URL
+      // Для povar.ru — всегда из URL (их h1 и og:title тоже мусорные)
+      if (source.includes("povar.ru")) {
         const fromUrl = titleFromUrl(url);
         if (fromUrl) jsonLd.title = fromUrl;
+      } else {
+        const h1 = $("h1").first().text().trim();
+        const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
+        if (h1 && !isJunkTitle(h1)) {
+          jsonLd.title = h1;
+        } else if (ogTitle && !isJunkTitle(ogTitle)) {
+          const siteName = $('meta[property="og:site_name"]').attr("content")?.trim() || "";
+          jsonLd.title = stripSiteNameSuffix(ogTitle, siteName);
+        } else {
+          const fromUrl = titleFromUrl(url);
+          if (fromUrl) jsonLd.title = fromUrl;
+        }
       }
     }
     return finalize(jsonLd, sourceUrl, source);
