@@ -43,6 +43,15 @@ export function RecipeDetailPage() {
     },
   });
 
+  const cook = trpc.recipes.cook.useMutation({
+    onSuccess: (result) => {
+      alert(`Готовим! Списано ${result.consumed} из ${result.total} ингредиентов из инвентаря.`);
+    },
+    onError: (err) => {
+      alert(err.message);
+    },
+  });
+
   if (!Number.isFinite(id) || id <= 0) {
     return (
       <div className="max-w-3xl mx-auto p-6 lg:p-10">
@@ -149,6 +158,16 @@ export function RecipeDetailPage() {
               className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft hover:text-alert hover:border-alert flex items-center justify-center transition-colors"
             >
               <Trash2 size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => cook.mutate({ id: recipe.id })}
+              disabled={cook.isPending}
+              aria-label="Готовить"
+              title="Готовить"
+              className="w-10 h-10 rounded-lg bg-primary text-paper hover:bg-primary-dark flex items-center justify-center transition-colors disabled:opacity-50"
+            >
+              <ChefHat size={18} />
             </button>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import { useState, FormEvent } from "react";
-import { ShoppingCart, Plus, Trash2, Loader2 } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Loader2, Refrigerator, Snowflake, Package } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 export function ShoppingPage() {
   const [newItem, setNewItem] = useState("");
+  const [storePick, setStorePick] = useState<number | null>(null);
   const utils = trpc.useUtils();
 
   const { data: items = [], isLoading } = trpc.shopping.list.useQuery();
@@ -18,6 +19,13 @@ export function ShoppingPage() {
   const toggle = trpc.shopping.toggle.useMutation({
     onSuccess: () => {
       utils.shopping.list.invalidate();
+    },
+  });
+
+  const buyAndStore = trpc.shopping.buyAndStore.useMutation({
+    onSuccess: () => {
+      utils.shopping.list.invalidate();
+      setStorePick(null);
     },
   });
 
@@ -114,7 +122,13 @@ export function ShoppingPage() {
                         className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
                       >
                         <button
-                          onClick={() => toggle.mutate({ id: item.id })}
+                          onClick={() => {
+                            if (item.isChecked === 1) {
+                              toggle.mutate({ id: item.id });
+                            } else {
+                              setStorePick(item.id);
+                            }
+                          }}
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                             item.isChecked === 1
                               ? "bg-primary border-primary"
@@ -206,6 +220,55 @@ export function ShoppingPage() {
             </button>
           </form>
         </>
+      )}
+
+      {/* Диалог выбора локации */}
+      {storePick !== null && (
+        <div
+          className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+          onClick={() => setStorePick(null)}
+        >
+          <div
+            className="bg-paper w-full sm:max-w-xs sm:rounded-2xl rounded-t-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-serif text-lg font-semibold text-ink mb-4 text-center">
+              Куда положить?
+            </h3>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'fridge' })}
+                disabled={buyAndStore.isPending}
+                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
+              >
+                <Refrigerator size={20} className="text-primary" />
+                <span className="text-sm font-medium text-ink">Холодильник</span>
+              </button>
+              <button
+                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'freezer' })}
+                disabled={buyAndStore.isPending}
+                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
+              >
+                <Snowflake size={20} className="text-primary" />
+                <span className="text-sm font-medium text-ink">Морозилка</span>
+              </button>
+              <button
+                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'pantry' })}
+                disabled={buyAndStore.isPending}
+                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
+              >
+                <Package size={20} className="text-primary" />
+                <span className="text-sm font-medium text-ink">Кладовая</span>
+              </button>
+            </div>
+            <button
+              onClick={() => setStorePick(null)}
+              className="mt-4 w-full h-10 text-sm text-ink-muted hover:text-ink transition-colors"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

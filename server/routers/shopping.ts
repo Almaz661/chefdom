@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { eq, and } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { purchaseItems } from '../db/schema';
+import { purchaseItems, inventory } from '../db/schema';
 
 export const shoppingRouter = router({
   // Весь список покупок (userId=1)
@@ -75,6 +75,44 @@ export const shoppingRouter = router({
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
       }
+      return { id: input.id };
+    }),
+
+  // Купить и положить в инвентарь
+  buyAndStore: publicProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        storageType: z.enum(['fridge', 'freezer', 'pantry']).default('fridge'),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const [item] = await db
+        .select()
+        .from(purchaseItems)
+        .where(eq(purchaseItems.id, input.id))
+        .limit(1);
+
+      if (!item) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+      }
+
+      // Отметить купленным
+      await db
+        .update(purchaseItems)
+        .set({ isChecked: 1 })
+        .where(eq(purchaseItems.id, input.id));
+
+      // Добавить в инвентарь
+      await db.insert(inventory).values({
+        userId: 1,
+        productName: item.productName,
+        quantity: item.quantity,
+        unit: item.unit,
+        storageType: input.storageType,
+        category: item.category,
+      });
+
       return { id: input.id };
     }),
 

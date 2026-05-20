@@ -386,4 +386,47 @@ export const recipesRouter = router({
     }
     return { cancelled: true };
   }),
+
+  // --- ГОТОВИТЬ (п.8 Этап 0) ---
+  // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие).
+  cook: publicProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const { inventory } = await import('../db/schema');
+      const { asc } = await import('drizzle-orm');
+
+      // Получить ингредиенты рецепта
+      const ingredients = await db
+        .select()
+        .from(recipeIngredients)
+        .where(eq(recipeIngredients.recipeId, input.id));
+
+      if (ingredients.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'У рецепта нет ингредиентов' });
+      }
+
+      let consumed = 0;
+
+      for (const ing of ingredients) {
+        // Найти в инвентаре по названию (case-insensitive), сортировка по сроку (FEFO)
+        const matches = await db
+          .select()
+          .from(inventory)
+          .where(
+            and(
+              eq(inventory.userId, 1),
+              ilike(inventory.productName, ing.name),
+            ),
+          )
+          .orderBy(asc(inventory.expiryDate));
+
+        if (matches.length > 0) {
+          // Удаляем первый (самый скоро истекающий)
+          await db.delete(inventory).where(eq(inventory.id, matches[0].id));
+          consumed++;
+        }
+      }
+
+      return { consumed, total: ingredients.length };
+    }),
 });
