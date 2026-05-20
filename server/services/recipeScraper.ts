@@ -60,11 +60,20 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   // Стратегия 1: JSON-LD
   const jsonLd = parseJsonLd($, url);
   if (jsonLd && isValidRecipe(jsonLd)) {
-    // Если title из JSON-LD мусорный — подменить на h1
+    // Если title из JSON-LD мусорный — подменить на h1 или og:title или из URL
     if (jsonLd.title && isJunkTitle(jsonLd.title)) {
       const h1 = $("h1").first().text().trim();
+      const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
       if (h1 && !isJunkTitle(h1)) {
         jsonLd.title = h1;
+      } else if (ogTitle && !isJunkTitle(ogTitle)) {
+        // Убираем суффикс сайта из og:title
+        const siteName = $('meta[property="og:site_name"]').attr("content")?.trim() || "";
+        jsonLd.title = stripSiteNameSuffix(ogTitle, siteName);
+      } else {
+        // Последний fallback — из URL
+        const fromUrl = titleFromUrl(url);
+        if (fromUrl) jsonLd.title = fromUrl;
       }
     }
     return finalize(jsonLd, sourceUrl, source);
@@ -129,6 +138,27 @@ function isJunkTitle(title: string): boolean {
     "кулинарные рецепты",
   ];
   return junkPatterns.some((p) => lower.includes(p));
+}
+
+/** Извлекает человекочитаемое название из URL (транслит → заглавная буква) */
+function titleFromUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    // Берём последний сегмент: salat_cezar_s_kuricei_i_suharikami-304.html
+    const lastSeg = path.split("/").filter(Boolean).pop() || "";
+    // Убираем расширение и числовой суффикс
+    const clean = lastSeg
+      .replace(/\.html?$/i, "")
+      .replace(/-\d+$/, "")
+      .replace(/[_-]/g, " ")
+      .trim();
+    if (clean.length < 3) return null;
+    // Заглавная первая буква
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  } catch {
+    return null;
+  }
 }
 
 function finalize(
