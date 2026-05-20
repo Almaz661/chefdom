@@ -6,7 +6,7 @@ import { RecipeImportDialog } from "../components/RecipeImportDialog";
 import { SectionImportDialog } from "../components/SectionImportDialog";
 
 // Пустое состояние когда в БД ровно 0 рецептов.
-function EmptyState({ onImport }: { onImport: () => void }) {
+function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: () => void }) {
   return (
     <div className="bg-paper border border-line border-dashed rounded-2xl p-10 text-center">
       <BookOpen
@@ -36,6 +36,14 @@ function EmptyState({ onImport }: { onImport: () => void }) {
         >
           <Download size={18} />
           Импорт с сайта
+        </button>
+        <button
+          type="button"
+          onClick={onSection}
+          className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 py-2.5 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
+        >
+          <FolderDown size={18} />
+          Импорт раздела
         </button>
       </div>
     </div>
@@ -238,7 +246,7 @@ export function RecipesPage() {
       {stats.isLoading ? (
         <div className="text-ink-muted text-sm">Загрузка...</div>
       ) : isEmpty ? (
-        <EmptyState onImport={() => setImportOpen(true)} />
+        <EmptyState onImport={() => setImportOpen(true)} onSection={() => setSectionOpen(true)} />
       ) : items.length === 0 && !list.isLoading ? (
         <div className="text-center text-ink-soft py-12">
           Ничего не найдено. Попробуй другой запрос или фильтр.
