@@ -8,6 +8,7 @@ import {
   Search,
   Clock,
   Loader2,
+  ShoppingCart,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
@@ -97,6 +98,15 @@ export function MenuPage() {
   const removeItem = trpc.menu.removeItem.useMutation({
     onSuccess: () => {
       utils.menu.getWeek.invalidate({ weekStart });
+    },
+  });
+
+  const toShopping = trpc.menu.toShopping.useMutation({
+    onSuccess: (result) => {
+      alert(`Добавлено ${result.added} продуктов в список покупок`);
+    },
+    onError: (err) => {
+      alert(err.message);
     },
   });
 
@@ -285,6 +295,20 @@ export function MenuPage() {
             })}
           </div>
         </>
+      )}
+
+      {/* Кнопка «В покупки» */}
+      {!isLoading && data && data.items.length > 0 && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={() => toShopping.mutate({ weekStart })}
+            disabled={toShopping.isPending}
+            className="inline-flex items-center gap-2 px-6 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+          >
+            <ShoppingCart size={18} />
+            {toShopping.isPending ? "Добавляю..." : "В покупки →"}
+          </button>
+        </div>
       )}
 
       {/* Диалог выбора рецепта */}

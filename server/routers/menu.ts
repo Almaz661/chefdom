@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { menus, menuItems, recipes } from '../db/schema';
+import { menus, menuItems, recipes, recipeIngredients, purchaseItems } from '../db/schema';
 
 const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
 
@@ -107,5 +107,69 @@ export const menuRouter = router({
       }
 
       return { id: input.itemId };
+    }),
+
+  // Собрать ингредиенты из меню недели → добавить в список покупок (без дублей)
+  toShopping: publicProcedure
+    .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+    .mutation(async ({ input }) => {
+      // Найти меню
+      const [menu] = await db
+        .select()
+        .from(menus)
+        .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, input.weekStart)))
+        .limit(1);
+
+      if (!menu) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Меню на эту неделю не найдено' });
+      }
+
+      // Получить все recipeId из меню
+      const items = await db
+        .select({ recipeId: menuItems.recipeId })
+        .from(menuItems)
+        .where(eq(menuItems.menuId, menu.id));
+
+      if (items.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Меню пустое — нечего добавлять в покупки' });
+      }
+
+      const recipeIds = [...new Set(items.map((i) => i.recipeId))];
+
+      // Получить ингредиенты всех рецептов
+      const ingredients = await db
+        .select()
+        .from(recipeIngredients)
+        .where(inArray(recipeIngredients.recipeId, recipeIds));
+
+      // Получить текущий список покупок для дедупликации
+      const existing = await db
+        .select({ productName: purchaseItems.productName })
+        .from(purchaseItems)
+        .where(eq(purchaseItems.userId, 1));
+
+      const existingNames = new Set(
+        existing.map((e) => e.productName.toLowerCase().trim()),
+      );
+
+      // Добавить ингредиенты которых ещё нет в списке
+      let added = 0;
+      for (const ing of ingredients) {
+        const nameLower = ing.name.toLowerCase().trim();
+        if (existingNames.has(nameLower)) continue;
+
+        await db.insert(purchaseItems).values({
+          userId: 1,
+          productName: ing.name,
+          quantity: ing.amount,
+          unit: ing.unit,
+          category: ing.groupName,
+        });
+
+        existingNames.add(nameLower);
+        added++;
+      }
+
+      return { added };
     }),
 });
