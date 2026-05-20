@@ -57,8 +57,20 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   const sourceUrl = url;
   const source = parsedUrl.hostname.replace(/^www\./, "");
 
+  // --- DEBUG LOG ---
+  const h1All = $("h1").map((_, el) => $(el).text().trim()).get();
+  const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "(нет)";
+  const titleTag = $("title").text().trim() || "(нет)";
+  console.log(`[scraper] URL: ${url}`);
+  console.log(`[scraper] source: ${source}`);
+  console.log(`[scraper] <title>: ${titleTag}`);
+  console.log(`[scraper] og:title: ${ogTitle}`);
+  console.log(`[scraper] h1 (${h1All.length}): ${JSON.stringify(h1All.slice(0, 3))}`);
+  console.log(`[scraper] HTML length: ${html.length}`);
+
   // Стратегия 1: JSON-LD
   const jsonLd = parseJsonLd($, url);
+  console.log(`[scraper] JSON-LD found: ${!!jsonLd}, title: "${jsonLd?.title || ""}", ingredients: ${jsonLd?.ingredients?.length ?? 0}, steps: ${jsonLd?.steps?.length ?? 0}`);
   if (jsonLd && isValidRecipe(jsonLd)) {
     // Если title из JSON-LD мусорный — подменить
     if (jsonLd.title && isJunkTitle(jsonLd.title)) {
@@ -86,6 +98,7 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   // Стратегия 2: сайт-специфика
   if (source.includes("menunedeli.ru")) {
     const menu = parseMenunedeli($, url);
+    console.log(`[scraper] menunedeli: title="${menu?.title || ""}", ing=${menu?.ingredients?.length ?? 0}, steps=${menu?.steps?.length ?? 0}`);
     if (menu && isValidRecipe(menu)) {
       return finalize(menu, sourceUrl, source);
     }
@@ -93,6 +106,7 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
 
   if (source.includes("povar.ru")) {
     const povar = parsePovarRu($, url);
+    console.log(`[scraper] povar.ru: title="${povar?.title || ""}", ing=${povar?.ingredients?.length ?? 0}, steps=${povar?.steps?.length ?? 0}`);
     if (povar && isValidRecipe(povar)) {
       return finalize(povar, sourceUrl, source);
     }
@@ -100,18 +114,23 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
 
   // Стратегия 3: microdata
   const micro = parseMicrodata($, url);
+  console.log(`[scraper] microdata: title="${micro?.title || ""}", ing=${micro?.ingredients?.length ?? 0}, steps=${micro?.steps?.length ?? 0}`);
   if (micro && isValidRecipe(micro)) {
+    console.log(`[scraper] → используем microdata`);
     return finalize(micro, sourceUrl, source);
   }
 
   // Стратегия 4: generic fallback (минимум — title + image)
   const generic = parseGeneric($, url);
+  console.log(`[scraper] generic: title="${generic?.title || ""}"`)
   if (generic.title && generic.title.length > 0) {
     // Если JSON-LD дал хоть что-то (но не прошло isValidRecipe), используем его
     // вместо чистого generic — обычно там хоть title правильный.
     if (jsonLd && jsonLd.title) {
+      console.log(`[scraper] → используем JSON-LD (partial) с generic fallback`);
       return finalize(jsonLd, sourceUrl, source);
     }
+    console.log(`[scraper] → используем generic`);
     return finalize(generic, sourceUrl, source);
   }
 
