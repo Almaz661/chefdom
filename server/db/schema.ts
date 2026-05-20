@@ -93,3 +93,23 @@ export const menuItems = pgTable('menu_items', {
     .notNull()
     .references(() => recipes.id, { onDelete: 'cascade' }),
 });
+
+// Список покупок.
+// isChecked: 0 = не куплено, 1 = куплено.
+// recipeSource: название рецепта откуда добавлено (null если вручную).
+// neededQuantity / inStockQuantity — для будущей интеграции с инвентарём.
+export const purchaseItems = pgTable('purchase_items', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  productName: text('product_name').notNull(),
+  quantity: numeric('quantity'),
+  unit: text('unit'),
+  category: text('category'),
+  isChecked: integer('is_checked').notNull().default(0),
+  recipeSource: text('recipe_source'),
+  neededQuantity: numeric('needed_quantity'),
+  inStockQuantity: numeric('in_stock_quantity'),
+  addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
+});
