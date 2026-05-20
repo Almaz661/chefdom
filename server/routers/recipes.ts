@@ -5,6 +5,7 @@ import { router, publicProcedure } from '../trpc';
 import { client, db } from '../db/index';
 import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
 import { scrapeRecipe } from '../services/recipeScraper';
+import { startSectionImport, getActiveJob, cancelActiveJob } from '../services/sectionImport';
 
 const PAGE_SIZE = 20;
 
@@ -354,4 +355,35 @@ export const recipesRouter = router({
         return { id: created.id };
       });
     }),
+
+  // --- SECTION IMPORT (Блок 7) ---
+
+  importSectionStart: publicProcedure
+    .input(z.object({ url: z.string().url('Некорректный URL раздела') }))
+    .mutation(({ input }) => {
+      try {
+        const job = startSectionImport(input.url);
+        return { jobId: job.id };
+      } catch (err) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: err instanceof Error ? err.message : 'Ошибка запуска импорта',
+        });
+      }
+    }),
+
+  importSectionStatus: publicProcedure.query(() => {
+    return getActiveJob();
+  }),
+
+  importSectionCancel: publicProcedure.mutation(() => {
+    const ok = cancelActiveJob();
+    if (!ok) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Нет активного импорта для отмены',
+      });
+    }
+    return { cancelled: true };
+  }),
 });

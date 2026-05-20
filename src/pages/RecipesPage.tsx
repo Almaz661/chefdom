@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Search, Plus, Download, ChefHat, BookOpen } from "lucide-react";
+import { Search, Plus, Download, FolderDown, ChefHat, BookOpen } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { RecipeImportDialog } from "../components/RecipeImportDialog";
+import { SectionImportDialog } from "../components/SectionImportDialog";
 
 // Пустое состояние когда в БД ровно 0 рецептов.
 function EmptyState({ onImport }: { onImport: () => void }) {
@@ -102,6 +103,7 @@ export function RecipesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | undefined>();
   const [importOpen, setImportOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -187,6 +189,14 @@ export function RecipesPage() {
             <Download size={18} />
             Импорт
           </button>
+          <button
+            type="button"
+            onClick={() => setSectionOpen(true)}
+            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
+          >
+            <FolderDown size={18} />
+            Раздел
+          </button>
         </div>
       )}
 
@@ -256,6 +266,10 @@ export function RecipesPage() {
       <RecipeImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
+      />
+      <SectionImportDialog
+        open={sectionOpen}
+        onClose={() => setSectionOpen(false)}
       />
     </div>
   );
