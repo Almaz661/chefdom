@@ -60,6 +60,13 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   // Стратегия 1: JSON-LD
   const jsonLd = parseJsonLd($, url);
   if (jsonLd && isValidRecipe(jsonLd)) {
+    // Если title из JSON-LD мусорный — подменить на h1
+    if (jsonLd.title && isJunkTitle(jsonLd.title)) {
+      const h1 = $("h1").first().text().trim();
+      if (h1 && !isJunkTitle(h1)) {
+        jsonLd.title = h1;
+      }
+    }
     return finalize(jsonLd, sourceUrl, source);
   }
 
@@ -107,6 +114,21 @@ function isValidRecipe(r: Partial<ScrapedRecipe>): boolean {
     (r.ingredients?.length ?? 0) >= 1 &&
     (r.steps?.length ?? 0) >= 1
   );
+}
+
+/** Определяет «мусорный» title — общее название сайта/каталога, а не рецепта */
+function isJunkTitle(title: string): boolean {
+  const lower = title.toLowerCase();
+  const junkPatterns = [
+    "каталог рецептов",
+    "каталог",
+    "рецепты с фото",
+    "пошаговые рецепты",
+    "главная",
+    "все рецепты",
+    "кулинарные рецепты",
+  ];
+  return junkPatterns.some((p) => lower.includes(p));
 }
 
 function finalize(
@@ -352,6 +374,10 @@ const KNOWN_UNITS = [
   "штуки",
   "ст.л",
   "ст.л.",
+  "ст. л.",
+  "ст. ложка",
+  "ст. ложки",
+  "ст. ложек",
   "ст",
   "ст.",
   "столовая",
@@ -361,6 +387,10 @@ const KNOWN_UNITS = [
   "ложек",
   "ч.л",
   "ч.л.",
+  "ч. л.",
+  "ч. ложка",
+  "ч. ложки",
+  "ч. ложек",
   "ч.",
   "чайная",
   "чайных",
@@ -381,7 +411,6 @@ const KNOWN_UNITS = [
   "долек",
   "пакет",
   "пакетик",
-  "по",
   "веточка",
   "веточки",
   "кусок",
@@ -428,15 +457,41 @@ function parseIngredientText(text: string): ScrapedIngredient {
   }
 
   // Формат 3: «Куриное филе 150 грамм» (число после названия без разделителя)
+  // Также ловит «Мука пшеничная 3 ст. ложки»
   const matchEndNoSep = working.match(
-    /^(.+?)\s+(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)\s*([а-яa-z.]+)?$/i,
+    /^(.+?)\s+(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)\s+(.+)$/i,
   );
   if (matchEndNoSep) {
     const namePart = matchEndNoSep[1].trim();
+    const afterNumber = matchEndNoSep[3].trim();
     // Убедиться что namePart содержит буквы (не число)
     if (/[а-яА-Яa-zA-Z]/.test(namePart)) {
-      const parsed = parseAmountUnit(matchEndNoSep[2], matchEndNoSep[3]);
-      return { name: namePart, amount: parsed.amount, unit: parsed.unit, groupName: null };
+      const parsed = parseAmountUnit(matchEndNoSep[2], undefined);
+      // Проверяем — afterNumber это единица или часть названия?
+      const afterLower = afterNumber.toLowerCase().replace(/\.$/, "");
+      const isUnit = KNOWN_UNITS.some((u) => afterLower === u || afterLower.startsWith(u));
+      if (isUnit) {
+        return { name: namePart, amount: parsed.amount, unit: afterNumber, groupName: null };
+      }
+      // afterNumber может быть «грамм твердый» — единица + уточнение
+      const unitFromAfter = extractUnitFromStart(afterNumber);
+      if (unitFromAfter) {
+        return { name: namePart, amount: parsed.amount, unit: unitFromAfter, groupName: null };
+      }
+      // Не единица — может быть число внутри названия, вернём как есть
+      return { name: working, amount: null, unit: null, groupName: null };
+    }
+  }
+
+  // Формат 3b: «Куриное филе 150» (число в конце без единицы)
+  const matchEndNum = working.match(
+    /^(.+?)\s+(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)$/i,
+  );
+  if (matchEndNum) {
+    const namePart = matchEndNum[1].trim();
+    if (/[а-яА-Яa-zA-Z]/.test(namePart)) {
+      const parsed = parseAmountUnit(matchEndNum[2], undefined);
+      return { name: namePart, amount: parsed.amount, unit: null, groupName: null };
     }
   }
 
@@ -465,6 +520,24 @@ function parseAmountUnit(amountStr: string, unitStr: string | undefined): { amou
   );
 
   return { amount, unit: unitMatch ? unitStr! : null, unitMatch };
+}
+
+/** Извлечь единицу из начала строки (например «грамм твердый» → «грамм») */
+function extractUnitFromStart(text: string): string | null {
+  const lower = text.toLowerCase();
+  // Сортируем по длине (сначала длинные) чтобы «ст. ложки» матчилось раньше «ст»
+  const sorted = [...KNOWN_UNITS].sort((a, b) => b.length - a.length);
+  for (const u of sorted) {
+    if (lower === u || lower.startsWith(u + " ") || lower.startsWith(u + ".")) {
+      return text.slice(0, u.length);
+    }
+  }
+  // Попробуем первое слово
+  const firstWord = text.split(/\s/)[0].toLowerCase().replace(/\.$/, "");
+  if (KNOWN_UNITS.some((u) => firstWord === u)) {
+    return text.split(/\s/)[0];
+  }
+  return null;
 }
 
 function parseStepsArray(instr: unknown, baseUrl: string): ScrapedStep[] {
