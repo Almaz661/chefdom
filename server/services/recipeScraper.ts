@@ -116,11 +116,104 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   const micro = parseMicrodata($, url);
   console.log(`[scraper] microdata: title="${micro?.title || ""}", ing=${micro?.ingredients?.length ?? 0}, steps=${micro?.steps?.length ?? 0}`);
   if (micro && isValidRecipe(micro)) {
-    console.log(`[scraper] → используем microdata`);
+    // Если title из microdata мусорный — подменить на h1
+    if (micro.title && isJunkTitle(micro.title)) {
+      const h1 = $("h1").first().text().trim();
+      if (h1 && !isJunkTitle(h1)) {
+        micro.title = h1;
+      } else {
+        const fromUrl = titleFromUrl(url);
+        if (fromUrl) micro.title = fromUrl;
+      }
+    }
+    console.log(`[scraper] → используем microdata, title="${micro.title}"`);
     return finalize(micro, sourceUrl, source);
   }
 
-  // Стратегия 4: generic fallback (минимум — title + image)
+  // Стратегия 3b: microdata частичная — объединяем с другими источниками
+  // Если microdata нашла шаги но не ингредиенты (или наоборот) — дополняем
+  if (micro && micro.title && ((micro.ingredients?.length ?? 0) > 0 || (micro.steps?.length ?? 0) > 0)) {
+    // Поищем недостающее через itemprop напрямую
+    const microIngredients = micro.ingredients?.length ?? 0;
+    const microSteps = micro.steps?.length ?? 0;
+
+    if (microIngredients === 0) {
+      // Попробуем найти ингредиенты через все itemprop="recipeIngredient" на странице
+      const foundIngs: ScrapedIngredient[] = [];
+      $('[itemprop="recipeIngredient"], [itemprop="ingredients"]').each((_, el) => {
+        const t = $(el).text().trim();
+        if (t && t.length < 200) foundIngs.push(parseIngredientText(t));
+      });
+      if (foundIngs.length > 0) micro.ingredients = foundIngs;
+    }
+
+    if (microSteps === 0) {
+      // Попробуем найти шаги через ol внутри основного контента
+      const foundSteps: ScrapedStep[] = [];
+      $("article ol li, .recipe-steps li, .instructions li, .entry-content ol li").each((_, el) => {
+        const t = $(el).text().trim();
+        if (t && t.length > 10) foundSteps.push({ instruction: t, imageUrl: null, timerMinutes: null });
+      });
+      if (foundSteps.length > 0) micro.steps = foundSteps;
+    }
+
+    // Исправить title если мусорный
+    if (micro.title && isJunkTitle(micro.title)) {
+      const h1 = $("h1").first().text().trim();
+      if (h1 && !isJunkTitle(h1)) micro.title = h1;
+    }
+
+    if (isValidRecipe(micro)) {
+      console.log(`[scraper] → используем microdata (дополненная), title="${micro.title}", ing=${micro.ingredients?.length}, steps=${micro.steps?.length}`);
+      return finalize(micro, sourceUrl, source);
+    }
+  }
+
+  // Стратегия 4: universal fallback — ищем данные через общие селекторы
+  const uniTitle = $("h1").first().text().trim() || $('meta[property="og:title"]').attr("content")?.trim() || $("title").text().trim();
+
+  // Поиск ингредиентов через типичные селекторы
+  let genericIngredients: ScrapedIngredient[] = [];
+  $('[itemprop="recipeIngredient"], [itemprop="ingredients"]').each((_, el) => {
+    const t = $(el).text().trim();
+    if (t && t.length < 200) genericIngredients.push(parseIngredientText(t));
+  });
+  if (genericIngredients.length === 0) {
+    $(".recipe_ing li, .ingredients li, .ingredient-list li, table.ingr td:first-child").each((_, el) => {
+      const t = $(el).text().trim();
+      if (t && t.length < 200 && t.length > 1) genericIngredients.push(parseIngredientText(t));
+    });
+  }
+
+  // Поиск шагов через типичные селекторы
+  let genericSteps: ScrapedStep[] = [];
+  $('[itemprop="recipeInstructions"] li, [itemprop="recipeInstructions"] p').each((_, el) => {
+    const t = $(el).text().trim();
+    if (t && t.length > 10) genericSteps.push({ instruction: t, imageUrl: null, timerMinutes: null });
+  });
+  if (genericSteps.length === 0) {
+    $(".recipe_steps li, .instructions li, .step-description, .recipe-step p, article ol li").each((_, el) => {
+      const t = $(el).text().trim();
+      if (t && t.length > 15) genericSteps.push({ instruction: t, imageUrl: null, timerMinutes: null });
+    });
+  }
+
+  console.log(`[scraper] universal: title="${uniTitle || ""}", ing=${genericIngredients.length}, steps=${genericSteps.length}`);
+
+  if (uniTitle && genericIngredients.length > 0 && genericSteps.length > 0) {
+    const combined: Partial<ScrapedRecipe> = {
+      title: isJunkTitle(uniTitle) ? (titleFromUrl(url) || uniTitle) : uniTitle,
+      description: $('meta[property="og:description"]').attr("content")?.trim() || null,
+      imageUrl: extractImageUrl($('meta[property="og:image"]').attr("content"), url),
+      servings: 4,
+      ingredients: genericIngredients,
+      steps: genericSteps,
+    };
+    console.log(`[scraper] → используем universal fallback`);
+    return finalize(combined, sourceUrl, source);
+  }
+
+  // Стратегия 5: чистый generic (только title + image, без данных)
   const generic = parseGeneric($, url);
   console.log(`[scraper] generic: title="${generic?.title || ""}"`)
   if (generic.title && generic.title.length > 0) {
