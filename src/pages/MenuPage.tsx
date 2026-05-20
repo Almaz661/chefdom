@@ -352,10 +352,10 @@ function MenuSlotCard({
           e.stopPropagation();
           onRemove();
         }}
-        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-paper border border-line flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-alert hover:text-alert"
+        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-paper border border-line flex items-center justify-center hover:border-alert hover:text-alert"
         aria-label="Убрать"
       >
-        <X size={12} />
+        <X size={14} />
       </button>
     </div>
   );
