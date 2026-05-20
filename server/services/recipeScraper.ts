@@ -282,8 +282,11 @@ function finalize(
   sourceUrl: string,
   source: string,
 ): ScrapedRecipe {
+  const title = (partial.title || "").slice(0, 300);
+  // Если категория не определена — попробовать угадать по названию
+  const category = partial.category || guessCategory(title);
   return {
-    title: (partial.title || "").slice(0, 300),
+    title,
     description: truncate(partial.description, 5000),
     imageUrl: partial.imageUrl ?? null,
     servings: partial.servings && partial.servings > 0 ? partial.servings : 4,
@@ -292,13 +295,35 @@ function finalize(
     totalTime: partial.totalTime ?? null,
     sourceUrl,
     source,
-    category: partial.category ?? null,
+    category,
     cuisine: partial.cuisine ?? null,
     difficulty: partial.difficulty ?? null,
     calories: partial.calories ?? null,
     ingredients: (partial.ingredients ?? []).slice(0, 200),
     steps: (partial.steps ?? []).slice(0, 100),
   };
+}
+
+/** Определяет категорию по ключевым словам в названии */
+function guessCategory(title: string): string | null {
+  const lower = title.toLowerCase();
+  const rules: [string[], string][] = [
+    [["суп", "борщ", "щи", "солянка", "рассольник", "уха", "окрошка", "гаспачо", "бульон", "похлёбка", "похлебка"], "Супы"],
+    [["салат", "винегрет", "табуле", "цезарь"], "Салаты"],
+    [["торт", "пирог", "пирожк", "кекс", "маффин", "булочк", "хлеб", "лепёшк", "лепешк", "печенье", "круассан", "ватрушк", "пицц", "шарлотк"], "Выпечка"],
+    [["десерт", "мороженое", "панна котта", "тирамису", "желе", "мусс", "крем-брюле", "суфле", "пудинг"], "Десерты"],
+    [["компот", "морс", "смузи", "коктейль", "лимонад", "чай", "кофе", "напиток", "сок"], "Напитки"],
+    [["каша", "овсянка", "гранола", "омлет", "яичниц", "сырник", "оладь", "блин", "запеканка творожн"], "Завтраки"],
+    [["варенье", "джем", "повидло", "маринован", "соленье", "квашен", "заготовк"], "Заготовки"],
+    [["соус", "заправк", "маринад", "песто", "аджик"], "Соусы"],
+  ];
+
+  for (const [keywords, cat] of rules) {
+    for (const kw of keywords) {
+      if (lower.includes(kw)) return cat;
+    }
+  }
+  return "Основные блюда";
 }
 
 function truncate(s: string | null | undefined, max: number): string | null {
