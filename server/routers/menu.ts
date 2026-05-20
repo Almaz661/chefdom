@@ -134,13 +134,42 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Меню пустое — нечего добавлять в покупки' });
       }
 
-      const recipeIds = [...new Set(items.map((i) => i.recipeId))];
+      // Подсчитать сколько раз каждый рецепт в меню
+      const recipeCount = new Map<number, number>();
+      for (const item of items) {
+        recipeCount.set(item.recipeId, (recipeCount.get(item.recipeId) || 0) + 1);
+      }
+
+      const recipeIds = [...recipeCount.keys()];
 
       // Получить ингредиенты всех рецептов
       const ingredients = await db
         .select()
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
+
+      // Агрегировать: суммировать количества по названию ингредиента
+      const aggregated = new Map<string, { name: string; amount: number | null; unit: string | null; category: string | null }>();
+      for (const ing of ingredients) {
+        const nameLower = ing.name.toLowerCase().trim();
+        const multiplier = recipeCount.get(ing.recipeId) || 1;
+        const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
+        const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
+
+        if (aggregated.has(nameLower)) {
+          const prev = aggregated.get(nameLower)!;
+          if (prev.amount !== null && scaledAmount !== null) {
+            prev.amount += scaledAmount;
+          }
+        } else {
+          aggregated.set(nameLower, {
+            name: ing.name,
+            amount: scaledAmount,
+            unit: ing.unit,
+            category: ing.groupName,
+          });
+        }
+      }
 
       // Получить текущий список покупок для дедупликации
       const existing = await db
@@ -152,18 +181,17 @@ export const menuRouter = router({
         existing.map((e) => e.productName.toLowerCase().trim()),
       );
 
-      // Добавить ингредиенты которых ещё нет в списке
+      // Добавить агрегированные ингредиенты которых ещё нет в списке
       let added = 0;
-      for (const ing of ingredients) {
-        const nameLower = ing.name.toLowerCase().trim();
+      for (const [nameLower, agg] of aggregated) {
         if (existingNames.has(nameLower)) continue;
 
         await db.insert(purchaseItems).values({
           userId: 1,
-          productName: ing.name,
-          quantity: ing.amount,
-          unit: ing.unit,
-          category: ing.groupName,
+          productName: agg.name,
+          quantity: agg.amount !== null ? String(agg.amount) : null,
+          unit: agg.unit,
+          category: agg.category,
         });
 
         existingNames.add(nameLower);
