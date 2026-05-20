@@ -71,6 +71,13 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
     }
   }
 
+  if (source.includes("povar.ru")) {
+    const povar = parsePovarRu($, url);
+    if (povar && isValidRecipe(povar)) {
+      return finalize(povar, sourceUrl, source);
+    }
+  }
+
   // Стратегия 3: microdata
   const micro = parseMicrodata($, url);
   if (micro && isValidRecipe(micro)) {
@@ -384,35 +391,80 @@ const KNOWN_UNITS = [
 
 function parseIngredientText(text: string): ScrapedIngredient {
   const trimmed = text.replace(/\s+/g, " ").trim();
-  // Числа с дробью «1/2», диапазоны «2-3», десятичные «0,5»
-  // Берём только первое число и единицу. Сложные кейсы — название целиком.
-  const match = trimmed.match(
+
+  // Убираем «по вкусу» — это не единица и не количество
+  const noTaste = trimmed.replace(/\bпо вкусу\b/gi, "").trim();
+  const isByTaste = noTaste.length < trimmed.length;
+
+  // Если после удаления «по вкусу» ничего не осталось кроме названия
+  if (isByTaste && !noTaste.match(/\d/)) {
+    const name = noTaste.replace(/^[-–—,.\s]+|[-–—,.\s]+$/g, "").trim();
+    return { name: name || trimmed, amount: null, unit: "по вкусу", groupName: null };
+  }
+
+  const working = noTaste || trimmed;
+
+  // Формат 1: «150 грамм Куриное филе» (число в начале)
+  const matchStart = working.match(
     /^(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)\s*([а-яa-z.]+)?\s+(.+)$/i,
   );
-  if (match) {
-    const amountStr = match[1].split(/[-–]/)[0].replace(",", ".");
-    let amount: number | null = null;
-    if (amountStr.includes("/")) {
-      const [a, b] = amountStr.split("/").map(Number);
-      if (b > 0) amount = a / b;
-    } else {
-      const n = parseFloat(amountStr);
-      if (Number.isFinite(n)) amount = n;
+  if (matchStart) {
+    const parsed = parseAmountUnit(matchStart[1], matchStart[2]);
+    const rest = matchStart[3].trim();
+    if (parsed.unitMatch) {
+      return { name: rest, amount: parsed.amount, unit: parsed.unit, groupName: null };
     }
-    const unitWord = (match[2] || "").toLowerCase().replace(/\.$/, "");
-    const rest = match[3].trim();
-
-    if (
-      unitWord &&
-      KNOWN_UNITS.some((u) => unitWord === u || unitWord.startsWith(u))
-    ) {
-      return { name: rest, amount, unit: match[2], groupName: null };
-    }
-    // Не похоже на единицу — вернём слово в название
-    const fullName = match[2] ? `${match[2]} ${rest}` : rest;
-    return { name: fullName.trim(), amount, unit: null, groupName: null };
+    const fullName = matchStart[2] ? `${matchStart[2]} ${rest}` : rest;
+    return { name: fullName.trim(), amount: parsed.amount, unit: null, groupName: null };
   }
-  return { name: trimmed, amount: null, unit: null, groupName: null };
+
+  // Формат 2: «Куриное филе — 150 грамм» или «Куриное филе 150 г» (число после названия)
+  const matchEnd = working.match(
+    /^(.+?)\s*[-–—]\s*(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)\s*([а-яa-z.]+)?$/i,
+  );
+  if (matchEnd) {
+    const parsed = parseAmountUnit(matchEnd[2], matchEnd[3]);
+    return { name: matchEnd[1].trim(), amount: parsed.amount, unit: parsed.unit, groupName: null };
+  }
+
+  // Формат 3: «Куриное филе 150 грамм» (число после названия без разделителя)
+  const matchEndNoSep = working.match(
+    /^(.+?)\s+(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|\d+\/\d+)\s*([а-яa-z.]+)?$/i,
+  );
+  if (matchEndNoSep) {
+    const namePart = matchEndNoSep[1].trim();
+    // Убедиться что namePart содержит буквы (не число)
+    if (/[а-яА-Яa-zA-Z]/.test(namePart)) {
+      const parsed = parseAmountUnit(matchEndNoSep[2], matchEndNoSep[3]);
+      return { name: namePart, amount: parsed.amount, unit: parsed.unit, groupName: null };
+    }
+  }
+
+  // Ничего не распознали — название целиком
+  if (isByTaste) {
+    return { name: working.replace(/^[-–—,.\s]+|[-–—,.\s]+$/g, "").trim() || trimmed, amount: null, unit: "по вкусу", groupName: null };
+  }
+  return { name: working, amount: null, unit: null, groupName: null };
+}
+
+function parseAmountUnit(amountStr: string, unitStr: string | undefined): { amount: number | null; unit: string | null; unitMatch: boolean } {
+  const cleanAmount = amountStr.split(/[-–]/)[0].replace(",", ".");
+  let amount: number | null = null;
+  if (cleanAmount.includes("/")) {
+    const [a, b] = cleanAmount.split("/").map(Number);
+    if (b > 0) amount = a / b;
+  } else {
+    const n = parseFloat(cleanAmount);
+    if (Number.isFinite(n)) amount = n;
+  }
+
+  const unitWord = (unitStr || "").toLowerCase().replace(/\.$/, "");
+  const unitMatch = !!(
+    unitWord &&
+    KNOWN_UNITS.some((u) => unitWord === u || unitWord.startsWith(u))
+  );
+
+  return { amount, unit: unitMatch ? unitStr! : null, unitMatch };
 }
 
 function parseStepsArray(instr: unknown, baseUrl: string): ScrapedStep[] {
@@ -543,6 +595,107 @@ function parseMenunedeli(
   };
 }
 
+// --- Strategy 2b: povar.ru ---
+
+function parsePovarRu(
+  $: cheerio.CheerioAPI,
+  baseUrl: string,
+): Partial<ScrapedRecipe> | null {
+  // Название рецепта — в h1
+  const title = $("h1").first().text().trim();
+  if (!title) return null;
+
+  const imageUrl = extractImageUrl(
+    $('meta[property="og:image"]').attr("content") ||
+      $(".bigImgBox img, .recipe-img img, .detailed img").first().attr("src"),
+    baseUrl,
+  );
+
+  const description =
+    $('meta[property="og:description"]').attr("content")?.trim() || null;
+
+  // Ингредиенты — обычно в ul.detailed_ingredients li или table
+  const ingredients: ScrapedIngredient[] = [];
+  $(".detailed_ingredients li, .ingredients_list li, ul.detailed_full li").each(
+    (_, el) => {
+      const nameEl = $(el).find(".name, span[itemprop='recipeIngredient']").first();
+      const qtyEl = $(el).find(".value, .count").first();
+
+      if (nameEl.length > 0) {
+        const name = nameEl.text().trim();
+        const qtyText = qtyEl.text().trim();
+        if (name) {
+          const combined = qtyText ? `${name} ${qtyText}` : name;
+          ingredients.push(parseIngredientText(combined));
+        }
+      } else {
+        // Fallback — весь текст li
+        const text = $(el).text().trim();
+        if (text && text.length < 200) {
+          ingredients.push(parseIngredientText(text));
+        }
+      }
+    },
+  );
+
+  // Шаги — обычно в .detailed_step_description_big или ol
+  const steps: ScrapedStep[] = [];
+  $(".detailed_step_description_big, .step_description, .detailed_step_content p").each(
+    (_, el) => {
+      const text = $(el).text().trim();
+      if (text && text.length > 10) {
+        const imgEl = $(el).closest(".detailed_step_photo_big, .step_photo").find("img");
+        const stepImg = imgEl.length > 0 ? extractImageUrl(imgEl.attr("src"), baseUrl) : null;
+        steps.push({ instruction: text, imageUrl: stepImg, timerMinutes: null });
+      }
+    },
+  );
+
+  if (steps.length === 0) {
+    $(".instructions ol li, .detailed_full ol li").each((_, el) => {
+      const text = $(el).text().trim();
+      if (text && text.length > 10) {
+        steps.push({ instruction: text, imageUrl: null, timerMinutes: null });
+      }
+    });
+  }
+
+  // Порции
+  const servingsText = $(".detailed_full .icon-person, .servings-count").first().text().trim();
+  const servings = parseServings(servingsText);
+
+  // Время
+  const timeText = $(".detailed_full .icon-time, .prep-time").first().text().trim();
+  const totalTime = parseDuration(timeText) || parseMinutesFromText(timeText);
+
+  return {
+    title,
+    description,
+    imageUrl,
+    servings,
+    prepTime: null,
+    cookTime: null,
+    totalTime,
+    category: null,
+    cuisine: null,
+    difficulty: null,
+    calories: null,
+    ingredients,
+    steps,
+  };
+}
+
+/** Парсит «45 минут» → 45, «1 час 20 минут» → 80 */
+function parseMinutesFromText(text: string): number | null {
+  if (!text) return null;
+  let total = 0;
+  const hMatch = text.match(/(\d+)\s*час/);
+  if (hMatch) total += parseInt(hMatch[1], 10) * 60;
+  const mMatch = text.match(/(\d+)\s*мин/);
+  if (mMatch) total += parseInt(mMatch[1], 10);
+  return total > 0 ? total : null;
+}
+
 // --- Strategy 3: Microdata ---
 
 function parseMicrodata(
@@ -635,12 +788,22 @@ function parseGeneric(
 ): Partial<ScrapedRecipe> {
   const siteName =
     $('meta[property="og:site_name"]').attr("content")?.trim() || "";
-  const rawTitle =
-    $('meta[property="og:title"]').attr("content")?.trim() ||
-    $("h1").first().text().trim() ||
-    $("title").text().trim();
+
+  // Приоритет: h1 > og:title > title (h1 обычно точнее для рецепта)
+  const h1 = $("h1").first().text().trim();
+  const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
+  const titleTag = $("title").text().trim();
+
+  let rawTitle = h1 || ogTitle || titleTag;
+  rawTitle = stripSiteNameSuffix(rawTitle, siteName);
+
+  // Если h1 слишком общий (< 3 слов и = og:site_name), берём og:title
+  if (rawTitle === siteName && ogTitle && ogTitle !== siteName) {
+    rawTitle = stripSiteNameSuffix(ogTitle, siteName);
+  }
+
   return {
-    title: stripSiteNameSuffix(rawTitle, siteName),
+    title: rawTitle,
     description:
       $('meta[property="og:description"]').attr("content")?.trim() ||
       $('meta[name="description"]').attr("content")?.trim() ||
