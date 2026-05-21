@@ -1,10 +1,10 @@
-// Импорт товаров из Open Food Facts (G.2)
+// Импорт товаров из Open Food Facts (G.2) с переводом на русский через DeepL
 // Вызывается через /api/seed-products
-// Open Food Facts — полностью бесплатно, без ключа.
 
 import { client } from './index';
 
 const OFF_API = 'https://world.openfoodfacts.org/cgi/search.pl';
+const DEEPL_API = 'https://api-free.deepl.com/v2/translate';
 
 const CATEGORIES = [
   'dairy', 'meats', 'fish', 'vegetables', 'fruits',
@@ -45,6 +45,36 @@ async function fetchCategory(category: string, page: number): Promise<OFFRespons
   return res.json() as Promise<OFFResponse>;
 }
 
+// Пакетный перевод через DeepL — переводим сразу до 50 строк за раз
+async function translateBatch(texts: string[], apiKey: string): Promise<string[]> {
+  if (texts.length === 0) return [];
+  try {
+    const body = new URLSearchParams();
+    body.append('target_lang', 'RU');
+    for (const t of texts) body.append('text', t);
+
+    const res = await fetch(DEEPL_API, {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+
+    if (!res.ok) {
+      console.error(`[deepl] HTTP ${res.status}`);
+      return texts; // fallback — оставляем оригинал
+    }
+
+    const data = await res.json() as { translations: { text: string }[] };
+    return data.translations.map(t => t.text);
+  } catch (e) {
+    console.error('[deepl] Ошибка перевода:', e);
+    return texts; // fallback
+  }
+}
+
 function parseQuantity(qty: string | undefined): { amount: number | null; unit: string | null } {
   if (!qty) return { amount: null, unit: null };
   const m = qty.match(/(\d+(?:[.,]\d+)?)\s*([a-zA-Zа-яА-Я]+)/);
@@ -53,6 +83,11 @@ function parseQuantity(qty: string | undefined): { amount: number | null; unit: 
 }
 
 export async function runSeedProducts(): Promise<void> {
+  const deeplKey = process.env.DEEPL_API_KEY;
+  if (!deeplKey) {
+    console.error('[seed-products] DEEPL_API_KEY не задан — товары будут без перевода');
+  }
+
   console.log('[seed-products] Начинаю импорт из Open Food Facts...');
   let inserted = 0;
 
@@ -71,20 +106,66 @@ export async function runSeedProducts(): Promise<void> {
 
       if (!data.products || data.products.length === 0) break;
 
+      // Собираем товары которые нуждаются в переводе
+      const toProcess: { barcode: string; nameEn: string; nameNl: string | null; brand: string | null; imageUrl: string | null; amount: number | null; unit: string | null }[] = [];
+
       for (const p of data.products) {
         const barcode = p.code?.trim();
-        const nameRu = p.product_name_ru?.trim() || p.product_name?.trim();
-        if (!barcode || !nameRu || barcode === '0') continue;
+        if (!barcode || barcode === '0') continue;
 
-        const nameNl = p.product_name_nl?.trim() || null;
-        const brand = p.brands?.trim() || null;
-        const imageUrl = p.image_url?.trim() || null;
-        const { amount, unit } = parseQuantity(p.quantity);
+        // Если есть русское название — используем его, иначе переводим
+        const nameRuOriginal = p.product_name_ru?.trim();
+        const nameEn = p.product_name?.trim() || p.product_name_nl?.trim() || '';
+        if (!nameRuOriginal && !nameEn) continue;
+
+        toProcess.push({
+          barcode,
+          nameEn: nameRuOriginal || nameEn, // если есть рус — не переводим
+          nameNl: p.product_name_nl?.trim() || null,
+          brand: p.brands?.trim() || null,
+          imageUrl: p.image_url?.trim() || null,
+          ...parseQuantity(p.quantity),
+        });
+      }
+
+      // Переводим только те у которых нет русского названия
+      const needTranslation = toProcess.filter(p => {
+        const hasRu = data.products.find(d => d.code === p.barcode)?.product_name_ru?.trim();
+        return !hasRu && deeplKey;
+      });
+
+      let translations: string[] = [];
+      if (needTranslation.length > 0 && deeplKey) {
+        // Пакетами по 50
+        const batches: string[][] = [];
+        for (let i = 0; i < needTranslation.length; i += 50) {
+          batches.push(needTranslation.slice(i, i + 50).map(p => p.nameEn));
+        }
+        for (const batch of batches) {
+          const translated = await translateBatch(batch, deeplKey);
+          translations.push(...translated);
+        }
+      }
+
+      let transIdx = 0;
+      for (const p of toProcess) {
+        const hasRu = data.products.find(d => d.code === p.barcode)?.product_name_ru?.trim();
+        let nameRu: string;
+
+        if (hasRu) {
+          nameRu = hasRu;
+        } else if (deeplKey && translations.length > transIdx) {
+          nameRu = translations[transIdx++];
+        } else {
+          nameRu = p.nameEn;
+        }
+
+        if (!nameRu) continue;
 
         try {
           await client`
             INSERT INTO products (barcode, name_ru, name_nl, brand, package_quantity, package_unit, image_url, off_id)
-            VALUES (${barcode}, ${nameRu}, ${nameNl}, ${brand}, ${amount}, ${unit}, ${imageUrl}, ${barcode})
+            VALUES (${p.barcode}, ${nameRu}, ${p.nameNl}, ${p.brand}, ${p.amount}, ${p.unit}, ${p.imageUrl}, ${p.barcode})
             ON CONFLICT (barcode) DO UPDATE SET
               name_ru = EXCLUDED.name_ru,
               name_nl = EXCLUDED.name_nl,
