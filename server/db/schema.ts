@@ -21,9 +21,8 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Этап 0 — рецепты (Блок 4)
-// Поля времени в минутах. calories — на порцию.
-// difficulty: «легко» / «средне» / «сложно».
+// Этап 0 — рецепты
+// calories, protein_g, fats_g, carbs_g — на порцию.
 export const recipes = pgTable('recipes', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
@@ -39,12 +38,14 @@ export const recipes = pgTable('recipes', {
   cuisine: text('cuisine'),
   difficulty: text('difficulty'),
   calories: integer('calories'),
+  proteinG: numeric('protein_g'),
+  fatsG: numeric('fats_g'),
+  carbsG: numeric('carbs_g'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Ингредиенты рецепта. amount как numeric — точная дробь («1,5 ч. л.» = 1.5).
-// groupName — опциональная группировка («Для теста», «Для соуса»).
+// Ингредиенты рецепта.
 export const recipeIngredients = pgTable('recipe_ingredients', {
   id: serial('id').primaryKey(),
   recipeId: integer('recipe_id')
@@ -57,7 +58,7 @@ export const recipeIngredients = pgTable('recipe_ingredients', {
   sortOrder: integer('sort_order').notNull().default(0),
 });
 
-// Шаги рецепта. timerMinutes — для кнопки таймера на странице (этап F.2).
+// Шаги рецепта.
 export const recipeSteps = pgTable('recipe_steps', {
   id: serial('id').primaryKey(),
   recipeId: integer('recipe_id')
@@ -69,7 +70,7 @@ export const recipeSteps = pgTable('recipe_steps', {
   timerMinutes: integer('timer_minutes'),
 });
 
-// Меню недели. weekStartDate — понедельник этой недели (YYYY-MM-DD).
+// Меню недели.
 export const menus = pgTable('menus', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -80,8 +81,6 @@ export const menus = pgTable('menus', {
 });
 
 // Слот в меню: день × приём пищи → рецепт.
-// dayOfWeek: 0=Пн, 1=Вт ... 6=Вс
-// mealType: 'breakfast' | 'lunch' | 'dinner'
 export const menuItems = pgTable('menu_items', {
   id: serial('id').primaryKey(),
   menuId: integer('menu_id')
@@ -94,9 +93,7 @@ export const menuItems = pgTable('menu_items', {
     .references(() => recipes.id, { onDelete: 'cascade' }),
 });
 
-// Инвентарь (что есть дома).
-// storageType: 'fridge' | 'freezer' | 'pantry'
-// expiryDate: YYYY-MM-DD или null если не скоропортящееся.
+// Инвентарь.
 export const inventory = pgTable('inventory', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -113,9 +110,6 @@ export const inventory = pgTable('inventory', {
 });
 
 // Список покупок.
-// isChecked: 0 = не куплено, 1 = куплено.
-// recipeSource: название рецепта откуда добавлено (null если вручную).
-// neededQuantity / inStockQuantity — для будущей интеграции с инвентарём.
 export const purchaseItems = pgTable('purchase_items', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -130,4 +124,43 @@ export const purchaseItems = pgTable('purchase_items', {
   neededQuantity: numeric('needed_quantity'),
   inStockQuantity: numeric('in_stock_quantity'),
   addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Этап G — справочник ингредиентов (USDA FoodData Central).
+export const ingredients = pgTable('ingredients', {
+  id: serial('id').primaryKey(),
+  fdcId: integer('fdc_id').unique(),
+  nameRu: text('name_ru').notNull(),
+  nameEn: text('name_en'),
+  category: text('category'),
+  defaultUnit: text('default_unit'),
+  kcalPer100g: numeric('kcal_per_100g'),
+  proteinG: numeric('protein_g'),
+  fatsG: numeric('fats_g'),
+  carbsG: numeric('carbs_g'),
+  waterPct: numeric('water_pct'),
+});
+
+// Этап G — каталог товаров (Open Food Facts).
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  ingredientId: integer('ingredient_id')
+    .references(() => ingredients.id),
+  barcode: text('barcode').unique(),
+  nameRu: text('name_ru').notNull(),
+  nameNl: text('name_nl'),
+  brand: text('brand'),
+  packageQuantity: numeric('package_quantity'),
+  packageUnit: text('package_unit'),
+  imageUrl: text('image_url'),
+  offId: text('off_id').unique(),
+});
+
+// Этап G — замены ингредиентов.
+export const ingredientSubstitutions = pgTable('ingredient_substitutions', {
+  id: serial('id').primaryKey(),
+  ingredientName: text('ingredient_name').notNull(),
+  alternativeName: text('alternative_name').notNull(),
+  quality: text('quality'),
+  quantityRatio: numeric('quantity_ratio'),
 });
