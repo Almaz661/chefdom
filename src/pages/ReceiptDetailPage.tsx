@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, ScanLine, X, Receipt as ReceiptIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, X, Receipt as ReceiptIcon } from "lucide-react";
 import { trpc } from "../utils/trpc";
-import { BarcodeScanner } from "../components/BarcodeScanner";
 
 // G.19 — детальная страница чека.
-// Шапка чека (магазин/дата/валюта/итог) + список позиций.
-// Позиции добавляются: вручную (форма) или сканером штрих-кода.
+// Чек создаётся фотографией со страницы списка (см. ReceiptsPage),
+// здесь — просмотр шапки и позиций. Если что-то распозналось плохо:
+// удалить позицию (или весь чек) и пересфотографировать.
+// «Добавить вручную» — на случай если в чеке потерялась позиция.
 
 const CURRENCY_SYMBOL: Record<string, string> = { EUR: "€", RUB: "₽" };
 
@@ -24,9 +25,7 @@ export function ReceiptDetailPage() {
   const navigate = useNavigate();
   const id = Number(params.id);
 
-  const [showScanner, setShowScanner] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
-  const [scanError, setScanError] = useState<string | null>(null);
 
   // Форма ручного добавления
   const [mName, setMName] = useState("");
@@ -48,17 +47,6 @@ export function ReceiptDetailPage() {
       setMQty("");
       setMUnit("");
       setMPrice("");
-    },
-  });
-
-  const addByBarcode = trpc.receipts.addItemByBarcode.useMutation({
-    onSuccess: () => {
-      utils.receipts.getById.invalidate({ id });
-      setShowScanner(false);
-      setScanError(null);
-    },
-    onError: (err) => {
-      setScanError(err.message);
     },
   });
 
@@ -143,12 +131,27 @@ export function ReceiptDetailPage() {
                   }).format(new Date(receipt.purchaseDate))
                 : "Дата не указана"}{" "}
               · {currency}
+              {receipt.totalAmount && (
+                <>
+                  {" "}· итог по чеку:{" "}
+                  <span className="tabular-nums text-ink font-medium">
+                    {formatPrice(
+                      receipt.totalAmount as unknown as string,
+                      currency,
+                    )}
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <button
             type="button"
             onClick={() => {
-              if (confirm(`Удалить чек "${receipt.storeName || "без названия"}"?`)) {
+              if (
+                confirm(
+                  `Удалить чек "${receipt.storeName || "без названия"}"? Если плохо распозналось — после удаления сфотографируй заново.`,
+                )
+              ) {
                 deleteReceipt.mutate({ id });
               }
             }}
@@ -161,34 +164,17 @@ export function ReceiptDetailPage() {
         </div>
       </div>
 
-      {/* Кнопки добавления */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => {
-            setScanError(null);
-            setShowScanner(true);
-          }}
-          className="inline-flex items-center gap-2 h-12 px-4 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors"
-        >
-          <ScanLine size={18} />
-          Сканировать штрих-код
-        </button>
+      {/* Кнопка добавления — теперь только ручная */}
+      <div>
         <button
           type="button"
           onClick={() => setShowAddManual(true)}
           className="inline-flex items-center gap-2 h-12 px-4 rounded-lg border border-line bg-paper text-ink font-medium hover:border-primary hover:text-primary transition-colors"
         >
           <Plus size={18} />
-          Добавить вручную
+          Добавить позицию вручную
         </button>
       </div>
-
-      {scanError && (
-        <p className="text-alert text-sm bg-paper border border-alert rounded-lg p-3">
-          {scanError}
-        </p>
-      )}
 
       {/* Позиции */}
       <section>
@@ -197,7 +183,8 @@ export function ReceiptDetailPage() {
         </h2>
         {items.length === 0 ? (
           <p className="text-ink-muted text-sm">
-            Позиций пока нет. Отсканируй штрих-код или добавь вручную.
+            Позиций пока нет. Распознать чек заново можно так: на странице «Чеки»
+            нажми «Удалить чек», затем «Сфотографировать чек» ещё раз.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -208,11 +195,11 @@ export function ReceiptDetailPage() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-ink">{it.productName}</p>
-                  <p className="text-xs text-ink-muted">
-                    {it.quantity ? `${it.quantity} ${it.unit ?? ""}` : ""}
-                    {it.barcode && ` · ${it.barcode}`}
-                    {it.matchedProductId && " · из каталога"}
-                  </p>
+                  {(it.quantity || it.unit) && (
+                    <p className="text-xs text-ink-muted">
+                      {it.quantity ?? ""} {it.unit ?? ""}
+                    </p>
+                  )}
                 </div>
                 {it.price && (
                   <span className="font-medium tabular-nums text-ink shrink-0">
@@ -234,8 +221,10 @@ export function ReceiptDetailPage() {
 
         {items.length > 0 && (
           <p className="text-ink-muted text-sm text-right mt-4 pt-3 border-t border-line">
-            Сумма по строкам: <span className="tabular-nums text-ink font-medium">
-              {CURRENCY_SYMBOL[currency] ?? ""}{itemsSum.toLocaleString("ru-RU", {
+            Сумма по строкам:{" "}
+            <span className="tabular-nums text-ink font-medium">
+              {CURRENCY_SYMBOL[currency] ?? ""}
+              {itemsSum.toLocaleString("ru-RU", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -243,17 +232,6 @@ export function ReceiptDetailPage() {
           </p>
         )}
       </section>
-
-      {/* Сканер штрих-кодов */}
-      {showScanner && (
-        <BarcodeScanner
-          onDetected={(code) => {
-            // Не закрываем сканер до успеха — onError установит scanError
-            addByBarcode.mutate({ receiptId: id, barcode: code });
-          }}
-          onClose={() => setShowScanner(false)}
-        />
-      )}
 
       {/* Модалка ручного добавления */}
       {showAddManual && (

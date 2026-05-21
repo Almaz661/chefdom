@@ -3,19 +3,21 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { receipts, receiptItems, products } from '../db/schema';
+import { receipts, receiptItems } from '../db/schema';
+import { recognizeImage } from '../services/ocr';
+import { parseReceiptText } from '../services/receiptParser';
 
 // G.19 — роутер чеков.
-// CRUD по чекам + добавление товара в чек по штрих-коду
-// (находим в каталоге products через products.barcode).
+// Сценарий: пользователь фотографирует бумажный чек из магазина,
+// фото уходит в OCR.space, текст парсится в магазин/дату/позиции/итог,
+// чек создаётся сразу. Если распознано плохо — пользователь удаляет
+// чек и фотографирует заново.
 
 const ItemInput = z.object({
   productName: z.string().min(1).max(300),
   quantity: z.number().nullable().optional(),
   unit: z.string().max(50).nullable().optional(),
   price: z.number().nullable().optional(),
-  barcode: z.string().max(50).nullable().optional(),
-  matchedProductId: z.number().int().positive().nullable().optional(),
 });
 
 export const receiptsRouter = router({
@@ -58,8 +60,7 @@ export const receiptsRouter = router({
       return { receipt, items };
     }),
 
-  // Создать пустой чек. Дальше пользователь добавляет позиции вручную
-  // или по штрих-коду через addItem / addItemByBarcode.
+  // Создать пустой чек вручную (на случай если OCR не работает / нет фото).
   create: publicProcedure
     .input(
       z.object({
@@ -79,6 +80,82 @@ export const receiptsRouter = router({
         })
         .returning({ id: receipts.id });
       return { id: created.id };
+    }),
+
+  // G.19 — главный сценарий. Принимает фото чека (base64),
+  // вызывает OCR, парсит текст, создаёт чек со всеми распознанными
+  // позициями. Возвращает id созданного чека и краткую статистику.
+  // Если хотя бы что-то распозналось — чек создаётся. Если не получилось
+  // вытащить даже одну позицию — чек всё равно создаётся (пустой,
+  // пользователь добавит вручную).
+  createFromPhoto: publicProcedure
+    .input(
+      z.object({
+        imageBase64: z.string().min(100), // base64 фото
+        // Подсказка для OCR. По умолчанию eng (латиница NL/EN).
+        // Если у пользователя русские чеки — фронт пришлёт 'rus'.
+        language: z.string().max(10).optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      // 1. OCR
+      let recognized: { text: string };
+      try {
+        recognized = await recognizeImage(input.imageBase64, {
+          language: input.language ?? 'eng',
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'неизвестная ошибка';
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Не удалось распознать фото: ${msg}. Попробуй сфотографировать чек ровнее, при хорошем освещении.`,
+        });
+      }
+
+      if (!recognized.text || recognized.text.trim().length < 10) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Текст на фото не распознался. Сфотографируй ровно, без бликов и теней, чтобы все строки были чёткими.',
+        });
+      }
+
+      // 2. Парсинг
+      const parsed = parseReceiptText(recognized.text);
+
+      // 3. Создаём чек
+      const [created] = await db
+        .insert(receipts)
+        .values({
+          userId: 1,
+          storeName: parsed.storeName,
+          purchaseDate: parsed.purchaseDate,
+          totalAmount:
+            parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
+          currency: parsed.currency,
+          notes: null,
+        })
+        .returning({ id: receipts.id });
+
+      // 4. Добавляем позиции
+      if (parsed.items.length > 0) {
+        await db.insert(receiptItems).values(
+          parsed.items.map((it, idx) => ({
+            receiptId: created.id,
+            productName: it.productName,
+            price: it.price !== null ? String(it.price) : null,
+            sortOrder: idx,
+          })),
+        );
+      }
+
+      return {
+        id: created.id,
+        recognizedItemsCount: parsed.items.length,
+        storeDetected: parsed.storeName !== null,
+        dateDetected: parsed.purchaseDate !== null,
+        totalDetected: parsed.totalAmount !== null,
+      };
     }),
 
   // Обновить «шапку» чека
@@ -131,7 +208,7 @@ export const receiptsRouter = router({
       return { id: input.id };
     }),
 
-  // Добавить позицию вручную
+  // Добавить позицию вручную (если OCR что-то пропустил)
   addItem: publicProcedure
     .input(z.object({ receiptId: z.number().int().positive(), item: ItemInput }))
     .mutation(async ({ input }) => {
@@ -149,70 +226,9 @@ export const receiptsRouter = router({
             input.item.price !== null && input.item.price !== undefined
               ? String(input.item.price)
               : null,
-          barcode: input.item.barcode ?? null,
-          matchedProductId: input.item.matchedProductId ?? null,
         })
         .returning({ id: receiptItems.id });
       return { id: created.id };
-    }),
-
-  // G.19 — добавить позицию по штрих-коду.
-  // Ищем товар в products. Если найден — берём из него name + brand,
-  // привязываем matched_product_id. Если не найден — возвращаем ошибку,
-  // фронт предложит добавить вручную.
-  addItemByBarcode: publicProcedure
-    .input(
-      z.object({
-        receiptId: z.number().int().positive(),
-        barcode: z.string().min(1).max(50),
-        quantity: z.number().nullable().optional(),
-        price: z.number().nullable().optional(),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const [product] = await db
-        .select({
-          id: products.id,
-          nameRu: products.nameRu,
-          brand: products.brand,
-          packageQuantity: products.packageQuantity,
-          packageUnit: products.packageUnit,
-        })
-        .from(products)
-        .where(eq(products.barcode, input.barcode))
-        .limit(1);
-
-      if (!product) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Товар не найден в каталоге. Добавьте вручную.',
-        });
-      }
-
-      const productName = product.brand
-        ? `${product.brand} ${product.nameRu}`
-        : product.nameRu;
-
-      const [created] = await db
-        .insert(receiptItems)
-        .values({
-          receiptId: input.receiptId,
-          productName,
-          quantity:
-            input.quantity !== null && input.quantity !== undefined
-              ? String(input.quantity)
-              : product.packageQuantity,
-          unit: product.packageUnit,
-          price:
-            input.price !== null && input.price !== undefined
-              ? String(input.price)
-              : null,
-          barcode: input.barcode,
-          matchedProductId: product.id,
-        })
-        .returning({ id: receiptItems.id });
-
-      return { id: created.id, productName, matchedProductId: product.id };
     }),
 
   // Удалить позицию
