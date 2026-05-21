@@ -1,10 +1,36 @@
 // Функция импорта ингредиентов из USDA — вызывается через /api/seed-ingredients
 // Не содержит top-level кода — безопасно импортировать.
+// Переводит английские названия на русский через DeepL.
 
 import { client } from './index';
 
 const BASE_URL = 'https://api.nal.usda.gov/fdc/v1';
+const DEEPL_API = 'https://api-free.deepl.com/v2/translate';
 const NUTRIENT_IDS = { KCAL: 1008, PROTEIN: 1003, FATS: 1004, CARBS: 1005, WATER: 1051 };
+
+// Пакетный перевод через DeepL — до 50 строк за раз
+async function translateBatch(texts: string[], apiKey: string): Promise<string[]> {
+  if (texts.length === 0) return [];
+  try {
+    const body = new URLSearchParams();
+    body.append('target_lang', 'RU');
+    for (const t of texts) body.append('text', t);
+    const res = await fetch(DEEPL_API, {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+    if (!res.ok) { console.error(`[deepl] HTTP ${res.status}`); return texts; }
+    const data = await res.json() as { translations: { text: string }[] };
+    return data.translations.map(t => t.text);
+  } catch (e) {
+    console.error('[deepl] Ошибка:', e);
+    return texts;
+  }
+}
 
 const CATEGORIES = [
   'Beef Products', 'Poultry Products', 'Pork Products',
@@ -52,6 +78,9 @@ export async function runSeedIngredients(): Promise<void> {
   const apiKey = process.env.USDA_API_KEY;
   if (!apiKey) throw new Error('USDA_API_KEY не задан');
 
+  const deeplKey = process.env.DEEPL_API_KEY;
+  if (!deeplKey) console.warn('[seed-ingredients] DEEPL_API_KEY не задан — названия останутся на английском');
+
   console.log('[seed-ingredients] Начинаю импорт из USDA...');
   let inserted = 0;
 
@@ -61,19 +90,42 @@ export async function runSeedIngredients(): Promise<void> {
       const data = await fetchPage(apiKey, cat, page);
       totalPages = data.totalPages;
 
-      for (const food of data.foods) {
+      // Фильтруем только продукты с КБЖУ
+      const foods = data.foods.filter(food => {
+        const kcal = getNutrient(food, NUTRIENT_IDS.KCAL);
+        const protein = getNutrient(food, NUTRIENT_IDS.PROTEIN);
+        const fats = getNutrient(food, NUTRIENT_IDS.FATS);
+        const carbs = getNutrient(food, NUTRIENT_IDS.CARBS);
+        return kcal || protein || fats || carbs;
+      });
+
+      // Переводим все названия пакетами по 50
+      let namesRu: string[] = foods.map(f => f.description);
+      if (deeplKey && foods.length > 0) {
+        const allNames: string[] = [];
+        for (let i = 0; i < foods.length; i += 50) {
+          const batch = foods.slice(i, i + 50).map(f => f.description);
+          const translated = await translateBatch(batch, deeplKey);
+          allNames.push(...translated);
+        }
+        namesRu = allNames;
+      }
+
+      for (let i = 0; i < foods.length; i++) {
+        const food = foods[i];
+        const nameRu = namesRu[i] || food.description;
         const kcal = getNutrient(food, NUTRIENT_IDS.KCAL);
         const protein = getNutrient(food, NUTRIENT_IDS.PROTEIN);
         const fats = getNutrient(food, NUTRIENT_IDS.FATS);
         const carbs = getNutrient(food, NUTRIENT_IDS.CARBS);
         const water = getNutrient(food, NUTRIENT_IDS.WATER);
-        if (!kcal && !protein && !fats && !carbs) continue;
 
         try {
           await client`
             INSERT INTO ingredients (fdc_id, name_ru, name_en, category, kcal_per_100g, protein_g, fats_g, carbs_g, water_pct)
-            VALUES (${food.fdcId}, ${food.description}, ${food.description}, ${CATEGORY_RU[cat] ?? cat}, ${kcal}, ${protein}, ${fats}, ${carbs}, ${water})
+            VALUES (${food.fdcId}, ${nameRu}, ${food.description}, ${CATEGORY_RU[cat] ?? cat}, ${kcal}, ${protein}, ${fats}, ${carbs}, ${water})
             ON CONFLICT (fdc_id) DO UPDATE SET
+              name_ru = EXCLUDED.name_ru,
               name_en = EXCLUDED.name_en,
               category = EXCLUDED.category,
               kcal_per_100g = EXCLUDED.kcal_per_100g,
