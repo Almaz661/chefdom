@@ -142,7 +142,7 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
       const foundIngs: ScrapedIngredient[] = [];
       $('[itemprop="recipeIngredient"], [itemprop="ingredients"]').each((_, el) => {
         const t = $(el).text().trim();
-        if (t && t.length < 200) foundIngs.push(parseIngredientText(t));
+        if (t && t.length < 200 && !isIngredientGroupHeader(t)) foundIngs.push(parseIngredientText(t));
       });
       if (foundIngs.length > 0) micro.ingredients = foundIngs;
     }
@@ -176,12 +176,12 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   let genericIngredients: ScrapedIngredient[] = [];
   $('[itemprop="recipeIngredient"], [itemprop="ingredients"]').each((_, el) => {
     const t = $(el).text().trim();
-    if (t && t.length < 200) genericIngredients.push(parseIngredientText(t));
+    if (t && t.length < 200 && !isIngredientGroupHeader(t)) genericIngredients.push(parseIngredientText(t));
   });
   if (genericIngredients.length === 0) {
     $(".recipe_ing li, .ingredients li, .ingredient-list li, table.ingr td:first-child").each((_, el) => {
       const t = $(el).text().trim();
-      if (t && t.length < 200 && t.length > 1) genericIngredients.push(parseIngredientText(t));
+      if (t && t.length < 200 && t.length > 1 && !isIngredientGroupHeader(t)) genericIngredients.push(parseIngredientText(t));
     });
   }
 
@@ -538,6 +538,20 @@ function parseCalories(c: unknown): number | null {
   return m ? parseInt(m[0], 10) : null;
 }
 
+/** Проверяет, является ли строка заголовком группы ингредиентов, а не ингредиентом.
+ *  Критерии:
+ *  1. Строка заканчивается на «:» (например «Для капусты:», «Продукты:»)
+ *  2. Строка состоит из одного слова без цифр (например «Продукты», «Тесто»)
+ */
+function isIngredientGroupHeader(text: string): boolean {
+  const t = text.trim();
+  // Критерий 1: заканчивается на ":"
+  if (t.endsWith(":")) return true;
+  // Критерий 2: одно слово без цифр (только буквы, дефис, скобки — но без пробелов внутри)
+  if (!/\d/.test(t) && /^\S+$/.test(t) && t.length > 1) return true;
+  return false;
+}
+
 function parseIngredientsArray(list: unknown): ScrapedIngredient[] {
   if (!Array.isArray(list)) return [];
   const result: ScrapedIngredient[] = [];
@@ -551,7 +565,9 @@ function parseIngredientsArray(list: unknown): ScrapedIngredient[] {
       else if (typeof obj.name === "string") text = obj.name;
     }
     text = text.trim();
-    if (text) result.push(parseIngredientText(text));
+    if (text && !isIngredientGroupHeader(text)) {
+      result.push(parseIngredientText(text));
+    }
   }
   return result;
 }
@@ -828,7 +844,7 @@ function parseMenunedeli(
   if (ingredients.length === 0) {
     $(".entry-content ul li, ul.ingredients li").each((_, el) => {
       const text = $(el).text().trim();
-      if (text && text.length < 200) {
+      if (text && text.length < 200 && !isIngredientGroupHeader(text)) {
         ingredients.push(parseIngredientText(text));
       }
     });
@@ -904,7 +920,7 @@ function parsePovarRu(
       } else {
         // Fallback — весь текст li
         const text = $(el).text().trim();
-        if (text && text.length < 200) {
+        if (text && text.length < 200 && !isIngredientGroupHeader(text)) {
           ingredients.push(parseIngredientText(text));
         }
       }
@@ -992,7 +1008,7 @@ function parseMicrodata(
   const ingredients: ScrapedIngredient[] = [];
   root.find('[itemprop="recipeIngredient"]').each((_, el) => {
     const t = $(el).text().trim();
-    if (t) ingredients.push(parseIngredientText(t));
+    if (t && !isIngredientGroupHeader(t)) ingredients.push(parseIngredientText(t));
   });
 
   const steps: ScrapedStep[] = [];
