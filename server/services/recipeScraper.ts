@@ -549,7 +549,8 @@ function parseCalories(c: unknown): number | null {
 /** Проверяет, является ли строка заголовком группы ингредиентов, а не ингредиентом.
  *  Критерии:
  *  1. Строка заканчивается на «:» (например «Для капусты:», «Продукты:»)
- *  2. Строка состоит из одного слова без цифр (например «Продукты», «Тесто»)
+ *  2. Строка состоит из одного слова без цифр (например «Продукты», «Тесто», «Ингредиенты»)
+ *  3. Совпадает с известными заголовками («Ингредиенты», «Состав» и т.д.)
  */
 function isIngredientGroupHeader(text: string): boolean {
   const t = text.trim();
@@ -557,6 +558,10 @@ function isIngredientGroupHeader(text: string): boolean {
   if (t.endsWith(":")) return true;
   // Критерий 2: одно слово без цифр (только буквы, дефис, скобки — но без пробелов внутри)
   if (!/\d/.test(t) && /^\S+$/.test(t) && t.length > 1) return true;
+  // Критерий 3: известные заголовки (несколько слов)
+  const lower = t.toLowerCase();
+  const knownHeaders = ["ингредиенты", "состав", "вам понадобится", "для теста", "для начинки", "для соуса", "для маринада"];
+  if (knownHeaders.some((h) => lower === h)) return true;
   return false;
 }
 
@@ -643,10 +648,12 @@ const KNOWN_UNITS = [
 ];
 
 function parseIngredientText(text: string): ScrapedIngredient {
-  const trimmed = text.replace(/\s+/g, " ").trim();
+  // Убираем тире/дефис в конце строки (например «Тмин молотый –» или «Соль –»)
+  // которое russianfood.com ставит перед количеством/«по вкусу»
+  const trimmed = text.replace(/\s+/g, " ").replace(/\s*[-–—]\s*$/, "").trim();
 
   // Убираем «по вкусу» — это не единица и не количество
-  const noTaste = trimmed.replace(/\bпо вкусу\b/gi, "").trim();
+  const noTaste = trimmed.replace(/\s*[-–—]\s*по вкусу\b/gi, "").replace(/\bпо вкусу\b/gi, "").trim();
   const isByTaste = noTaste.length < trimmed.length;
 
   // Если после удаления «по вкусу» ничего не осталось кроме названия
