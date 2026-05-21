@@ -225,6 +225,45 @@ export function RecipeDetailPage() {
           )}
         </div>
 
+        {/* C.1 — КБЖУ на порцию с % дневной нормы */}
+        {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
+          <div className="bg-cream rounded-xl p-4 mb-6">
+            <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+              На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
+            </p>
+            <div className="grid grid-cols-4 gap-3 text-center">
+              {recipe.calories && (
+                <div>
+                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(recipe.calories * multiplier)}</p>
+                  <p className="text-xs text-ink-muted">ккал</p>
+                  <p className="text-xs text-ink-muted">{Math.round(recipe.calories * multiplier / 2000 * 100)}% нормы</p>
+                </div>
+              )}
+              {recipe.proteinG && (
+                <div>
+                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.proteinG) * multiplier)}г</p>
+                  <p className="text-xs text-ink-muted">белки</p>
+                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.proteinG) * multiplier / 50 * 100)}% нормы</p>
+                </div>
+              )}
+              {recipe.fatsG && (
+                <div>
+                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.fatsG) * multiplier)}г</p>
+                  <p className="text-xs text-ink-muted">жиры</p>
+                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.fatsG) * multiplier / 70 * 100)}% нормы</p>
+                </div>
+              )}
+              {recipe.carbsG && (
+                <div>
+                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.carbsG) * multiplier)}г</p>
+                  <p className="text-xs text-ink-muted">углеводы</p>
+                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.carbsG) * multiplier / 260 * 100)}% нормы</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Описание */}
         {recipe.description && (
           <p className="font-serif italic text-ink-soft mb-8 leading-relaxed">
