@@ -197,10 +197,18 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
       if (t && t.length > 15) genericSteps.push({ instruction: t, imageUrl: null, timerMinutes: null });
     });
   }
+  // russianfood.com и подобные: шаги в div.step_n или в p внутри контейнера шагов
+  if (genericSteps.length === 0) {
+    $("[class*='step_n'] p, [class*='step_'] .text, .cooking-steps p, .cont_area p").each((_, el) => {
+      const t = $(el).text().trim();
+      if (t && t.length > 20) genericSteps.push({ instruction: t, imageUrl: null, timerMinutes: null });
+    });
+  }
 
   console.log(`[scraper] universal: title="${uniTitle || ""}", ing=${genericIngredients.length}, steps=${genericSteps.length}`);
 
-  if (uniTitle && genericIngredients.length > 0 && genericSteps.length > 0) {
+  // Если есть ингредиенты — принимаем даже без шагов (лучше рецепт без шагов чем ничего)
+  if (uniTitle && genericIngredients.length > 0 && (genericSteps.length > 0 || genericIngredients.length >= 3)) {
     const combined: Partial<ScrapedRecipe> = {
       title: isJunkTitle(uniTitle) ? (titleFromUrl(url) || uniTitle) : uniTitle,
       description: $('meta[property="og:description"]').attr("content")?.trim() || null,
