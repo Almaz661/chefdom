@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Pencil, Plus, Trash2, X, Receipt as ReceiptIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+  Receipt as ReceiptIcon,
+} from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 // G.19 — детальная страница чека.
@@ -26,6 +38,10 @@ export function ReceiptDetailPage() {
   const id = Number(params.id);
 
   const [showAddManual, setShowAddManual] = useState(false);
+
+  // «Показать сырой текст OCR» — раскрывающийся блок для отладки
+  const [showRaw, setShowRaw] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
 
   // Инлайн-редактирование позиции
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -64,6 +80,10 @@ export function ReceiptDetailPage() {
       utils.receipts.getById.invalidate({ id });
       setEditingId(null);
     },
+  });
+
+  const reparse = trpc.receipts.reparse.useMutation({
+    onSuccess: () => utils.receipts.getById.invalidate({ id }),
   });
 
   const deleteReceipt = trpc.receipts.delete.useMutation({
@@ -177,7 +197,7 @@ export function ReceiptDetailPage() {
       </div>
 
       {/* Кнопка добавления — теперь только ручная */}
-      <div>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setShowAddManual(true)}
@@ -186,7 +206,66 @@ export function ReceiptDetailPage() {
           <Plus size={18} />
           Добавить позицию вручную
         </button>
+        {receipt.ocrRaw && (
+          <button
+            type="button"
+            onClick={() => reparse.mutate({ id })}
+            disabled={reparse.isPending}
+            title="Распознать заново из сохранённого текста OCR (без нового запроса)"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-lg border border-line bg-paper text-ink-soft font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+          >
+            <RefreshCw
+              size={18}
+              className={reparse.isPending ? "animate-spin" : ""}
+            />
+            {reparse.isPending ? "Перепарсиваю…" : "Перепарсить"}
+          </button>
+        )}
       </div>
+
+      {/* Блок «Показать сырой текст OCR» */}
+      {receipt.ocrRaw && (
+        <div className="bg-paper border border-line rounded-xl">
+          <button
+            type="button"
+            onClick={() => setShowRaw((s) => !s)}
+            className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left text-sm text-ink-soft hover:text-ink"
+          >
+            <span>Сырой текст OCR (для отладки)</span>
+            {showRaw ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          {showRaw && (
+            <div className="px-4 pb-4 border-t border-line">
+              <div className="flex justify-end pt-3 pb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard
+                      ?.writeText(receipt.ocrRaw ?? "")
+                      .then(() => {
+                        setCopyDone(true);
+                        setTimeout(() => setCopyDone(false), 1500);
+                      });
+                  }}
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-paper text-xs text-ink-soft hover:text-primary hover:border-primary"
+                >
+                  {copyDone ? <Check size={14} /> : <Copy size={14} />}
+                  {copyDone ? "Скопировано" : "Скопировать"}
+                </button>
+              </div>
+              <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-ink-soft bg-cream rounded-lg p-3 max-h-80 overflow-y-auto font-mono">
+                {receipt.ocrRaw}
+              </pre>
+              <p className="text-xs text-ink-muted mt-2">
+                Если позиции распознались плохо — скопируй текст выше и пришли
+                разработчику. По нему можно подогнать парсер под этот формат
+                чека, после чего «Перепарсить» обновит позиции без новой
+                фотографии.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Позиции */}
       <section>

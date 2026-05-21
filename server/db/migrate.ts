@@ -290,6 +290,18 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '009_receipts_ocr_raw',
+    up: async (sql) => {
+      // G.19 — храним сырой текст OCR.
+      // Зачем: парсер несовершенен; имея сырой текст, можно «перепарсить»
+      // чек после улучшений парсера, не делая повторный запрос в OCR.space
+      // (бесплатный тариф жёстко лимитирован: 1 запрос в 10 секунд).
+      // Пользователь также видит сырой текст в UI — может скопировать его
+      // и прислать разработчику, если парсер не справился.
+      await sql`ALTER TABLE receipts ADD COLUMN IF NOT EXISTS ocr_raw TEXT`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

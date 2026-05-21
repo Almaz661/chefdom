@@ -123,7 +123,7 @@ export const receiptsRouter = router({
       // 2. Парсинг
       const parsed = parseReceiptText(recognized.text);
 
-      // 3. Создаём чек
+      // 3. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
       const [created] = await db
         .insert(receipts)
         .values({
@@ -134,6 +134,7 @@ export const receiptsRouter = router({
             parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
           currency: parsed.currency,
           notes: null,
+          ocrRaw: recognized.text,
         })
         .returning({ id: receipts.id });
 
@@ -155,6 +156,67 @@ export const receiptsRouter = router({
         storeDetected: parsed.storeName !== null,
         dateDetected: parsed.purchaseDate !== null,
         totalDetected: parsed.totalAmount !== null,
+      };
+    }),
+
+  // G.19 — перепарсить уже сохранённый чек.
+  // Берёт сырой OCR-текст из БД, прогоняет через парсер заново
+  // (без повторного запроса в OCR.space), удаляет старые позиции,
+  // вставляет новые. Полезно после улучшения парсера или ручной правки
+  // ocr_raw в БД (например через Neon SQL Console).
+  // Шапка чека (магазин/дата/итог/валюта) тоже обновляется.
+  reparse: publicProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const [receipt] = await db
+        .select()
+        .from(receipts)
+        .where(and(eq(receipts.id, input.id), eq(receipts.userId, 1)))
+        .limit(1);
+      if (!receipt) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
+      }
+      if (!receipt.ocrRaw) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'У этого чека нет сохранённого текста OCR. Перепарсить можно только чеки, созданные через «Сфотографировать чек».',
+        });
+      }
+
+      const parsed = parseReceiptText(receipt.ocrRaw);
+
+      // Обновляем шапку
+      await db
+        .update(receipts)
+        .set({
+          storeName: parsed.storeName,
+          purchaseDate: parsed.purchaseDate,
+          totalAmount:
+            parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
+          currency: parsed.currency,
+        })
+        .where(eq(receipts.id, input.id));
+
+      // Удаляем старые позиции и вставляем новые
+      await db
+        .delete(receiptItems)
+        .where(eq(receiptItems.receiptId, input.id));
+
+      if (parsed.items.length > 0) {
+        await db.insert(receiptItems).values(
+          parsed.items.map((it, idx) => ({
+            receiptId: input.id,
+            productName: it.productName,
+            price: it.price !== null ? String(it.price) : null,
+            sortOrder: idx,
+          })),
+        );
+      }
+
+      return {
+        id: input.id,
+        recognizedItemsCount: parsed.items.length,
       };
     }),
 
