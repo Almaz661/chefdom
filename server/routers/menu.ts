@@ -148,21 +148,24 @@ export const menuRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Агрегировать: суммировать количества по названию ингредиента
+      // Агрегировать: суммировать количества по названию + единица
+      // (чтобы «Куриное филе 150 грамм» и «Куриное филе 3 штуки» не складывались)
       const aggregated = new Map<string, { name: string; amount: number | null; unit: string | null; category: string | null }>();
       for (const ing of ingredients) {
         const nameLower = ing.name.toLowerCase().trim();
+        const unitLower = (ing.unit || "").toLowerCase().trim();
+        const key = `${nameLower}|${unitLower}`;
         const multiplier = recipeCount.get(ing.recipeId) || 1;
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
 
-        if (aggregated.has(nameLower)) {
-          const prev = aggregated.get(nameLower)!;
+        if (aggregated.has(key)) {
+          const prev = aggregated.get(key)!;
           if (prev.amount !== null && scaledAmount !== null) {
             prev.amount += scaledAmount;
           }
         } else {
-          aggregated.set(nameLower, {
+          aggregated.set(key, {
             name: ing.name,
             amount: scaledAmount,
             unit: ing.unit,
@@ -173,18 +176,18 @@ export const menuRouter = router({
 
       // Получить текущий список покупок для дедупликации
       const existing = await db
-        .select({ productName: purchaseItems.productName })
+        .select({ productName: purchaseItems.productName, unit: purchaseItems.unit })
         .from(purchaseItems)
         .where(eq(purchaseItems.userId, 1));
 
-      const existingNames = new Set(
-        existing.map((e) => e.productName.toLowerCase().trim()),
+      const existingKeys = new Set(
+        existing.map((e) => `${e.productName.toLowerCase().trim()}|${(e.unit || "").toLowerCase().trim()}`),
       );
 
       // Добавить агрегированные ингредиенты которых ещё нет в списке
       let added = 0;
-      for (const [nameLower, agg] of aggregated) {
-        if (existingNames.has(nameLower)) continue;
+      for (const [key, agg] of aggregated) {
+        if (existingKeys.has(key)) continue;
 
         await db.insert(purchaseItems).values({
           userId: 1,
@@ -194,7 +197,7 @@ export const menuRouter = router({
           category: agg.category,
         });
 
-        existingNames.add(nameLower);
+        existingKeys.add(key);
         added++;
       }
 
