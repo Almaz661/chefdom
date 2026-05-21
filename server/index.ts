@@ -65,6 +65,48 @@ app.get("/api/seed-products", async (req, res) => {
   });
 });
 
+// Авто-расчёт КБЖУ для всех рецептов (G.4)
+app.get("/api/calc-nutrition", async (req, res) => {
+  res.json({ ok: true, message: "Расчёт КБЖУ запущен в фоне. Смотри логи Render." });
+  setImmediate(async () => {
+    try {
+      const { db } = await import("./db/index");
+      const { recipes, recipeIngredients, ingredients } = await import("./db/schema");
+      const { eq, ilike, sql } = await import("drizzle-orm");
+
+      const allRecipes = await db.select({ id: recipes.id, servings: recipes.servings }).from(recipes);
+      console.log(`[calc-nutrition] Рецептов для обработки: ${allRecipes.length}`);
+      let updated = 0;
+
+      for (const recipe of allRecipes) {
+        const ings = await db.select().from(recipeIngredients).where(eq(recipeIngredients.recipeId, recipe.id));
+        let kcal = 0, protein = 0, fats = 0, carbs = 0, matched = 0;
+
+        for (const ing of ings) {
+          const [found] = await db.select().from(ingredients).where(ilike(ingredients.nameRu, `%${ing.name}%`)).limit(1);
+          if (!found) continue;
+          const amount = ing.amount ? parseFloat(ing.amount) : 100;
+          const f = amount / 100;
+          kcal += found.kcalPer100g ? parseFloat(found.kcalPer100g) * f : 0;
+          protein += found.proteinG ? parseFloat(found.proteinG) * f : 0;
+          fats += found.fatsG ? parseFloat(found.fatsG) * f : 0;
+          carbs += found.carbsG ? parseFloat(found.carbsG) * f : 0;
+          matched++;
+        }
+
+        if (matched === 0) continue;
+        const s = recipe.servings || 1;
+        await db.execute(sql`UPDATE recipes SET calories=${Math.round(kcal/s)}, protein_g=${Math.round(protein/s*10)/10}, fats_g=${Math.round(fats/s*10)/10}, carbs_g=${Math.round(carbs/s*10)/10} WHERE id=${recipe.id}`);
+        updated++;
+      }
+
+      console.log(`[calc-nutrition] Готово. Обновлено: ${updated}/${allRecipes.length}`);
+    } catch (err) {
+      console.error("[calc-nutrition] Ошибка:", err);
+    }
+  });
+});
+
 // Раздача собранного фронта (production: dist/ создаётся командой `npm run build`).
 // Локально при `npm run dev:server` dist/ может не быть — это не ошибка,
 // для локальной разработки фронт запускается отдельно через `npm run dev:client`.
