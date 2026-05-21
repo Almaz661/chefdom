@@ -7,6 +7,13 @@ import App from "./App";
 import { ServerWakeUp } from "./components/ServerWakeUp";
 import "./index.css";
 
+// F.3 — регистрация Service Worker для offline режима
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
