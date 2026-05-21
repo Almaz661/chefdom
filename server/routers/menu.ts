@@ -148,13 +148,21 @@ export const menuRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Агрегировать: суммировать количества по названию + единица
-      // (чтобы «Куриное филе 150 грамм» и «Куриное филе 3 штуки» не складывались)
+      // Нормализация названия — убираем окончания чтобы «яйцо» и «яйца» были одним продуктом
+      function normalizeName(name: string): string {
+        return name
+          .toLowerCase()
+          .trim()
+          .replace(/[аяеёиоуыэюь]+$/, "") // убираем гласные окончания
+          .trim();
+      }
+
+      // Агрегировать: суммировать количества по нормализованному названию + единица
       const aggregated = new Map<string, { name: string; amount: number | null; unit: string | null; category: string | null }>();
       for (const ing of ingredients) {
-        const nameLower = ing.name.toLowerCase().trim();
+        const nameNorm = normalizeName(ing.name);
         const unitLower = (ing.unit || "").toLowerCase().trim();
-        const key = `${nameLower}|${unitLower}`;
+        const key = `${nameNorm}|${unitLower}`;
         const multiplier = recipeCount.get(ing.recipeId) || 1;
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
@@ -181,7 +189,7 @@ export const menuRouter = router({
         .where(eq(purchaseItems.userId, 1));
 
       const existingKeys = new Set(
-        existing.map((e) => `${e.productName.toLowerCase().trim()}|${(e.unit || "").toLowerCase().trim()}`),
+        existing.map((e) => `${normalizeName(e.productName)}|${(e.unit || "").toLowerCase().trim()}`),
       );
 
       // Добавить агрегированные ингредиенты которых ещё нет в списке
