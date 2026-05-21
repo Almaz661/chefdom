@@ -312,7 +312,19 @@ function finalize(
   };
 }
 
-/** Очищает шаги: убирает HTML-теги, дубли, нумерацию «Шаг N» */
+/** Извлекает время в минутах из текста шага.
+ *  Примеры: «варите 40 минут» → 40, «1 час 30 минут» → 90, «20 мин» → 20 */
+function extractTimerFromText(text: string): number | null {
+  const lower = text.toLowerCase();
+  let total = 0;
+  const hMatch = lower.match(/(\d+)\s*час/);
+  if (hMatch) total += parseInt(hMatch[1], 10) * 60;
+  const mMatch = lower.match(/(\d+)\s*мин/);
+  if (mMatch) total += parseInt(mMatch[1], 10);
+  return total > 0 ? total : null;
+}
+
+/** Очищает шаги: убирает HTML-теги, дубли, нумерацию «Шаг N», извлекает таймер */
 function cleanSteps(steps: ScrapedStep[]): ScrapedStep[] {
   const seen = new Set<string>();
   const result: ScrapedStep[] = [];
@@ -336,7 +348,9 @@ function cleanSteps(steps: ScrapedStep[]): ScrapedStep[] {
     }
     if (isDupe) continue;
     seen.add(textLower);
-    result.push({ ...step, instruction: text });
+    // Если таймер не задан явно — попробуем извлечь из текста шага
+    const timerMinutes = step.timerMinutes ?? extractTimerFromText(text);
+    result.push({ ...step, instruction: text, timerMinutes });
   }
   return result;
 }
