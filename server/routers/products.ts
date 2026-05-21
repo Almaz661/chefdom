@@ -3,7 +3,8 @@ import { TRPCError } from '@trpc/server';
 import { eq, ilike, sql } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { products, ingredients, recipes, recipeIngredients } from '../db/schema';
+import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
+
 
 export const productsRouter = router({
 
@@ -47,6 +48,18 @@ export const productsRouter = router({
         .from(ingredients)
         .where(ilike(ingredients.nameRu, `%${input.query}%`))
         .limit(20);
+      return rows;
+    }),
+
+  // B.3 — получить замены для ингредиента
+  getSubstitutions: publicProcedure
+    .input(z.object({ ingredientName: z.string().min(1).max(200) }))
+    .query(async ({ input }) => {
+      const rows = await db
+        .select()
+        .from(ingredientSubstitutions)
+        .where(ilike(ingredientSubstitutions.ingredientName, input.ingredientName))
+        .limit(10);
       return rows;
     }),
 
