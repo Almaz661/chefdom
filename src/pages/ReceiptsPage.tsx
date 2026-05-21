@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, ScrollText, Receipt as ReceiptIcon, X } from "lucide-react";
+import { Camera, Plus, ScrollText, Receipt as ReceiptIcon, X } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
-// Российский формат даты «15 мая 2026»
+// G.19 — список чеков. Главный сценарий: «Сфотографировать чек»
+// (камера → OCR → авто-создание чека). Запасной: «Добавить вручную».
+
 function formatDate(s: string | null): string {
   if (!s) return "—";
   const d = new Date(s);
@@ -22,12 +24,34 @@ function formatAmount(amount: string | null, currency: string): string {
   return `${symbol}${n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Конвертирует File в base64 без префикса data:...,
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result;
+      if (typeof r !== "string") {
+        reject(new Error("Не удалось прочитать файл"));
+        return;
+      }
+      // r вида "data:image/jpeg;base64,XXXXX" — режем префикс
+      const comma = r.indexOf(",");
+      resolve(comma >= 0 ? r.slice(comma + 1) : r);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Ошибка чтения файла"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ReceiptsPage() {
   const navigate = useNavigate();
-  const [showCreate, setShowCreate] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showManual, setShowManual] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [currency, setCurrency] = useState<"EUR" | "RUB">("EUR");
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
   const list = trpc.receipts.list.useQuery();
@@ -35,30 +59,91 @@ export function ReceiptsPage() {
   const create = trpc.receipts.create.useMutation({
     onSuccess: ({ id }) => {
       utils.receipts.list.invalidate();
-      setShowCreate(false);
+      setShowManual(false);
       setStoreName("");
       setPurchaseDate("");
       navigate(`/receipts/${id}`);
     },
   });
 
+  const createFromPhoto = trpc.receipts.createFromPhoto.useMutation({
+    onSuccess: (res) => {
+      utils.receipts.list.invalidate();
+      setPhotoStatus(null);
+      navigate(`/receipts/${res.id}`);
+    },
+    onError: (err) => {
+      setPhotoStatus(null);
+      setPhotoError(err.message);
+    },
+  });
+
+  async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // чтобы повторный выбор того же файла сработал
+    if (!file) return;
+    setPhotoError(null);
+    setPhotoStatus("Распознаю чек… Это займёт 5–15 секунд.");
+    try {
+      const base64 = await fileToBase64(file);
+      // Язык: пользователь может настроить позже. По умолчанию eng.
+      // OCR.space всё равно неплохо разбирает кириллицу в режиме eng,
+      // но если в Render задана переменная OCR_LANG=rus — фронт пришлёт rus.
+      // На старте — eng (большинство голландских чеков).
+      createFromPhoto.mutate({ imageBase64: base64 });
+    } catch (err) {
+      setPhotoStatus(null);
+      setPhotoError(err instanceof Error ? err.message : "Ошибка чтения файла");
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-6 lg:p-10 space-y-6">
-      <div className="flex items-baseline justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink mb-1">
-            Чеки
-          </h1>
-          <p className="text-ink-soft">Покупки в магазинах</p>
-        </div>
+      <div>
+        <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink mb-1">
+          Чеки
+        </h1>
+        <p className="text-ink-soft">Покупки в магазинах</p>
+      </div>
+
+      {/* Главное действие — сфотографировать чек */}
+      <div className="space-y-2">
         <button
           type="button"
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={createFromPhoto.isPending}
+          className="w-full inline-flex items-center justify-center gap-2 h-14 px-4 rounded-xl bg-primary text-paper font-medium hover:bg-primary-dark transition-colors disabled:opacity-60"
         >
-          <Plus size={18} />
-          Добавить чек
+          <Camera size={20} />
+          {createFromPhoto.isPending
+            ? "Распознаю чек…"
+            : "Сфотографировать чек"}
         </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={onFileSelected}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => setShowManual(true)}
+          className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-lg border border-line bg-paper text-ink-soft text-sm font-medium hover:border-primary hover:text-primary transition-colors"
+        >
+          <Plus size={16} />
+          Добавить вручную (без фото)
+        </button>
+
+        {photoStatus && (
+          <p className="text-sm text-ink-soft text-center">{photoStatus}</p>
+        )}
+        {photoError && (
+          <p className="text-sm text-alert bg-paper border border-alert rounded-lg p-3">
+            {photoError}
+          </p>
+        )}
       </div>
 
       {list.isLoading && <p className="text-ink-muted">Загрузка…</p>}
@@ -73,7 +158,7 @@ export function ReceiptsPage() {
           <p className="text-ink-soft">
             Пока нет ни одного чека.
             <br />
-            Нажми «Добавить чек» чтобы начать.
+            Сфотографируй первый — на чеке найдётся магазин, дата и позиции.
           </p>
         </div>
       )}
@@ -111,11 +196,11 @@ export function ReceiptsPage() {
         </ul>
       )}
 
-      {/* Модалка создания чека */}
-      {showCreate && (
+      {/* Запасной флоу — ручное создание */}
+      {showManual && (
         <div
           className="fixed inset-0 bg-ink/50 flex items-center justify-center p-6 z-50"
-          onClick={() => !create.isPending && setShowCreate(false)}
+          onClick={() => !create.isPending && setShowManual(false)}
         >
           <div
             className="bg-paper rounded-2xl p-6 max-w-md w-full"
@@ -123,11 +208,11 @@ export function ReceiptsPage() {
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <h3 className="font-serif text-xl font-semibold text-ink">
-                Новый чек
+                Новый чек вручную
               </h3>
               <button
                 type="button"
-                onClick={() => setShowCreate(false)}
+                onClick={() => setShowManual(false)}
                 aria-label="Закрыть"
                 className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-cream flex items-center justify-center"
               >
@@ -185,7 +270,7 @@ export function ReceiptsPage() {
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
-                onClick={() => setShowCreate(false)}
+                onClick={() => setShowManual(false)}
                 disabled={create.isPending}
                 className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
               >
