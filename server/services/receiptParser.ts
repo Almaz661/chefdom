@@ -125,10 +125,14 @@ function extractTrailingPrice(line: string): number | null {
 }
 
 // Достаём само число из строки-цены (вырезав €, EUR, BTW-коды).
+// Важно: BTW-код (B, A, BB, B1) ВСЕГДА начинается с буквы. Если первый
+// символ — цифра, это часть числа (например хвост «0,79» или «-2,07»),
+// и его нельзя срезать. Поэтому regex требует ведущей буквы:
+// `[A-Z][A-Z0-9]{0,2}` — буква + опц. ещё 0–2 буквы/цифры.
 function priceOnlyValue(line: string): number | null {
   const cleaned = line
     .replace(/€|EUR/gi, ' ')
-    .replace(/\b[A-Z0-9]{1,3}\b\s*$/, ' ')
+    .replace(/\b[A-Z][A-Z0-9]{0,2}\b\s*$/, ' ')
     .trim();
   return parseNumber(cleaned);
 }
