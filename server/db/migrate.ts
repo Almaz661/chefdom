@@ -239,9 +239,54 @@ const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_cooking_history_user_cooked
         ON cooking_history(user_id, cooked_at DESC)
       `;
-      await sql`
-        CREATE INDEX IF NOT EXISTS idx_cooking_history_recipe
+      await sql`CREATE INDEX IF NOT EXISTS idx_cooking_history_recipe
         ON cooking_history(recipe_id)
+      `;
+    },
+  },
+  {
+    version: '008_receipts',
+    up: async (sql) => {
+      // Чеки. Минимально для этапа G.19 — без OCR, без перевода, без курса.
+      // total_amount — итог чека (опц., вводится вручную либо суммой строк).
+      // currency: 'EUR' | 'RUB'. По умолчанию EUR (контекст — Нидерланды).
+      // status: 'draft' (создан, заполняется) | 'final' (закрыт) — задел на будущее.
+      await sql`
+        CREATE TABLE IF NOT EXISTS receipts (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          store_name TEXT,
+          purchase_date TEXT,
+          total_amount NUMERIC,
+          currency TEXT NOT NULL DEFAULT 'EUR',
+          status TEXT NOT NULL DEFAULT 'draft',
+          notes TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_receipts_user_created
+        ON receipts(user_id, created_at DESC)
+      `;
+      // Позиции чека. matched_product_id — ссылка на products (если найден
+      // в каталоге по штрих-коду). product_name — снапшот, чтобы строка
+      // оставалась читаемой даже если товар удалят из каталога.
+      await sql`
+        CREATE TABLE IF NOT EXISTS receipt_items (
+          id SERIAL PRIMARY KEY,
+          receipt_id INTEGER NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,
+          product_name TEXT NOT NULL,
+          quantity NUMERIC,
+          unit TEXT,
+          price NUMERIC,
+          barcode TEXT,
+          matched_product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+          sort_order INTEGER NOT NULL DEFAULT 0
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt
+        ON receipt_items(receipt_id)
       `;
     },
   },

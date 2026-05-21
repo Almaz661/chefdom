@@ -200,3 +200,39 @@ export const cookingHistory = pgTable('cooking_history', {
   rating: integer('rating'),
   cookedAt: timestamp('cooked_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// G.19 — чеки. Создаются вручную (OCR — отдельный этап, требует API ключ).
+// purchaseDate: YYYY-MM-DD. currency: 'EUR' | 'RUB'.
+// status: 'draft' (заполняется) | 'final' (закрыт).
+export const receipts = pgTable('receipts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  storeName: text('store_name'),
+  purchaseDate: text('purchase_date'),
+  totalAmount: numeric('total_amount'),
+  currency: text('currency').notNull().default('EUR'),
+  status: text('status').notNull().default('draft'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Позиции чека. barcode + matchedProductId связывают строку с каталогом
+// products (этап G.2). productName — снапшот, чтобы запись осталась
+// читаемой если товар удалят из каталога.
+export const receiptItems = pgTable('receipt_items', {
+  id: serial('id').primaryKey(),
+  receiptId: integer('receipt_id')
+    .notNull()
+    .references(() => receipts.id, { onDelete: 'cascade' }),
+  productName: text('product_name').notNull(),
+  quantity: numeric('quantity'),
+  unit: text('unit'),
+  price: numeric('price'),
+  barcode: text('barcode'),
+  matchedProductId: integer('matched_product_id').references(() => products.id, {
+    onDelete: 'set null',
+  }),
+  sortOrder: integer('sort_order').notNull().default(0),
+});
