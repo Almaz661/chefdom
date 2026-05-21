@@ -213,6 +213,38 @@ const migrations: Migration[] = [
       await sql`CREATE INDEX IF NOT EXISTS idx_substitutions_ingredient ON ingredient_substitutions(ingredient_name)`;
     },
   },
+  {
+    version: '007_cooking_history',
+    up: async (sql) => {
+      // История готовки. recipe_id NULLable + ON DELETE SET NULL —
+      // история сохраняется даже при удалении рецепта (важно для аналитики).
+      await sql`
+        CREATE TABLE IF NOT EXISTS cooking_history (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id),
+          recipe_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+          recipe_title TEXT NOT NULL,
+          servings INTEGER NOT NULL DEFAULT 1,
+          calories_per_serving INTEGER,
+          category TEXT,
+          cuisine TEXT,
+          consumed_count INTEGER NOT NULL DEFAULT 0,
+          total_ingredients INTEGER NOT NULL DEFAULT 0,
+          notes TEXT,
+          rating INTEGER,
+          cooked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_cooking_history_user_cooked
+        ON cooking_history(user_id, cooked_at DESC)
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_cooking_history_recipe
+        ON cooking_history(recipe_id)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

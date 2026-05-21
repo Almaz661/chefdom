@@ -388,12 +388,31 @@ export const recipesRouter = router({
   }),
 
   // --- ГОТОВИТЬ (п.8 Этап 0) ---
-  // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие).
+  // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие)
+  // и пишет факт готовки в cooking_history (для HistoryPage / Dashboard).
   cook: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      const { inventory } = await import('../db/schema');
+      const { inventory, cookingHistory } = await import('../db/schema');
       const { asc } = await import('drizzle-orm');
+
+      // Получить рецепт (метаданные нужны для снапшота в cooking_history)
+      const [recipe] = await db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          servings: recipes.servings,
+          calories: recipes.calories,
+          category: recipes.category,
+          cuisine: recipes.cuisine,
+        })
+        .from(recipes)
+        .where(eq(recipes.id, input.id))
+        .limit(1);
+
+      if (!recipe) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
+      }
 
       // Получить ингредиенты рецепта
       const ingredients = await db
@@ -426,6 +445,20 @@ export const recipesRouter = router({
           consumed++;
         }
       }
+
+      // Записываем факт готовки в историю — снапшотом, чтобы не зависеть
+      // от рецепта (он может быть позже отредактирован/удалён).
+      await db.insert(cookingHistory).values({
+        userId: 1,
+        recipeId: recipe.id,
+        recipeTitle: recipe.title,
+        servings: recipe.servings ?? 1,
+        caloriesPerServing: recipe.calories ?? null,
+        category: recipe.category ?? null,
+        cuisine: recipe.cuisine ?? null,
+        consumedCount: consumed,
+        totalIngredients: ingredients.length,
+      });
 
       return { consumed, total: ingredients.length };
     }),
