@@ -6,11 +6,11 @@ import {
   Users,
   Flame,
   ChefHat,
-  Timer,
   Pencil,
   Trash2,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { StepTimer } from "../components/StepTimer";
 
 // Форматирование числа в российском формате: 1.5 → "1,5", 2 → "2".
 function formatAmount(n: number | null): string {
@@ -318,10 +318,11 @@ export function RecipeDetailPage() {
                       />
                     )}
                     {step.timerMinutes !== null && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cream border border-line rounded-lg text-sm text-ink-soft">
-                        <Timer size={14} />
-                        {step.timerMinutes} мин
-                      </span>
+                      <StepTimer
+                        minutes={step.timerMinutes}
+                        stepNumber={step.stepNumber}
+                        recipeName={recipe.title}
+                      />
                     )}
                   </div>
                 </li>
