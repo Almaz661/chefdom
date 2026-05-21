@@ -39,6 +39,28 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Одноразовый запуск импорта ингредиентов из USDA (G.1)
+// Защищён секретным ключом: /api/seed-ingredients?secret=USDA_API_KEY
+app.get("/api/seed-ingredients", async (req, res) => {
+  const secret = req.query.secret as string;
+  if (!secret || secret !== process.env.USDA_API_KEY) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  res.json({ ok: true, message: "Импорт запущен в фоне. Смотри логи Render." });
+
+  // Запускаем импорт асинхронно после ответа
+  setImmediate(async () => {
+    try {
+      const { runSeedIngredients } = await import("./db/seed-ingredients-fn");
+      await runSeedIngredients();
+    } catch (err) {
+      console.error("[seed-ingredients] Ошибка:", err);
+    }
+  });
+});
+
 // Раздача собранного фронта (production: dist/ создаётся командой `npm run build`).
 // Локально при `npm run dev:server` dist/ может не быть — это не ошибка,
 // для локальной разработки фронт запускается отдельно через `npm run dev:client`.
