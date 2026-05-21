@@ -231,6 +231,40 @@ export const receiptsRouter = router({
       return { id: created.id };
     }),
 
+  // Редактировать позицию (название / количество / единица / цена)
+  updateItem: publicProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        productName: z.string().min(1).max(300).optional(),
+        quantity: z.number().nullable().optional(),
+        unit: z.string().max(50).nullable().optional(),
+        price: z.number().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const updateData: Record<string, unknown> = {};
+      if (rest.productName !== undefined) updateData.productName = rest.productName;
+      if (rest.quantity !== undefined) {
+        updateData.quantity =
+          rest.quantity === null ? null : String(rest.quantity);
+      }
+      if (rest.unit !== undefined) updateData.unit = rest.unit;
+      if (rest.price !== undefined) {
+        updateData.price = rest.price === null ? null : String(rest.price);
+      }
+      const result = await db
+        .update(receiptItems)
+        .set(updateData)
+        .where(eq(receiptItems.id, id))
+        .returning({ id: receiptItems.id });
+      if (result.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+      }
+      return { id };
+    }),
+
   // Удалить позицию
   deleteItem: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))

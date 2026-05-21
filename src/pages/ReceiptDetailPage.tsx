@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, X, Receipt as ReceiptIcon } from "lucide-react";
+import { ArrowLeft, Check, Pencil, Plus, Trash2, X, Receipt as ReceiptIcon } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 // G.19 — детальная страница чека.
@@ -27,6 +27,11 @@ export function ReceiptDetailPage() {
 
   const [showAddManual, setShowAddManual] = useState(false);
 
+  // Инлайн-редактирование позиции
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [eName, setEName] = useState("");
+  const [ePrice, setEPrice] = useState("");
+
   // Форма ручного добавления
   const [mName, setMName] = useState("");
   const [mQty, setMQty] = useState("");
@@ -52,6 +57,13 @@ export function ReceiptDetailPage() {
 
   const deleteItem = trpc.receipts.deleteItem.useMutation({
     onSuccess: () => utils.receipts.getById.invalidate({ id }),
+  });
+
+  const updateItem = trpc.receipts.updateItem.useMutation({
+    onSuccess: () => {
+      utils.receipts.getById.invalidate({ id });
+      setEditingId(null);
+    },
   });
 
   const deleteReceipt = trpc.receipts.delete.useMutation({
@@ -188,34 +200,118 @@ export function ReceiptDetailPage() {
           </p>
         ) : (
           <ul className="space-y-2">
-            {items.map((it) => (
-              <li
-                key={it.id}
-                className="flex items-center gap-3 px-4 py-3 bg-paper border border-line rounded-xl"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-ink">{it.productName}</p>
-                  {(it.quantity || it.unit) && (
-                    <p className="text-xs text-ink-muted">
-                      {it.quantity ?? ""} {it.unit ?? ""}
-                    </p>
-                  )}
-                </div>
-                {it.price && (
-                  <span className="font-medium tabular-nums text-ink shrink-0">
-                    {formatPrice(it.price as unknown as string, currency)}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => deleteItem.mutate({ id: it.id })}
-                  aria-label="Удалить позицию"
-                  className="w-9 h-9 rounded-lg text-ink-muted hover:text-alert hover:bg-cream flex items-center justify-center shrink-0"
+            {items.map((it) => {
+              const isEditing = editingId === it.id;
+              if (isEditing) {
+                // Режим редактирования — инлайн-форма
+                const handleSave = () => {
+                  const trimmed = eName.trim();
+                  if (!trimmed) return;
+                  const parsedPrice = ePrice
+                    ? parseFloat(ePrice.replace(",", "."))
+                    : null;
+                  updateItem.mutate({
+                    id: it.id,
+                    productName: trimmed,
+                    price: Number.isFinite(parsedPrice as number)
+                      ? (parsedPrice as number)
+                      : null,
+                  });
+                };
+                return (
+                  <li
+                    key={it.id}
+                    className="px-4 py-3 bg-paper border-2 border-primary rounded-xl"
+                  >
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={eName}
+                        onChange={(e) => setEName(e.target.value)}
+                        autoFocus
+                        className="flex-1 h-11 px-3 rounded-lg border border-line bg-paper focus:border-primary focus:outline-none"
+                        placeholder="Название"
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={ePrice}
+                        onChange={(e) => setEPrice(e.target.value)}
+                        className="sm:w-28 h-11 px-3 rounded-lg border border-line bg-paper focus:border-primary focus:outline-none tabular-nums"
+                        placeholder="Цена"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          disabled={!eName.trim() || updateItem.isPending}
+                          aria-label="Сохранить"
+                          title="Сохранить"
+                          className="w-11 h-11 rounded-lg bg-primary text-paper hover:bg-primary-dark flex items-center justify-center disabled:opacity-50"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          aria-label="Отмена"
+                          title="Отмена"
+                          className="w-11 h-11 rounded-lg border border-line text-ink-soft hover:bg-cream flex items-center justify-center"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              }
+              // Обычный режим
+              return (
+                <li
+                  key={it.id}
+                  className="flex items-center gap-3 px-4 py-3 bg-paper border border-line rounded-xl"
                 >
-                  <Trash2 size={16} />
-                </button>
-              </li>
-            ))}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink">{it.productName}</p>
+                    {(it.quantity || it.unit) && (
+                      <p className="text-xs text-ink-muted">
+                        {it.quantity ?? ""} {it.unit ?? ""}
+                      </p>
+                    )}
+                  </div>
+                  {it.price && (
+                    <span className="font-medium tabular-nums text-ink shrink-0">
+                      {formatPrice(it.price as unknown as string, currency)}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(it.id);
+                      setEName(it.productName);
+                      setEPrice(
+                        it.price !== null && it.price !== undefined
+                          ? String(it.price).replace(".", ",")
+                          : "",
+                      );
+                    }}
+                    aria-label="Редактировать"
+                    title="Редактировать"
+                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-primary hover:bg-cream flex items-center justify-center shrink-0"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteItem.mutate({ id: it.id })}
+                    aria-label="Удалить позицию"
+                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-alert hover:bg-cream flex items-center justify-center shrink-0"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
 
