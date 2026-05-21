@@ -298,12 +298,135 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
   return items;
 }
 
+/**
+ * Стратегия параллельных колонок.
+ *
+ * Срабатывает когда OCR выдал чек «двумя колонками»: сначала ВСЕ имена
+ * товаров подряд (одна за другой), потом ВСЕ цены подряд. Это бывает
+ * на ALDI чеках при определённой ориентации фото.
+ *
+ * Алгоритм:
+ *   1. Идём по тексту, складываем кандидаты-имена в `names` и цены в `prices`,
+ *      сохраняя порядок появления.
+ *   2. «N x X,XX €» (qty line) — пропускаем, в результат не идёт.
+ *   3. Если строка состоит ТОЛЬКО из символа валюты («€» / «EUR»), считаем
+ *      что это «хвост» предыдущей цены — игнорируем (число уже учтено).
+ *   4. Если имён больше чем цен — пробуем склеить соседние имена,
+ *      где второе начинается со строчной буквы (продолжение фразы,
+ *      например «Barissimo» + «intense»).
+ *   5. Если в итоге `len(names) === len(prices)`, матчим по индексу.
+ */
+function parseParallelColumns(
+  text: string,
+  total: number | null,
+): ItemCandidate[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  const names: string[] = [];
+  const prices: number[] = [];
+
+  for (const l of lines) {
+    if (isSkipLine(l)) continue;
+    if (isQuantityLine(l)) continue;
+    // Одиночный «€» / «EUR» / «$» — хвост предыдущей цены, игнорируем
+    if (/^[€$₽]\s*$/.test(l) || /^EUR\s*$/i.test(l) || /^RUB\s*$/i.test(l)) {
+      continue;
+    }
+
+    if (isPriceOnlyLine(l)) {
+      const p = priceOnlyValue(l);
+      if (p === null) continue;
+      if (!looksLikePrice(p)) continue;
+      // Не считаем итог позицией
+      if (total !== null && Math.abs(p - total) < 0.01) continue;
+      prices.push(p);
+      continue;
+    }
+
+    if (looksLikeProductName(l)) {
+      // Однострочное «Молоко 1,29» — игнорируем здесь, оно уже было обработано
+      // в parseAll. Если parseAll не справился, а тут такие строки — лучше
+      // оставить «как есть»: имя без цены не добавляем.
+      const hasTrailingPrice = /\d[.,]\d{2}\s*(?:€|EUR)?\s*$/.test(l);
+      if (hasTrailingPrice) continue;
+      names.push(l);
+    }
+  }
+
+  // Склейка имён-продолжений: если имён больше чем цен, склеиваем пары,
+  // где второе имя начинается со строчной буквы (latin или кириллица).
+  while (names.length > prices.length && names.length >= 2) {
+    let merged = false;
+    for (let i = 1; i < names.length; i++) {
+      const next = names[i];
+      const firstChar = next.charAt(0);
+      const isLower =
+        firstChar &&
+        firstChar === firstChar.toLowerCase() &&
+        firstChar !== firstChar.toUpperCase();
+      if (isLower) {
+        names[i - 1] = `${names[i - 1]} ${next}`;
+        names.splice(i, 1);
+        merged = true;
+        break;
+      }
+    }
+    if (!merged) break;
+  }
+
+  if (names.length === 0 || prices.length === 0) return [];
+  // Если всё-таки не сошлось по числу — берём min(names, prices)
+  // (лучше показать половину чем ничего).
+  const n = Math.min(names.length, prices.length);
+  if (n < 2) return [];
+
+  const out: ItemCandidate[] = [];
+  for (let i = 0; i < n; i++) {
+    out.push({ name: names[i], price: prices[i] });
+  }
+  return out;
+}
+
+/**
+ * Возвращает индекс строки с итогом (первое вхождение).
+ * Парсинг товаров идёт ТОЛЬКО до этой строки, чтобы мусор после
+ * («POI», «BS…», номера терминала, токены) не попал в позиции.
+ */
+function findTotalLineIndex(lines: string[]): number {
+  for (let i = 0; i < lines.length; i++) {
+    if (
+      /^\s*(итого|total|totaal|subtotaal|te\s*betalen|сумма\s*к\s*оплате|к\s*оплате)\b/i.test(
+        lines[i],
+      )
+    ) {
+      return i;
+    }
+  }
+  return lines.length;
+}
+
 export function parseReceiptText(text: string): ParsedReceipt {
   const { storeName, currency } = detectStoreAndCurrency(text);
   const purchaseDate = detectDate(text);
   const totalAmount = detectTotal(text);
 
-  const items = parseAll(text, totalAmount);
+  // Обрезаем текст до строки итога — позиции находятся ВЫШЕ итога,
+  // ниже идут служебные строки (POI, токены, штрих-коды, реквизиты карты).
+  const allLines = text.split(/\r?\n/);
+  const cutoff = findTotalLineIndex(allLines);
+  const itemsText = allLines.slice(0, cutoff).join('\n');
+
+  // Стратегия 1 — построчно (название + цена близко друг к другу).
+  // Хорошо работает для AH/Jumbo/российских чеков и для ALDI когда
+  // OCR не «таблицует».
+  let items = parseAll(itemsText, totalAmount);
+
+  // Если основная стратегия дала мало результатов, пробуем «параллельные
+  // колонки»: OCR мог расщепить чек на два блока (все имена → все цены).
+  if (items.length <= 1) {
+    const parallel = parseParallelColumns(itemsText, totalAmount);
+    if (parallel.length > items.length) items = parallel;
+  }
 
   return {
     storeName,
