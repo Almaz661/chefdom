@@ -12,7 +12,6 @@ import {
   users,
 } from "../db/schema";
 
-
 export const settingsRouter = router({
 
   // Экспорт всех данных в JSON (раздел 15.1 плана)
@@ -35,14 +34,12 @@ export const settingsRouter = router({
       db.select().from(purchaseItems),
     ]);
 
-    // Собираем рецепты вместе с ингредиентами и шагами
     const recipesWithDetails = allRecipes.map((recipe) => ({
       ...recipe,
       ingredients: allIngredients.filter((i) => i.recipeId === recipe.id),
       steps: allSteps.filter((s) => s.recipeId === recipe.id),
     }));
 
-    // Собираем меню вместе со слотами
     const menusWithItems = allMenus.map((menu) => ({
       ...menu,
       items: allMenuItems.filter((i) => i.menuId === menu.id),
@@ -59,7 +56,6 @@ export const settingsRouter = router({
   }),
 
   // Восстановление из backup (раздел 15.2 плана)
-  // Заменяет ВСЕ текущие данные
   importBackup: publicProcedure
     .input(
       z.object({
@@ -73,12 +69,10 @@ export const settingsRouter = router({
     )
     .mutation(async ({ input }) => {
       await db.transaction(async (tx) => {
-        // Получаем userId по умолчанию (пользователь «Семья»)
         const [user] = await tx.select({ id: users.id }).from(users).limit(1);
         if (!user) throw new Error("Пользователь не найден");
         const userId = user.id;
 
-        // Очищаем все таблицы
         await tx.delete(purchaseItems);
         await tx.delete(menuItems);
         await tx.delete(menus);
@@ -87,7 +81,6 @@ export const settingsRouter = router({
         await tx.delete(recipeSteps);
         await tx.delete(recipes);
 
-        // Восстанавливаем рецепты
         for (const r of input.recipes) {
           const { ingredients, steps, id: _oldId, ...recipeData } = r;
 
@@ -136,7 +129,6 @@ export const settingsRouter = router({
           }
         }
 
-        // Восстанавливаем инвентарь
         if (input.inventory.length > 0) {
           await tx.insert(inventory).values(
             input.inventory.map((item: any) => ({
@@ -152,7 +144,6 @@ export const settingsRouter = router({
           );
         }
 
-        // Восстанавливаем список покупок
         if (input.purchase_items.length > 0) {
           await tx.insert(purchaseItems).values(
             input.purchase_items.map((item: any) => ({
