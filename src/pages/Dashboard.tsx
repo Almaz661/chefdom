@@ -40,6 +40,8 @@ export function Dashboard() {
   const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 2 });
   // Список покупок — для счётчика
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
+  // «Недавно готовила» — последние 5 (раздел 6.4 макета)
+  const { data: recentCooks = [] } = trpc.cooking.recent.useQuery({ limit: 5 });
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
@@ -157,23 +159,81 @@ export function Dashboard() {
         </Link>
       </div>
 
-      {/* Недавно готовила — пустое состояние */}
+      {/* Недавно готовила — раздел 6.4 макета: горизонтальный скролл */}
       <section>
-        <h3 className="font-serif text-lg font-semibold text-ink mb-3">
-          Недавно готовила
-        </h3>
-        <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
-          <BookOpen
-            size={32}
-            className="text-line-strong mx-auto mb-3"
-            strokeWidth={1.5}
-          />
-          <p className="text-ink-soft text-sm">
-            Пока ничего не готовила.
-            <br />
-            История появится после первого приготовления.
-          </p>
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="font-serif text-lg font-semibold text-ink">
+            Недавно готовила
+          </h3>
+          {recentCooks.length > 0 && (
+            <Link
+              to="/history"
+              className="text-primary text-sm font-medium hover:text-primary-dark inline-flex items-center gap-1"
+            >
+              Вся история
+              <ArrowRight size={14} />
+            </Link>
+          )}
         </div>
+
+        {recentCooks.length === 0 ? (
+          <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
+            <BookOpen
+              size={32}
+              className="text-line-strong mx-auto mb-3"
+              strokeWidth={1.5}
+            />
+            <p className="text-ink-soft text-sm">
+              Пока ничего не готовила.
+              <br />
+              История появится после первого приготовления.
+            </p>
+          </div>
+        ) : (
+          <ul className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+            {recentCooks.map((c) => {
+              const card = (
+                <div className="w-36 shrink-0 snap-start bg-paper border border-line rounded-xl overflow-hidden hover:border-primary transition-colors">
+                  <div className="aspect-square bg-cream flex items-center justify-center overflow-hidden">
+                    {c.recipeImage ? (
+                      <img
+                        src={c.recipeImage}
+                        alt={c.recipeTitle}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <ChefHat
+                        size={32}
+                        className="text-line-strong"
+                        strokeWidth={1.5}
+                      />
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-serif text-sm font-semibold text-ink line-clamp-2 leading-snug">
+                      {c.recipeTitle}
+                    </p>
+                  </div>
+                </div>
+              );
+              return (
+                <li key={c.id}>
+                  {c.recipeId ? (
+                    <Link to={`/recipes/${c.recipeId}`} className="block">
+                      {card}
+                    </Link>
+                  ) : (
+                    card
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       {/* Меню недели — мини-полоса */}

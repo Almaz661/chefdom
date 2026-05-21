@@ -174,3 +174,29 @@ export const ingredientSubstitutions = pgTable('ingredient_substitutions', {
   quality: text('quality'),
   quantityRatio: numeric('quantity_ratio'),
 });
+
+// Этап H — история готовки.
+// Логируется каждое нажатие «Готовить» на странице рецепта.
+// recipeId nullable + ON DELETE SET NULL — чтобы при удалении рецепта
+// история не терялась (для аналитики важно сохранить факты готовки).
+// recipeTitle хранится снапшотом, чтобы показывать в истории даже
+// после удаления исходного рецепта.
+// servings — фактическое количество порций (с учётом множителя).
+// consumedCount / totalIngredients — снапшот, сколько списано из инвентаря.
+export const cookingHistory = pgTable('cooking_history', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  recipeId: integer('recipe_id').references(() => recipes.id, { onDelete: 'set null' }),
+  recipeTitle: text('recipe_title').notNull(),
+  servings: integer('servings').notNull().default(1),
+  caloriesPerServing: integer('calories_per_serving'),
+  category: text('category'),
+  cuisine: text('cuisine'),
+  consumedCount: integer('consumed_count').notNull().default(0),
+  totalIngredients: integer('total_ingredients').notNull().default(0),
+  notes: text('notes'),
+  rating: integer('rating'),
+  cookedAt: timestamp('cooked_at', { withTimezone: true }).defaultNow().notNull(),
+});
