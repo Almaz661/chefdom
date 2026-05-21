@@ -1,14 +1,20 @@
 // F.3 — Service Worker для offline режима
-// Кэширует рецепты и список покупок, работает без сети
+// Кэширует ассеты, работает без сети.
+//
+// Стратегия:
+//   - HTML страницы (navigation): Network First — всегда свежий index.html
+//     если есть сеть; иначе fallback на кеш. Это критично для авто-обновления
+//     после деплоя — иначе пользователь застревает на старой версии.
+//   - API (/trpc, /api): только сеть, без кеша.
+//   - Остальная статика (JS/CSS/шрифты/иконки): Cache First с фоновым
+//     обновлением, плюс кеш только успешных GET-ответов.
+//
+// При смене CACHE_NAME (бамп версии при деплое) старые кеши очищаются
+// в activate. Это страховка от ситуации «пользователь застрял на v1».
 
-const CACHE_NAME = 'shefdom-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/favicon.svg',
-];
+const CACHE_NAME = 'shefdom-v2';
+const STATIC_ASSETS = ['/manifest.json', '/favicon.svg'];
 
-// При установке — кэшируем статику
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -16,7 +22,6 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// При активации — удаляем старые кэши
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -26,30 +31,53 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Стратегия: Network First для API, Cache First для статики
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
-  // API запросы — только сеть, без кэша
+  // API — только сеть, без кеша
   if (url.pathname.startsWith('/trpc') || url.pathname.startsWith('/api')) {
     return;
   }
 
-  // Статика и страницы — Cache First с fallback на сеть
+  // Только GET имеет смысл кешировать
+  if (req.method !== 'GET') return;
+
+  // HTML / навигация — Network First (чтобы новый деплой подхватился сразу)
+  const isHtml =
+    req.mode === 'navigate' ||
+    (req.headers.get('accept') || '').includes('text/html');
+
+  if (isHtml) {
+    event.respondWith(
+      fetch(req)
+        .then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(req).then((cached) => cached || caches.match('/'))
+        )
+    );
+    return;
+  }
+
+  // Остальное (JS/CSS/шрифты/картинки) — Cache First
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    caches.match(req).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        // Кэшируем только успешные GET запросы
-        if (event.request.method === 'GET' && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => {
-        // Если нет сети и нет кэша — отдаём главную страницу (SPA fallback)
-        return caches.match('/');
-      });
+      return fetch(req)
+        .then((response) => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/'));
     })
   );
 });
