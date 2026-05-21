@@ -38,9 +38,13 @@ export async function recognizeImage(
   form.set('apikey', apiKey);
   form.set('base64Image', dataUrl);
   form.set('language', options.language ?? 'eng');
-  form.set('isTable', 'true'); // чеки — таблица «название · цена»
-  form.set('OCREngine', '2'); // движок 2 — точнее для чеков
-  form.set('scale', 'true'); // масштабирует мелкий текст
+  // Намеренно НЕ ставим isTable=true. На чеках ALDI / Albert Heijn / Jumbo
+  // (одна колонка названий + одна колонка цен) табличный режим перестраивает
+  // текст и сливает соседние строки в один блок. Без него OCR.space сохраняет
+  // построчную структуру, и парсер легко находит «название · цена».
+  form.set('OCREngine', '2'); // 2 устойчивее к шуму бытовых фото
+  form.set('scale', 'true'); // увеличивает мелкий текст
+  form.set('detectOrientation', 'true'); // фото перевёрнуто? OCR сам повернёт
 
   const res = await fetch(OCR_ENDPOINT, {
     method: 'POST',
