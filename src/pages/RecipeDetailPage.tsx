@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -29,6 +29,18 @@ export function RecipeDetailPage() {
   const [multiplier, setMultiplier] = useState(1);
   const [imgError, setImgError] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  // F.1 — Screen Wake Lock: экран не гаснет пока готовишь
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  useEffect(() => {
+    if (!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then((lock) => {
+      wakeLockRef.current = lock;
+    }).catch(() => {});
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+    };
+  }, []);
 
   const utils = trpc.useUtils();
   const query = trpc.recipes.getById.useQuery(
