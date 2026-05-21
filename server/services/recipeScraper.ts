@@ -300,8 +300,37 @@ function finalize(
     difficulty: partial.difficulty ?? null,
     calories: partial.calories ?? null,
     ingredients: (partial.ingredients ?? []).slice(0, 200),
-    steps: (partial.steps ?? []).slice(0, 100),
+    steps: cleanSteps((partial.steps ?? []).slice(0, 100)),
   };
+}
+
+/** Очищает шаги: убирает HTML-теги, дубли, нумерацию «Шаг N» */
+function cleanSteps(steps: ScrapedStep[]): ScrapedStep[] {
+  const seen = new Set<string>();
+  const result: ScrapedStep[] = [];
+  for (const step of steps) {
+    // Убрать HTML-теги из текста
+    let text = step.instruction
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    // Убрать префикс «Шаг N» или «N.»
+    text = text.replace(/^(?:Шаг\s*\d+[.\s]*|^\d+\.\s*)/i, "").trim();
+    if (!text || text.length < 5) continue;
+    // Дедупликация — если этот текст уже есть (или является подстрокой предыдущего)
+    const textLower = text.toLowerCase();
+    let isDupe = false;
+    for (const s of seen) {
+      if (s.includes(textLower) || textLower.includes(s)) {
+        isDupe = true;
+        break;
+      }
+    }
+    if (isDupe) continue;
+    seen.add(textLower);
+    result.push({ ...step, instruction: text });
+  }
+  return result;
 }
 
 /** Определяет категорию по ключевым словам в названии */
