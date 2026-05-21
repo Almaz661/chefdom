@@ -173,12 +173,7 @@ export const settingsRouter = router({
 
   // Статистика для страницы «О приложении»
   getStats: publicProcedure.query(async () => {
-    const [recipeCount] = await db
-      .select({ count: recipes.id })
-      .from(recipes);
-
     const allRecipes = await db.select({ id: recipes.id }).from(recipes);
-
     return {
       recipesCount: allRecipes.length,
       version: "1.0",
