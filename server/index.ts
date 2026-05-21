@@ -40,13 +40,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 // Одноразовый запуск импорта ингредиентов из USDA (G.1)
-// Защищён секретным ключом: /api/seed-ingredients?secret=USDA_API_KEY
 app.get("/api/seed-ingredients", async (req, res) => {
-  const secret = req.query.secret as string;
-  if (!secret || secret !== process.env.USDA_API_KEY) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
-  }
 
   res.json({ ok: true, message: "Импорт запущен в фоне. Смотри логи Render." });
 
