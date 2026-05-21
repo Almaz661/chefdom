@@ -77,4 +77,30 @@ export const authRouter = router({
       }
       return rows[0];
     }),
+
+  // Смена PIN (раздел 14.2 плана)
+  changePin: publicProcedure
+    .input(
+      z.object({
+        currentPin: z.string().regex(/^\d{4}$/, "PIN — 4 цифры"),
+        newPin: z.string().regex(/^\d{4}$/, "PIN — 4 цифры"),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Проверяем текущий PIN
+      const rows = await client<{ id: number }[]>`
+        SELECT id FROM users WHERE pin = ${input.currentPin} LIMIT 1
+      `;
+      if (rows.length === 0) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Текущий PIN неверный",
+        });
+      }
+      // Обновляем PIN
+      await client`
+        UPDATE users SET pin = ${input.newPin} WHERE id = ${rows[0].id}
+      `;
+      return { ok: true };
+    }),
 });
