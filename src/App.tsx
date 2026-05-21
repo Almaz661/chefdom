@@ -15,6 +15,7 @@ import { ProductsPage } from "./pages/ProductsPage";
 import { ReceiptsPage } from "./pages/ReceiptsPage";
 import { WhatToCookPage } from "./pages/WhatToCookPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { ReceiptDetailPage } from "./pages/ReceiptDetailPage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -70,6 +71,10 @@ export default function App() {
       <Route
         path="/receipts"
         element={<PrivatePage><ReceiptsPage /></PrivatePage>}
+      />
+      <Route
+        path="/receipts/:id"
+        element={<PrivatePage><ReceiptDetailPage /></PrivatePage>}
       />
       <Route
         path="/what-to-cook"
