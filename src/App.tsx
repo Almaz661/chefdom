@@ -10,6 +10,7 @@ import { MenuPage } from "./pages/MenuPage";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { InventoryPage } from "./pages/InventoryPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -58,7 +59,7 @@ export default function App() {
         path="/settings"
         element={<PrivatePage><SettingsPage /></PrivatePage>}
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
