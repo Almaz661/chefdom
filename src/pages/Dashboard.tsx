@@ -5,8 +5,10 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
+  AlertTriangle,
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
+import { trpc } from "../utils/trpc";
 
 // Приветствие меняется по времени суток
 function getGreeting(): string {
@@ -32,8 +34,12 @@ const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 export function Dashboard() {
   const auth = getAuth();
   const name = auth?.name || "Семья";
-  // JS: 0=Вс, 1=Пн ... 6=Сб. Конвертируем в индекс с понедельника.
   const todayIdx = (new Date().getDay() + 6) % 7;
+
+  // B.1 — продукты истекающие в ближайшие 2 дня
+  const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 2 });
+  // Список покупок — для счётчика
+  const { data: shopping = [] } = trpc.shopping.list.useQuery();
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
@@ -44,6 +50,29 @@ export function Dashboard() {
         </h1>
         <p className="text-ink-soft">{formatToday()}</p>
       </header>
+
+      {/* B.1 — Алерт истекающих продуктов */}
+      {expiring.length > 0 && (
+        <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="text-warning mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink mb-1">
+                {expiring.length} {expiring.length === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 2 дня
+              </p>
+              <p className="text-sm text-ink-soft truncate">
+                {expiring.map(e => e.productName).join(" · ")}
+              </p>
+            </div>
+            <Link
+              to="/what-to-cook"
+              className="text-xs font-medium text-warning hover:text-amber-700 shrink-0"
+            >
+              Что приготовить?
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/*
         Алерт сроков годности появится здесь когда:
@@ -115,7 +144,12 @@ export function Dashboard() {
           <h3 className="font-serif text-xl font-semibold text-ink mb-1">
             Список покупок
           </h3>
-          <p className="text-ink-soft text-sm mb-3">Список пуст</p>
+          <p className="text-ink-soft text-sm mb-3">
+            {shopping.length > 0
+              ? `${shopping.filter(s => s.isChecked === 0).length} позиций · ${shopping.filter(s => s.isChecked === 1).length} куплено`
+              : "Список пуст"
+            }
+          </p>
           <span className="inline-flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
             Открыть
             <ArrowRight size={16} />

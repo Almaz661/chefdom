@@ -13,6 +13,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { ReceiptsPage } from "./pages/ReceiptsPage";
+import { WhatToCookPage } from "./pages/WhatToCookPage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -68,6 +69,10 @@ export default function App() {
       <Route
         path="/receipts"
         element={<PrivatePage><ReceiptsPage /></PrivatePage>}
+      />
+      <Route
+        path="/what-to-cook"
+        element={<PrivatePage><WhatToCookPage /></PrivatePage>}
       />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
