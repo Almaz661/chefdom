@@ -41,16 +41,26 @@ app.get("/api/health", (_req, res) => {
 
 // Одноразовый запуск импорта ингредиентов из USDA (G.1)
 app.get("/api/seed-ingredients", async (req, res) => {
-
   res.json({ ok: true, message: "Импорт запущен в фоне. Смотри логи Render." });
-
-  // Запускаем импорт асинхронно после ответа
   setImmediate(async () => {
     try {
       const { runSeedIngredients } = await import("./db/seed-ingredients-fn");
       await runSeedIngredients();
     } catch (err) {
       console.error("[seed-ingredients] Ошибка:", err);
+    }
+  });
+});
+
+// Одноразовый запуск импорта товаров из Open Food Facts (G.2)
+app.get("/api/seed-products", async (req, res) => {
+  res.json({ ok: true, message: "Импорт товаров запущен в фоне. Смотри логи Render." });
+  setImmediate(async () => {
+    try {
+      const { runSeedProducts } = await import("./db/seed-products-fn");
+      await runSeedProducts();
+    } catch (err) {
+      console.error("[seed-products] Ошибка:", err);
     }
   });
 });
