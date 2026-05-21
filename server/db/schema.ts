@@ -131,3 +131,46 @@ export const purchaseItems = pgTable('purchase_items', {
   inStockQuantity: numeric('in_stock_quantity'),
   addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// Этап G — рецепты теперь хранят КБЖУ на порцию
+// (поля добавлены миграцией 006, здесь отражаем в схеме Drizzle)
+// calories уже был, добавляем protein_g / fats_g / carbs_g через ALTER TABLE
+
+// Этап G — справочник ингредиентов (USDA FoodData Central)
+export const ingredients = pgTable('ingredients', {
+  id: serial('id').primaryKey(),
+  fdcId: integer('fdc_id').unique(),
+  nameRu: text('name_ru').notNull(),
+  nameEn: text('name_en'),
+  category: text('category'),
+  defaultUnit: text('default_unit'),
+  kcalPer100g: numeric('kcal_per_100g'),
+  proteinG: numeric('protein_g'),
+  fatsG: numeric('fats_g'),
+  carbsG: numeric('carbs_g'),
+  waterPct: numeric('water_pct'),
+});
+
+// Этап G — каталог товаров (Open Food Facts)
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  ingredientId: integer('ingredient_id')
+    .references(() => ingredients.id),
+  barcode: text('barcode').unique(),
+  nameRu: text('name_ru').notNull(),
+  nameNl: text('name_nl'),
+  brand: text('brand'),
+  packageQuantity: numeric('package_quantity'),
+  packageUnit: text('package_unit'),
+  imageUrl: text('image_url'),
+  offId: text('off_id').unique(),
+});
+
+// Этап G — замены ингредиентов
+export const ingredientSubstitutions = pgTable('ingredient_substitutions', {
+  id: serial('id').primaryKey(),
+  ingredientName: text('ingredient_name').notNull(),
+  alternativeName: text('alternative_name').notNull(),
+  quality: text('quality'),
+  quantityRatio: numeric('quantity_ratio'),
+});

@@ -155,6 +155,64 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '006_ingredients_products',
+    up: async (sql) => {
+      // КБЖУ в рецептах
+      await sql`ALTER TABLE recipes ADD COLUMN IF NOT EXISTS protein_g NUMERIC`;
+      await sql`ALTER TABLE recipes ADD COLUMN IF NOT EXISTS fats_g NUMERIC`;
+      await sql`ALTER TABLE recipes ADD COLUMN IF NOT EXISTS carbs_g NUMERIC`;
+
+      // Справочник ингредиентов (USDA FoodData Central)
+      await sql`
+        CREATE TABLE IF NOT EXISTS ingredients (
+          id SERIAL PRIMARY KEY,
+          fdc_id INTEGER UNIQUE,
+          name_ru TEXT NOT NULL,
+          name_en TEXT,
+          category TEXT,
+          default_unit TEXT,
+          kcal_per_100g NUMERIC,
+          protein_g NUMERIC,
+          fats_g NUMERIC,
+          carbs_g NUMERIC,
+          water_pct NUMERIC
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS idx_ingredients_name_ru ON ingredients(name_ru)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_ingredients_fdc_id ON ingredients(fdc_id)`;
+
+      // Каталог товаров (Open Food Facts)
+      await sql`
+        CREATE TABLE IF NOT EXISTS products (
+          id SERIAL PRIMARY KEY,
+          ingredient_id INTEGER REFERENCES ingredients(id),
+          barcode TEXT UNIQUE,
+          name_ru TEXT NOT NULL,
+          name_nl TEXT,
+          brand TEXT,
+          package_quantity NUMERIC,
+          package_unit TEXT,
+          image_url TEXT,
+          off_id TEXT UNIQUE
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_name_ru ON products(name_ru)`;
+
+      // Замены ингредиентов
+      await sql`
+        CREATE TABLE IF NOT EXISTS ingredient_substitutions (
+          id SERIAL PRIMARY KEY,
+          ingredient_name TEXT NOT NULL,
+          alternative_name TEXT NOT NULL,
+          quality TEXT,
+          quantity_ratio NUMERIC
+        )
+      `;
+      await sql`CREATE INDEX IF NOT EXISTS idx_substitutions_ingredient ON ingredient_substitutions(ingredient_name)`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
