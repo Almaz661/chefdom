@@ -204,6 +204,8 @@ export const cookingHistory = pgTable('cooking_history', {
 // G.19 — чеки. Создаются вручную (OCR — отдельный этап, требует API ключ).
 // purchaseDate: YYYY-MM-DD. currency: 'EUR' | 'RUB'.
 // status: 'draft' (заполняется) | 'final' (закрыт).
+// ocrRaw — сырой текст из OCR.space (для повторного парсинга без
+// дополнительных запросов в OCR, см. миграцию 009).
 export const receipts = pgTable('receipts', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -215,6 +217,7 @@ export const receipts = pgTable('receipts', {
   currency: text('currency').notNull().default('EUR'),
   status: text('status').notNull().default('draft'),
   notes: text('notes'),
+  ocrRaw: text('ocr_raw'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
