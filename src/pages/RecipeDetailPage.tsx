@@ -8,9 +8,11 @@ import {
   ChefHat,
   Pencil,
   Trash2,
+  Replace,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { StepTimer } from "../components/StepTimer";
+import { SubstitutionDialog } from "../components/SubstitutionDialog";
 
 // Форматирование числа в российском формате: 1.5 → "1,5", 2 → "2".
 function formatAmount(n: number | null): string {
@@ -29,6 +31,8 @@ export function RecipeDetailPage() {
   const [multiplier, setMultiplier] = useState(1);
   const [imgError, setImgError] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  // B.3 — открытый диалог замены, либо null
+  const [subForIngredient, setSubForIngredient] = useState<string | null>(null);
 
   // F.1 — Screen Wake Lock: экран не гаснет пока готовишь
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -312,14 +316,26 @@ export function RecipeDetailPage() {
                       return (
                         <li
                           key={ing.id}
-                          className="flex items-baseline gap-3 text-ink"
+                          className="flex items-center gap-3 text-ink group"
                         >
-                          <span className="font-medium tabular-nums min-w-[80px]">
+                          <span className="font-medium tabular-nums min-w-[80px] self-baseline">
                             {scaled !== null
                               ? `${formatAmount(scaled)}${ing.unit ? " " + ing.unit : ""}`
                               : "по вкусу"}
                           </span>
-                          <span className="text-ink-soft">{ing.name}</span>
+                          <span className="text-ink-soft flex-1 self-baseline">
+                            {ing.name}
+                          </span>
+                          {/* B.3 — кнопка «Чем заменить» */}
+                          <button
+                            type="button"
+                            onClick={() => setSubForIngredient(ing.name)}
+                            aria-label={`Чем заменить ${ing.name}`}
+                            title="Чем заменить"
+                            className="w-9 h-9 -my-2 rounded-lg text-ink-muted hover:text-primary hover:bg-cream flex items-center justify-center shrink-0 transition-colors"
+                          >
+                            <Replace size={16} />
+                          </button>
                         </li>
                       );
                     })}
@@ -384,6 +400,14 @@ export function RecipeDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* B.3 — Диалог замен ингредиента */}
+      {subForIngredient && (
+        <SubstitutionDialog
+          ingredientName={subForIngredient}
+          onClose={() => setSubForIngredient(null)}
+        />
+      )}
 
       {/* Модалка подтверждения удаления */}
       {showConfirmDelete && (
