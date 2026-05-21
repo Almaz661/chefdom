@@ -1,12 +1,3 @@
-process.on("uncaughtException", (err) => {
-  console.error("[boot] uncaughtException:", err);
-  process.exit(1);
-});
-process.on("unhandledRejection", (reason) => {
-  console.error("[boot] unhandledRejection:", reason);
-  process.exit(1);
-});
-
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
