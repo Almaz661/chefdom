@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lte, isNotNull } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
 import { inventory } from '../db/schema';
@@ -17,6 +17,27 @@ export const inventoryRouter = router({
       .orderBy(inventory.productName);
     return items;
   }),
+
+  // B.1 — продукты истекающие в ближайшие N дней
+  getExpiring: publicProcedure
+    .input(z.object({ days: z.number().int().min(1).max(30).default(2) }))
+    .query(async ({ input }) => {
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + input.days);
+      const limitStr = limitDate.toISOString().slice(0, 10);
+      const items = await db
+        .select()
+        .from(inventory)
+        .where(
+          and(
+            eq(inventory.userId, 1),
+            isNotNull(inventory.expiryDate),
+            lte(inventory.expiryDate, limitStr),
+          )
+        )
+        .orderBy(inventory.expiryDate);
+      return items;
+    }),
 
   // Добавить продукт
   add: publicProcedure
