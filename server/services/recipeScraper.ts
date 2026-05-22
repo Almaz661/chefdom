@@ -324,16 +324,68 @@ function extractTimerFromText(text: string): number | null {
   return total > 0 ? total : null;
 }
 
-/** Очищает шаги: убирает HTML-теги, дубли, нумерацию «Шаг N», извлекает таймер */
+/** Очищает текст шага рецепта от HTML и CSS-мусора.
+ *
+ *  Особый случай — menunedeli.ru: сайт вставляет в текст шагов рецепта
+ *  блоки <section class="inline-post-link"> со встроенным <style>...</style>
+ *  (рекламные «Читайте также»). Если просто срезать теги, CSS-код
+ *  («section.inline-post-link { margin: ...; }») остаётся как обычный текст.
+ *  Поэтому СНАЧАЛА удаляем <style>/<script>/<noscript> и эти баннеры
+ *  ВМЕСТЕ С СОДЕРЖИМЫМ, и только потом срезаем оставшиеся теги.
+ *
+ *  Экспортирована — вызывается также из recipes.cleanupAllSteps для разовой
+ *  очистки уже сохранённых рецептов.
+ */
+export function cleanStepText(raw: string): string {
+  let text = raw;
+
+  // 1. Удалить <style>, <script>, <noscript> вместе с их содержимым.
+  //    Это критично: иначе CSS / JS останутся как текст.
+  text = text
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, " ");
+
+  // 2. Удалить рекламные блоки «Читайте также» (menunedeli.ru и подобные).
+  //    Они встроены в текст шага и не относятся к рецепту.
+  text = text.replace(
+    /<section\b[^>]*class\s*=\s*["'][^"']*inline-post-link[^"']*["'][^>]*>[\s\S]*?<\/section>/gi,
+    " ",
+  );
+
+  // 3. Срезать остальные HTML-теги.
+  text = text.replace(/<[^>]+>/g, " ");
+
+  // 4. HTML-комментарии (могут остаться в тексте).
+  text = text.replace(/<!--[\s\S]*?-->/g, " ");
+
+  // 5. Страховка: остаточные CSS-блоки «селектор { свойства }».
+  //    Если выше пропустили (например, текст пришёл уже без <style>-обёртки —
+  //    JSON-LD на некоторых сайтах хранит CSS прямо в text-поле), вычистим их
+  //    в несколько проходов, чтобы убрать вложенные @media-блоки.
+  let prev: string;
+  do {
+    prev = text;
+    text = text.replace(
+      /[#.@:a-zA-Z][\w\-,.\s:>~+*()'"]*\{[^{}]*\}/g,
+      " ",
+    );
+  } while (text !== prev);
+
+  // 6. CSS-комментарии вне фигурных скобок (например «/* padding ... */»).
+  text = text.replace(/\/\*[\s\S]*?\*\//g, " ");
+
+  // 7. Сжать пробелы.
+  text = text.replace(/\s+/g, " ").trim();
+
+  return text;
+}
+
 function cleanSteps(steps: ScrapedStep[]): ScrapedStep[] {
   const seen = new Set<string>();
   const result: ScrapedStep[] = [];
   for (const step of steps) {
-    // Убрать HTML-теги из текста
-    let text = step.instruction
-      .replace(/<[^>]+>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    let text = cleanStepText(step.instruction);
     // Убрать префикс «Шаг N» или «N.»
     text = text.replace(/^(?:Шаг\s*\d+[.\s]*|^\d+\.\s*)/i, "").trim();
     if (!text || text.length < 5) continue;
