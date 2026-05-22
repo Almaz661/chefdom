@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   Replace,
+  Moon,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { StepTimer } from "../components/StepTimer";
@@ -34,15 +35,43 @@ export function RecipeDetailPage() {
   // B.3 — открытый диалог замены, либо null
   const [subForIngredient, setSubForIngredient] = useState<string | null>(null);
 
-  // F.1 — Screen Wake Lock: экран не гаснет пока готовишь
+  // F.1 — Screen Wake Lock: экран не гаснет пока готовишь.
+  // Поддерживается в Chrome 84+, Edge 84+, Safari iOS 16.4+, Opera 70+.
+  // На неподдерживаемых браузерах просто не активируется (без ошибки).
+  // Re-acquire при возврате на вкладку — wakeLock освобождается ОС когда
+  // вкладка скрыта; при возврате нужно запросить заново.
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
   useEffect(() => {
     if (!("wakeLock" in navigator)) return;
-    navigator.wakeLock.request("screen").then((lock) => {
-      wakeLockRef.current = lock;
-    }).catch(() => {});
+
+    const acquire = async () => {
+      try {
+        const lock = await navigator.wakeLock.request("screen");
+        wakeLockRef.current = lock;
+        setWakeLockActive(true);
+        lock.addEventListener("release", () => {
+          setWakeLockActive(false);
+        });
+      } catch {
+        setWakeLockActive(false);
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && !wakeLockRef.current) {
+        acquire();
+      }
+    };
+
+    acquire();
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      setWakeLockActive(false);
     };
   }, []);
 
@@ -225,6 +254,16 @@ export function RecipeDetailPage() {
             <span className="inline-flex items-center gap-1.5 text-ink">
               <Flame size={16} className="text-ink-muted" />
               {recipe.calories} ккал/порц.
+            </span>
+          )}
+          {/* F.1 — индикатор активного Wake Lock (экран не гаснет) */}
+          {wakeLockActive && (
+            <span
+              className="inline-flex items-center gap-1.5 text-ink-soft"
+              title="Экран не гаснет, пока ты на этом рецепте"
+            >
+              <Moon size={16} className="text-primary" />
+              Экран не гаснет
             </span>
           )}
         </div>
