@@ -29,6 +29,16 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
 
     async function start() {
       try {
+        // На iOS Safari listVideoInputDevices() не работает без
+        // предварительного getUserMedia (браузер не показывает камеры
+        // пока пользователь не дал разрешение). Поэтому сначала
+        // запрашиваем стрим, потом перечисляем устройства.
+        const preStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        // Останавливаем превью-стрим — ZXing создаст свой
+        preStream.getTracks().forEach((t) => t.stop());
+
         const devices = await reader.listVideoInputDevices();
         // Предпочитаем заднюю камеру (на телефонах) — обычно в label слово "back"
         const back = devices.find((d) => /back|rear|environment/i.test(d.label));
@@ -36,7 +46,7 @@ export function BarcodeScanner({ onDetected, onClose }: Props) {
 
         if (!deviceId) {
           setStatus("error");
-          setErrorMessage("Камера не найдена.");
+          setErrorMessage("Камера не найдена. Проверьте что у устройства есть камера и разрешение выдано.");
           return;
         }
 
