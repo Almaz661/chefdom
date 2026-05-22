@@ -6,6 +6,7 @@ import {
   BookOpen,
   CalendarDays,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -38,6 +39,8 @@ export function Dashboard() {
 
   // B.1 — продукты истекающие в ближайшие 3 дня
   const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 3 });
+  // B.2 — продукты которые лежат давно (>30 дней)
+  const { data: stale = [] } = trpc.inventory.getStale.useQuery({ days: 30 });
   // Список покупок — для счётчика
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
   // «Недавно готовила» — последние 5 (раздел 6.4 макета)
@@ -73,6 +76,29 @@ export function Dashboard() {
               className="text-xs font-medium text-warning hover:text-amber-700 shrink-0"
             >
               Что приготовить?
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* B.2 — Алерт «давно не используется» (>30 дней в инвентаре) */}
+      {stale.length > 0 && (
+        <section className="bg-cream border border-line rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <Clock size={20} className="text-ink-muted mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink mb-1">
+                {stale.length} {stale.length === 1 ? "продукт лежит" : "продукта лежат"} больше 30 дней
+              </p>
+              <p className="text-sm text-ink-soft truncate">
+                {stale.map(s => s.productName).join(" · ")}
+              </p>
+            </div>
+            <Link
+              to="/inventory"
+              className="text-xs font-medium text-ink-soft hover:text-ink shrink-0"
+            >
+              Открыть инвентарь
             </Link>
           </div>
         </section>

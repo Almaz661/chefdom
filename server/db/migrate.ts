@@ -334,6 +334,25 @@ const migrations: Migration[] = [
       await seedSubstitutions(sql);
     },
   },
+  {
+    version: '014_inventory_added_at',
+    up: async (sql) => {
+      // B.2 — отдельное поле added_at для алерта «давно лежит».
+      // updated_at сбрасывается при любом UPDATE (изменили количество — сдвинулся
+      // отсчёт), а нам нужна дата фактического добавления продукта.
+      // Для существующих записей берём updated_at как лучший доступный proxy.
+      await sql`
+        ALTER TABLE inventory
+        ADD COLUMN IF NOT EXISTS added_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      `;
+      // Backfill для существующих: added_at = updated_at
+      await sql`
+        UPDATE inventory
+        SET added_at = updated_at
+        WHERE added_at >= NOW() - INTERVAL '1 minute'
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

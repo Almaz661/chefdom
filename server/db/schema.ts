@@ -97,6 +97,8 @@ export const menuItems = pgTable('menu_items', {
 // Инвентарь (что есть дома).
 // storageType: 'fridge' | 'freezer' | 'pantry'
 // expiryDate: YYYY-MM-DD или null если не скоропортящееся.
+// addedAt — когда продукт добавлен (для алерта B.2 «давно лежит»).
+// Поле добавлено миграцией 014.
 export const inventory = pgTable('inventory', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
@@ -109,6 +111,7 @@ export const inventory = pgTable('inventory', {
   expiryDate: text('expiry_date'),
   minQuantity: numeric('min_quantity'),
   category: text('category'),
+  addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

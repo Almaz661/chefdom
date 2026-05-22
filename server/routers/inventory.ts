@@ -39,6 +39,26 @@ export const inventoryRouter = router({
       return items;
     }),
 
+  // B.2 — продукты которые лежат в инвентаре давно (по умолчанию >30 дней).
+  // Не учитываем те у которых явно указан срок годности — для них работает B.1.
+  getStale: publicProcedure
+    .input(z.object({ days: z.number().int().min(1).max(365).default(30) }))
+    .query(async ({ input }) => {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - input.days);
+      const items = await db
+        .select()
+        .from(inventory)
+        .where(
+          and(
+            eq(inventory.userId, 1),
+            lte(inventory.addedAt, cutoffDate),
+          )
+        )
+        .orderBy(inventory.addedAt);
+      return items;
+    }),
+
   // Добавить продукт
   add: publicProcedure
     .input(
