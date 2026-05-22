@@ -109,31 +109,66 @@ async function runImport(job: ImportJob): Promise<void> {
   const hostname = parsedSeed.hostname;
   const seedPath = parsedSeed.pathname.replace(/\/$/, "");
 
+  // Категория из URL раздела (например /desserts/ → "Десерты")
+  const sectionCategory = guessSectionCategory(seedPath);
+
   // Собираем URL рецептов со всех страниц пагинации
   const recipeUrls = new Set<string>();
   let pageNum = 1;
-  const maxPages = 50; // safety limit
+  const maxPages = 300; // safety limit (поддержка больших разделов)
+
+  // Определяем работающий формат пагинации (пробуем разные варианты)
+  let workingFormat: PageFormat | null = null;
 
   while (pageNum <= maxPages) {
     if (job.cancelled) return;
 
-    const pageUrl =
-      pageNum === 1
-        ? job.seedUrl
-        : buildPageUrl(job.seedUrl, pageNum);
+    let html: string | null = null;
 
-    let html: string;
-    try {
-      html = await fetchHtml(pageUrl);
-    } catch {
-      // Если следующая страница 404 → стоп пагинации
-      break;
+    if (pageNum === 1) {
+      try {
+        html = await fetchHtml(job.seedUrl);
+      } catch {
+        break;
+      }
+    } else {
+      // Если формат уже найден — используем его
+      if (workingFormat) {
+        const pageUrl = buildPageUrl(job.seedUrl, pageNum, workingFormat);
+        try {
+          html = await fetchHtml(pageUrl);
+        } catch {
+          break;
+        }
+      } else {
+        // Пробуем все форматы пагинации, выбираем тот что вернул новые ссылки
+        const formats: PageFormat[] = ["query-page", "slash-num", "num-html", "wordpress"];
+        for (const fmt of formats) {
+          const tryUrl = buildPageUrl(job.seedUrl, pageNum, fmt);
+          try {
+            const tryHtml = await fetchHtml(tryUrl);
+            const $try = cheerio.load(tryHtml);
+            const tryLinks = discoverRecipeLinks($try, hostname, seedPath);
+            // Если есть НОВЫЕ ссылки которых нет на первой странице — формат рабочий
+            const newLinks = tryLinks.filter((l) => !recipeUrls.has(l));
+            if (newLinks.length > 0) {
+              html = tryHtml;
+              workingFormat = fmt;
+              console.log(`[sectionImport] ${job.id}: формат пагинации = ${fmt}`);
+              break;
+            }
+          } catch {
+            // не тот формат, пробуем следующий
+          }
+        }
+        if (!html) break; // ни один формат не сработал
+      }
     }
 
     const $ = cheerio.load(html);
     const links = discoverRecipeLinks($, hostname, seedPath);
 
-    if (links.length === 0) break; // пустая страница → стоп
+    if (links.length === 0) break;
 
     let newCount = 0;
     for (const link of links) {
@@ -143,7 +178,6 @@ async function runImport(job: ImportJob): Promise<void> {
       }
     }
 
-    // Если страница не дала новых URL — стоп пагинации
     if (newCount === 0) break;
 
     pageNum++;
@@ -184,6 +218,10 @@ async function runImport(job: ImportJob): Promise<void> {
       const scraped = await scrapeRecipe(url);
       job.currentTitle = scraped.title;
 
+      // Если категория из URL раздела известна — используем её,
+      // иначе оставляем то что определил scrapeRecipe (по названию)
+      const finalCategory = sectionCategory ?? scraped.category;
+
       await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(recipes)
@@ -197,7 +235,7 @@ async function runImport(job: ImportJob): Promise<void> {
             totalTime: scraped.totalTime,
             sourceUrl: scraped.sourceUrl,
             source: scraped.source,
-            category: scraped.category,
+            category: finalCategory,
             cuisine: scraped.cuisine,
             difficulty: scraped.difficulty,
             calories: scraped.calories,
@@ -294,6 +332,16 @@ function discoverRecipeLinks(
     });
   }
 
+  // Стратегия 4 (универсальная): собираем ВСЕ ссылки на странице,
+  // отфильтровываем через tryAdd. Работает для сайтов где нет
+  // article/post-классов (povar.ru, gastronom.ru и т.п.)
+  if (urls.length === 0) {
+    $("a[href]").each((_, el) => {
+      const link = $(el).attr("href");
+      if (link) tryAdd(link, urls, seen, hostname, seedPath);
+    });
+  }
+
   return urls;
 }
 
@@ -358,20 +406,55 @@ function tryAdd(
 
 // --- Pagination ---
 
-function buildPageUrl(seedUrl: string, page: number): string {
+type PageFormat = "wordpress" | "query-page" | "slash-num" | "num-html";
+
+function buildPageUrl(seedUrl: string, page: number, format: PageFormat): string {
   const parsed = new URL(seedUrl);
   const path = parsed.pathname.replace(/\/$/, "");
 
-  // WordPress style: /category/page/2/
-  // Проверяем, используется ли query-параметр
-  if (parsed.searchParams.has("page")) {
-    parsed.searchParams.set("page", String(page));
-    return parsed.href;
+  switch (format) {
+    case "query-page":
+      // ?page=N
+      parsed.searchParams.set("page", String(page));
+      return parsed.href;
+    case "slash-num":
+      // /list/desert/2/  (povar.ru, gastronom.ru)
+      parsed.pathname = `${path}/${page}/`;
+      return parsed.href;
+    case "num-html":
+      // /recipes/desert/2.html
+      parsed.pathname = `${path}/${page}.html`;
+      return parsed.href;
+    case "wordpress":
+    default:
+      // /category/page/2/
+      parsed.pathname = `${path}/page/${page}/`;
+      return parsed.href;
   }
+}
 
-  // Default: append /page/N/
-  parsed.pathname = `${path}/page/${page}/`;
-  return parsed.href;
+// Угадывает категорию из URL раздела
+function guessSectionCategory(seedPath: string): string | null {
+  const lower = seedPath.toLowerCase();
+  const rules: [RegExp, string][] = [
+    [/desert|dessert|десерт|sweet|sladk/i, "Десерты"],
+    [/sup|soup|суп|borsh|борщ/i, "Супы"],
+    [/salat|salad|салат/i, "Салаты"],
+    [/zavtrak|breakfast|завтрак/i, "Завтраки"],
+    [/vipech|выпечк|baking|cakes|tort|тортов|pirog|пирог/i, "Выпечка"],
+    [/napitk|drink|напитки|beverag|cocktail|коктейл/i, "Напитки"],
+    [/zakusk|appetizer|закуск|starter/i, "Закуски"],
+    [/zagotovk|preserv|заготовк|варенье|jam/i, "Заготовки"],
+    [/sous|sauce|соус|маринад|marinad/i, "Соусы"],
+    [/garnir|side|гарнир/i, "Гарниры"],
+    [/myaso|meat|мясо|kuric|курица|chicken|svinin|свинин|govjadin|говядин/i, "Мясо"],
+    [/riba|fish|рыба|seafood|moreprodukt|морепродукт/i, "Рыба"],
+    [/vtoroe|main|основн|hot|горячее/i, "Основные блюда"],
+  ];
+  for (const [re, cat] of rules) {
+    if (re.test(lower)) return cat;
+  }
+  return null;
 }
 
 // --- Helpers ---
