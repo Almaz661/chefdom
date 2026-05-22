@@ -8,23 +8,81 @@ import { products, ingredients, recipes, recipeIngredients, ingredientSubstituti
 
 export const productsRouter = router({
 
-  // G.3 — поиск товара по штрих-коду
+  // G.3 — поиск товара по штрих-коду (с fallback на Open Food Facts API)
   getByBarcode: publicProcedure
     .input(z.object({ barcode: z.string().min(1) }))
     .query(async ({ input }) => {
+      // 1. Сначала ищем в локальной БД
       const [product] = await db
         .select()
         .from(products)
         .where(eq(products.barcode, input.barcode))
         .limit(1);
 
-      if (!product) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Товар не найден по штрих-коду',
-        });
+      if (product) return product;
+
+      // 2. Fallback — Open Food Facts API
+      try {
+        const offRes = await fetch(
+          `https://world.openfoodfacts.org/api/v2/product/${input.barcode}.json?fields=product_name,brands,quantity`
+        );
+
+        if (!offRes.ok) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Товар не найден по штрих-коду' });
+        }
+
+        const offData = await offRes.json() as {
+          status: number;
+          product?: { product_name?: string; brands?: string; quantity?: string };
+        };
+
+        if (offData.status !== 1 || !offData.product?.product_name) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Товар не найден по штрих-коду' });
+        }
+
+        const offProduct = offData.product;
+
+        // 3. Сохраняем в локальную БД для будущих запросов
+        const [saved] = await db
+          .insert(products)
+          .values({
+            barcode: input.barcode,
+            nameRu: offProduct.product_name!,
+            brand: offProduct.brands || null,
+            packageQuantity: offProduct.quantity || null,
+            offId: input.barcode, // маркер что пришло из OFF
+          })
+          .onConflictDoNothing()
+          .returning();
+
+        if (saved) return saved;
+
+        // Если onConflict сработал — значит кто-то уже вставил, читаем заново
+        const [existing] = await db
+          .select()
+          .from(products)
+          .where(eq(products.barcode, input.barcode))
+          .limit(1);
+
+        if (existing) return existing;
+
+        // Возвращаем данные из OFF без сохранения
+        return {
+          id: 0,
+          barcode: input.barcode,
+          nameRu: offProduct.product_name!,
+          brand: offProduct.brands || null,
+          packageQuantity: offProduct.quantity || null,
+          packageUnit: null,
+          offId: input.barcode,
+          ingredientId: null,
+          nameNl: null,
+          imageUrl: null,
+        };
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Товар не найден по штрих-коду' });
       }
-      return product;
     }),
 
   // G.3 — поиск товара по названию

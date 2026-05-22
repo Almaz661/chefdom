@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Package, Barcode } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { BarcodeScanner } from "../components/BarcodeScanner";
 
 export function ProductsPage() {
   const [query, setQuery] = useState("");
@@ -79,14 +80,23 @@ export function ProductsPage() {
 
       {mode === "barcode" && (
         <>
-          <input
-            type="text"
-            value={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-            placeholder="Введите штрих-код..."
-            inputMode="numeric"
-            className="w-full h-12 px-4 bg-paper border border-line rounded-lg text-ink focus:outline-none focus:border-primary mb-4 font-mono"
-          />
+          {/* Фото-сканер */}
+          <div className="mb-4">
+            <BarcodeScanner onDetected={(code) => setBarcode(code)} />
+          </div>
+
+          {/* Ручной ввод */}
+          <div className="relative mb-4">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted text-xs">или вручную:</span>
+            <input
+              type="text"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              placeholder="Введите штрих-код..."
+              inputMode="numeric"
+              className="w-full h-12 pl-24 pr-4 bg-paper border border-line rounded-lg text-ink focus:outline-none focus:border-primary font-mono"
+            />
+          </div>
           {barcodeResult.data ? (
             <div className="bg-paper border border-line rounded-xl px-4 py-4">
               <p className="text-base font-medium text-ink mb-1">{barcodeResult.data.nameRu}</p>
