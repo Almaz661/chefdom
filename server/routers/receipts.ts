@@ -1,87 +1,17 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { receipts, receiptItems, products } from '../db/schema';
+import { receipts, receiptItems } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
-import { parseReceiptText, type ProductMasterEntry } from '../services/receiptParser';
+import { parseReceiptText } from '../services/receiptParser';
 
 // G.19 — роутер чеков.
 // Сценарий: пользователь фотографирует бумажный чек из магазина,
 // фото уходит в OCR.space, текст парсится в магазин/дату/позиции/итог,
 // чек создаётся сразу. Если распознано плохо — пользователь удаляет
 // чек и фотографирует заново.
-
-/**
- * Загрузить Product Master из БД (все товары с известными ценами).
- * Используется для автоматической привязки цен к товарам в двухблочном формате.
- */
-async function loadProductMaster(): Promise<ProductMasterEntry[]> {
-  const rows = await db
-    .select({
-      nameRu: products.nameRu,
-      lastPrice: products.lastPrice,
-    })
-    .from(products)
-    .where(sql`${products.lastPrice} IS NOT NULL`);
-
-  return rows
-    .map((r) => ({
-      nameRu: r.nameRu,
-      lastPrice: parseFloat(r.lastPrice as string),
-    }))
-    .filter((entry) => !isNaN(entry.lastPrice));
-}
-
-/**
- * Обновить last_price для товаров после парсинга чека.
- * Для каждой позиции чека ищем товар в products по нечёткому совпадению (ILIKE).
- * Если нашли — обновляем last_price и price_updated_at.
- * Если не нашли — создаём новый товар в products (без barcode, off_id, ingredient_id).
- *
- * @param items — позиции чека (из parseReceiptText)
- */
-async function updateProductMasterPrices(
-  items: Array<{ productName: string; price: number | null }>,
-): Promise<void> {
-  for (const item of items) {
-    if (item.price === null || item.price <= 0) continue;
-
-    const normalizedName = item.productName.trim();
-    if (!normalizedName) continue;
-
-    // Ищем товар в БД по нечёткому совпадению (ILIKE %name%)
-    const existing = await db
-      .select({ id: products.id, nameRu: products.nameRu })
-      .from(products)
-      .where(
-        or(
-          ilike(products.nameRu, `%${normalizedName}%`),
-          ilike(products.nameRu, normalizedName),
-        ),
-      )
-      .limit(1);
-
-    if (existing.length > 0) {
-      // Товар найден — обновляем last_price
-      await db
-        .update(products)
-        .set({
-          lastPrice: String(item.price),
-          priceUpdatedAt: new Date(),
-        })
-        .where(eq(products.id, existing[0].id));
-    } else {
-      // Товар не найден — создаём новый (минимальная запись для Product Master)
-      await db.insert(products).values({
-        nameRu: normalizedName,
-        lastPrice: String(item.price),
-        priceUpdatedAt: new Date(),
-      });
-    }
-  }
-}
 
 const ItemInput = z.object({
   productName: z.string().min(1).max(300),
@@ -158,8 +88,6 @@ export const receiptsRouter = router({
   // Если хотя бы что-то распозналось — чек создаётся. Если не получилось
   // вытащить даже одну позицию — чек всё равно создаётся (пустой,
   // пользователь добавит вручную).
-  // Использует Product Master для автоматической привязки цен к товарам
-  // в двухблочном формате (все имена сверху, все цены снизу).
   createFromPhoto: publicProcedure
     .input(
       z.object({
@@ -192,13 +120,10 @@ export const receiptsRouter = router({
         });
       }
 
-      // 2. Загружаем Product Master (товары с известными ценами)
-      const productMaster = await loadProductMaster();
+      // 2. Парсинг
+      const parsed = parseReceiptText(recognized.text);
 
-      // 3. Парсинг с использованием Product Master
-      const parsed = parseReceiptText(recognized.text, productMaster);
-
-      // 4. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
+      // 3. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
       const [created] = await db
         .insert(receipts)
         .values({
@@ -213,7 +138,7 @@ export const receiptsRouter = router({
         })
         .returning({ id: receipts.id });
 
-      // 5. Добавляем позиции
+      // 4. Добавляем позиции
       if (parsed.items.length > 0) {
         await db.insert(receiptItems).values(
           parsed.items.map((it, idx) => ({
@@ -223,9 +148,6 @@ export const receiptsRouter = router({
             sortOrder: idx,
           })),
         );
-
-        // 6. Обновляем Product Master (last_price для всех товаров)
-        await updateProductMasterPrices(parsed.items);
       }
 
       return {
@@ -243,7 +165,6 @@ export const receiptsRouter = router({
   // вставляет новые. Полезно после улучшения парсера или ручной правки
   // ocr_raw в БД (например через Neon SQL Console).
   // Шапка чека (магазин/дата/итог/валюта) тоже обновляется.
-  // Использует Product Master для автоматической привязки цен.
   reparse: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
@@ -263,11 +184,7 @@ export const receiptsRouter = router({
         });
       }
 
-      // Загружаем Product Master
-      const productMaster = await loadProductMaster();
-
-      // Парсим с использованием Product Master
-      const parsed = parseReceiptText(receipt.ocrRaw, productMaster);
+      const parsed = parseReceiptText(receipt.ocrRaw);
 
       // Обновляем шапку
       await db
@@ -295,9 +212,6 @@ export const receiptsRouter = router({
             sortOrder: idx,
           })),
         );
-
-        // Обновляем Product Master
-        await updateProductMasterPrices(parsed.items);
       }
 
       return {
