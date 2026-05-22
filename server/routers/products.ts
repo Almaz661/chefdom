@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, ilike, sql } from 'drizzle-orm';
+import { eq, ilike, or, sql } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
@@ -109,14 +109,34 @@ export const productsRouter = router({
       return rows;
     }),
 
-  // B.3 — получить замены для ингредиента
+  // B.3 — получить замены для ингредиента.
+  // Поиск нечувствителен к регистру и работает по подстроке:
+  // "Сметана 20%" найдёт замены для "Сметана"
+  // "Свежий чеснок" найдёт замены для "чеснок"
   getSubstitutions: publicProcedure
     .input(z.object({ ingredientName: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
+      // Чистим имя: убираем количество и единицы, оставляем только название
+      const cleanName = input.ingredientName
+        .replace(/\d+([.,]\d+)?\s*\S*/g, '') // числа с единицами: "200г", "1 ст.л."
+        .replace(/[%(){}[\]]/g, '') // спецсимволы
+        .trim()
+        .toLowerCase();
+
+      if (cleanName.length < 2) return [];
+
+      // Двунаправленный поиск через ILIKE:
+      // 1. ingredient_name содержит cleanName ("Сметана" в БД, "Сметана 20%" на входе)
+      // 2. cleanName содержит ingredient_name ("свежий чеснок" на входе, "чеснок" в БД)
       const rows = await db
         .select()
         .from(ingredientSubstitutions)
-        .where(ilike(ingredientSubstitutions.ingredientName, input.ingredientName))
+        .where(
+          or(
+            ilike(ingredientSubstitutions.ingredientName, `%${cleanName}%`),
+            sql`LOWER(${ingredientSubstitutions.ingredientName}) = ANY(string_to_array(${cleanName}, ' '))`,
+          ),
+        )
         .limit(10);
       return rows;
     }),
