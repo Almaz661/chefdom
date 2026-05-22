@@ -15,10 +15,10 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
       const cacheKeys = "caches" in window ? await caches.keys() : [];
-      const hasOldCache = cacheKeys.includes("shefdom-v1");
-      const alreadyCleaned = sessionStorage.getItem("sw-cleaned-v2") === "1";
+      const hasOldCache = cacheKeys.some((k) => k !== "shefdom-v3");
+      const alreadyCleaned = sessionStorage.getItem("sw-cleaned-v3") === "1";
       if (hasOldCache && !alreadyCleaned) {
-        sessionStorage.setItem("sw-cleaned-v2", "1");
+        sessionStorage.setItem("sw-cleaned-v3", "1");
         // unregister все SW и удалить все cacheStorage
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
