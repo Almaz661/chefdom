@@ -6,6 +6,7 @@ import { db } from '../db/index';
 import { receipts, receiptItems } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
 import { parseReceiptText } from '../services/receiptParser';
+import { translateBatchToRu } from '../services/translate';
 
 // G.19 — роутер чеков.
 // Сценарий: пользователь фотографирует бумажный чек из магазина,
@@ -123,7 +124,16 @@ export const receiptsRouter = router({
       // 2. Парсинг
       const parsed = parseReceiptText(recognized.text);
 
-      // 3. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
+      // 3. Переводим названия товаров NL→RU (DeepL, best-effort)
+      if (parsed.items.length > 0) {
+        const names = parsed.items.map(it => it.productName);
+        const translated = await translateBatchToRu(names, 'NL');
+        for (let i = 0; i < parsed.items.length; i++) {
+          parsed.items[i].productName = translated[i];
+        }
+      }
+
+      // 4. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
       const [created] = await db
         .insert(receipts)
         .values({
@@ -185,6 +195,15 @@ export const receiptsRouter = router({
       }
 
       const parsed = parseReceiptText(receipt.ocrRaw);
+
+      // Переводим названия товаров NL→RU
+      if (parsed.items.length > 0) {
+        const names = parsed.items.map(it => it.productName);
+        const translated = await translateBatchToRu(names, 'NL');
+        for (let i = 0; i < parsed.items.length; i++) {
+          parsed.items[i].productName = translated[i];
+        }
+      }
 
       // Обновляем шапку
       await db

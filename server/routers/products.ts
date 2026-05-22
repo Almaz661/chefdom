@@ -4,6 +4,7 @@ import { eq, ilike, or, sql } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
+import { translateToRu } from '../services/translate';
 
 
 export const productsRouter = router({
@@ -42,12 +43,16 @@ export const productsRouter = router({
 
         const offProduct = offData.product;
 
-        // 3. Сохраняем в локальную БД для будущих запросов
+        // 3. Переводим название NL/EN→RU (DeepL, best-effort)
+        const translatedName = await translateToRu(offProduct.product_name!);
+
+        // 4. Сохраняем в локальную БД для будущих запросов
         const [saved] = await db
           .insert(products)
           .values({
             barcode: input.barcode,
-            nameRu: offProduct.product_name!,
+            nameRu: translatedName,
+            nameNl: offProduct.product_name!,
             brand: offProduct.brands || null,
             packageQuantity: offProduct.quantity || null,
             offId: input.barcode, // маркер что пришло из OFF
@@ -70,13 +75,13 @@ export const productsRouter = router({
         return {
           id: 0,
           barcode: input.barcode,
-          nameRu: offProduct.product_name!,
+          nameRu: translatedName,
           brand: offProduct.brands || null,
           packageQuantity: offProduct.quantity || null,
           packageUnit: null,
           offId: input.barcode,
           ingredientId: null,
-          nameNl: null,
+          nameNl: offProduct.product_name!,
           imageUrl: null,
         };
       } catch (err) {
