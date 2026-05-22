@@ -13,6 +13,7 @@ function getApiKey(): string | null {
 
 /**
  * Переводит текст на русский язык через DeepL API.
+ * Формат результата: "Оригинал (Перевод)" — чтобы видеть и NL и RU.
  * source_lang: 'NL' | 'EN' | null (auto-detect).
  * Если ключа нет или перевод не удался — возвращает оригинал.
  */
@@ -55,7 +56,12 @@ export async function translateToRu(
     };
 
     if (data.translations && data.translations.length > 0) {
-      return data.translations[0].text;
+      const translated = data.translations[0].text;
+      // Формат: "Оригинал (Перевод)" — видно и NL и RU
+      if (translated.toLowerCase() !== text.toLowerCase()) {
+        return `${text} (${translated})`;
+      }
+      return text;
     }
 
     return text;
@@ -117,10 +123,15 @@ export async function translateBatchToRu(
       return texts;
     }
 
-    // Собираем результат: переведённые + оригиналы
+    // Собираем результат: "Оригинал (Перевод)" + оригиналы для русских
     const result = [...texts];
     for (let i = 0; i < toTranslate.length; i++) {
-      result[toTranslate[i].index] = data.translations[i].text;
+      const original = toTranslate[i].text;
+      const translated = data.translations[i].text;
+      // Формат: "Оригинал (Перевод)" — видно и NL и RU
+      if (translated.toLowerCase() !== original.toLowerCase()) {
+        result[toTranslate[i].index] = `${original} (${translated})`;
+      }
     }
     return result;
   } catch (err) {
