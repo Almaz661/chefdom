@@ -56,7 +56,10 @@ const KNOWN_STORES: Array<[RegExp, string, 'EUR' | 'RUB']> = [
   [/metro/i, 'Metro', 'RUB'],
 ];
 
-function detectStoreAndCurrency(text: string): {
+function detectStoreAndCurrency(
+  text: string,
+  defaultCurrency: 'EUR' | 'RUB' = 'EUR',
+): {
   storeName: string | null;
   currency: 'EUR' | 'RUB';
 } {
@@ -66,7 +69,7 @@ function detectStoreAndCurrency(text: string): {
   if (/₽|\bруб(?:\.|лей|ля)?\b/i.test(text)) {
     return { storeName: null, currency: 'RUB' };
   }
-  return { storeName: null, currency: 'EUR' };
+  return { storeName: null, currency: defaultCurrency };
 }
 
 // Дата: 31.05.2026 / 31-05-2026 / 31/05/2026 или ISO YYYY-MM-DD
@@ -503,8 +506,11 @@ function preprocessOcrText(text: string): string {
   return result.join('\n');
 }
 
-export function parseReceiptText(text: string): ParsedReceipt {
-  const { storeName, currency } = detectStoreAndCurrency(text);
+export function parseReceiptText(
+  text: string,
+  defaultCurrency: 'EUR' | 'RUB' = 'EUR',
+): ParsedReceipt {
+  const { storeName, currency } = detectStoreAndCurrency(text, defaultCurrency);
   const purchaseDate = detectDate(text);
   const totalAmount = detectTotal(text);
 

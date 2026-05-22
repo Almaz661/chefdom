@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { router, publicProcedure } from "../trpc";
 import { db } from "../db/index";
 import {
@@ -12,7 +13,37 @@ import {
   users,
 } from "../db/schema";
 
+const currencySchema = z.enum(["EUR", "RUB"]);
+export type AppCurrency = z.infer<typeof currencySchema>;
+
 export const settingsRouter = router({
+
+  // Текущая валюта по умолчанию (для отображения в Настройках и
+  // подстановки в форме создания чека).
+  // Берём первого пользователя — мульти-юзер пока не поддерживается.
+  getCurrency: publicProcedure.query(async () => {
+    const [user] = await db
+      .select({ defaultCurrency: users.defaultCurrency })
+      .from(users)
+      .limit(1);
+    const value = user?.defaultCurrency === "RUB" ? "RUB" : "EUR";
+    return { currency: value as AppCurrency };
+  }),
+
+  // Сохранить валюту. Влияет на:
+  //  - значение по умолчанию в форме «Новый чек вручную»;
+  //  - fallback в парсере OCR, если магазин не распознан.
+  setCurrency: publicProcedure
+    .input(z.object({ currency: currencySchema }))
+    .mutation(async ({ input }) => {
+      const [user] = await db.select({ id: users.id }).from(users).limit(1);
+      if (!user) throw new Error("Пользователь не найден");
+      await db
+        .update(users)
+        .set({ defaultCurrency: input.currency })
+        .where(eq(users.id, user.id));
+      return { currency: input.currency };
+    }),
 
   // Экспорт всех данных в JSON (раздел 15.1 плана)
   exportBackup: publicProcedure.query(async () => {

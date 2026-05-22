@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Camera, Plus, ScrollText, Receipt as ReceiptIcon, X } from "lucide-react";
 import { trpc } from "../utils/trpc";
@@ -55,6 +55,17 @@ export function ReceiptsPage() {
 
   const utils = trpc.useUtils();
   const list = trpc.receipts.list.useQuery();
+  const currencySetting = trpc.settings.getCurrency.useQuery();
+  // Когда настройка подгрузится — синхронизируем дефолт ручной формы.
+  // Только пока модалка закрыта, чтобы не «прыгал» выбор пользователя
+  // прямо в открытом диалоге.
+  const settingCurrency = currencySetting.data?.currency;
+  useEffect(() => {
+    if (settingCurrency && !showManual && settingCurrency !== currency) {
+      setCurrency(settingCurrency);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingCurrency, showManual]);
 
   const create = trpc.receipts.create.useMutation({
     onSuccess: ({ id }) => {
