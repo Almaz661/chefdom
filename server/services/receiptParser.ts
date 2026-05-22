@@ -154,7 +154,7 @@ const SKIP_LINE: RegExp[] = [
   // Налоговые/банковские термины
   /\bbtw\b|\bvat\b|\bnetto\b|\bbruto\b/i,
   /\b(kassa|kassabon|ticket|bon|chequ?e)\b/i,
-  /^\s*(спасибо|приходите|bedankt|thank\s*you|hartelijk\s*dank|tot\s*ziens)/i,
+  /^\s*(спасибо|приходите|bedankt|thank\s*you|hartelijk\s*dank|tot\s*ziens|vacatures|jouw\s*voordeel|bonus\s*box|betaald\s*met|waarvan)/i,
   /\b(?:tel|phone|телефон|адрес|address|kvk|inn|инн|kassier|merchant|terminal|period|transaction|token|client|debit|mastercard|maestro|visa|payment|authorization|pinbetaling|contact\s*less|read\s*method|chip|card|sequence)\b/i,
   /^\s*\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/,
   /^\s*\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\s*$/,
@@ -165,7 +165,7 @@ const SKIP_LINE: RegExp[] = [
   /^\s*\d+\s+\d+\s+\d+/,
   // Адресные паттерны NL
   /\b\d{4}\s*[A-Z]{2}\b/,
-  /\b(plein|straat|laan|weg|kade|gracht)\b/i,
+  /\b(plein|straat|laan|weg|kade|gracht|hart\s+van|marieplein|waalsprong)\b/i,
   // Названия магазинов сами по себе (с возможными пробелами между букв)
   /^\s*a\s*l\s*d\s*i\s*$/i,
   /^\s*l\s*i\s*d\s*l\s*$/i,
@@ -176,6 +176,10 @@ const SKIP_LINE: RegExp[] = [
   // POI, CLIENT TICKET и прочие идентификаторы
   /^\s*POI\s*:/i,
   /^\s*CLIENT\s*TICKET/i,
+  // Albert Heijn заголовки
+  /^\s*AANTAL\s+OMSCHRIJVING/i,
+  /^\s*PRIJS\s+BEDRAG/i,
+  /^\s*www\./i,
 ];
 
 function isSkipLine(line: string): boolean {
@@ -303,8 +307,12 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
 
     // Кандидат-имя. Проверяем сначала однострочный формат.
     if (looksLikeProductName(line)) {
-      // Хвостовая цена в этой же строке («Молоко 1,29»)?
-      const tailMatch = line.match(/(.+?)\s+(-?\d{1,4}[.,]\d{2})\s*(?:€|EUR)?\s*$/);
+      // Хвостовая цена в этой же строке?
+      // Пробуем несколько паттернов:
+      // 1. «Молоко 1,29»
+      // 2. «Kippenvleugels 1,29 6,89» (ALDI — две цены, берём последнюю)
+      // 3. «BLUE BAND romig wikkel 1,49»
+      const tailMatch = line.match(/(.+?)\s+(-?\d{1,4}[.,]\d{2})(?:\s+\d{1,4}[.,]\d{2})?\s*(?:€|EUR)?\s*(?:[A-Z]{1,2})?\s*$/);
       if (tailMatch) {
         const namePart = tailMatch[1].trim();
         const pricePart = parseNumber(tailMatch[2]);
