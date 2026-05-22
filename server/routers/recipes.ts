@@ -405,6 +405,31 @@ export const recipesRouter = router({
     return { cancelled: true };
   }),
 
+  // Пересчёт КБЖУ для всех рецептов в базе (кнопка в Настройках).
+  // Идём по всем рецептам и для каждого вызываем calcRecipeNutrition.
+  // Если matched === 0 (ингредиенты не нашлись в USDA) — рецепт остаётся
+  // как был, не затирается. Возвращаем сколько реально обновилось.
+  //
+  // Время выполнения: ~0.5–1 с на рецепт (зависит от числа ингредиентов
+  // и сети до Neon). Для 100 рецептов это ~1–2 минуты — запрос блокирующий,
+  // фронт показывает спиннер. Если рецептов сильно больше — нужно будет
+  // переделать в job с прогрессом, как sectionImport.
+  recalcAllNutrition: publicProcedure.mutation(async () => {
+    const allRecipes = await db.select({ id: recipes.id }).from(recipes);
+    let updated = 0;
+    let failed = 0;
+    for (const r of allRecipes) {
+      try {
+        const result = await calcRecipeNutrition(r.id);
+        if (result && result.matched > 0) updated++;
+      } catch (err) {
+        failed++;
+        console.warn(`[recalcAllNutrition] recipe ${r.id} failed:`, err);
+      }
+    }
+    return { total: allRecipes.length, updated, failed };
+  }),
+
   // --- B.4 «Что приготовить» из имеющегося инвентаря ---
   // Для топ-N рецептов считает сколько ингредиентов есть в инвентаре
   // и использует ли рецепт скоропортящиеся продукты.

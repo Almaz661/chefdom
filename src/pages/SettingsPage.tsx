@@ -1,5 +1,5 @@
 import { useState, useRef, FormEvent } from "react";
-import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle, Coins, RefreshCw } from "lucide-react";
+import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle, Coins, RefreshCw, Calculator } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 export function SettingsPage() {
@@ -7,6 +7,11 @@ export function SettingsPage() {
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
   const [importError, setImportError] = useState("");
   const [isClearingCache, setIsClearingCache] = useState(false);
+  const [recalcStatus, setRecalcStatus] = useState<
+    | { type: "idle" }
+    | { type: "success"; total: number; updated: number; failed: number }
+    | { type: "error"; message: string }
+  >({ type: "idle" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stats } = trpc.settings.getStats.useQuery();
@@ -90,6 +95,34 @@ export function SettingsPage() {
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  // --- Пересчитать КБЖУ во всех рецептах ---
+  // Кнопка для разовой починки старых рецептов, у которых калорий нет.
+  // Отправляет всю работу на бэк (loops over recipes), фронт показывает
+  // спиннер. После успеха — toast с количеством обновлённых рецептов.
+  const recalcMutation = trpc.recipes.recalcAllNutrition.useMutation({
+    onSuccess: ({ total, updated, failed }) => {
+      setRecalcStatus({ type: "success", total, updated, failed });
+      // Сбросить toast через 8 сек
+      setTimeout(() => setRecalcStatus({ type: "idle" }), 8000);
+    },
+    onError: (err) => {
+      setRecalcStatus({ type: "error", message: err.message });
+    },
+  });
+
+  const handleRecalcNutrition = () => {
+    const confirmed = window.confirm(
+      "Пересчитать калории во всех рецептах?\n\n" +
+        "Программа пройдёт по всем сохранённым рецептам и попробует посчитать " +
+        "калории по справочнику продуктов. Существующие значения будут перезаписаны " +
+        "(если ингредиенты найдутся в справочнике).\n\n" +
+        "Это может занять до пары минут."
+    );
+    if (!confirmed) return;
+    setRecalcStatus({ type: "idle" });
+    recalcMutation.mutate();
   };
 
   // --- Очистить кэш и перезагрузить ---
@@ -266,6 +299,67 @@ export function SettingsPage() {
             <div className="flex items-center gap-2 text-sm text-alert">
               <AlertCircle size={16} />
               {importError || "Ошибка при восстановлении"}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* КБЖУ */}
+      <section className="mb-6">
+        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+          Калории
+        </h2>
+        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <Calculator
+              size={20}
+              className="text-primary mt-0.5 shrink-0"
+              strokeWidth={2}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink">
+                Пересчитать калории
+              </p>
+              <p className="text-sm text-ink-muted">
+                Запустит расчёт КБЖУ по справочнику продуктов для всех
+                сохранённых рецептов. Полезно если у старых рецептов нет
+                калорий.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleRecalcNutrition}
+            disabled={recalcMutation.isPending}
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-sm font-medium text-ink hover:bg-cream disabled:opacity-50 transition-colors"
+          >
+            {recalcMutation.isPending ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Считаю…
+              </>
+            ) : (
+              <>
+                <Calculator size={18} />
+                Пересчитать все рецепты
+              </>
+            )}
+          </button>
+
+          {recalcStatus.type === "success" && (
+            <div className="flex items-start gap-2 text-sm text-fresh">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+              <span>
+                Готово: обновлено {recalcStatus.updated} из{" "}
+                {recalcStatus.total} рецептов
+                {recalcStatus.failed > 0 &&
+                  ` (с ошибкой: ${recalcStatus.failed})`}
+              </span>
+            </div>
+          )}
+          {recalcStatus.type === "error" && (
+            <div className="flex items-start gap-2 text-sm text-alert">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span>{recalcStatus.message}</span>
             </div>
           )}
         </div>
