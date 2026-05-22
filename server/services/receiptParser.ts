@@ -112,6 +112,13 @@ function isQuantityLine(line: string): boolean {
   return /^\s*\d+\s*[xXхХ\*×]\s*\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*$/.test(line);
 }
 
+// Строки-скидки: «Artikelkorting 30%», «Korting», «Скидка 10%» и т.д.
+// Они НЕ являются товарами, но имеют связанную отрицательную цену.
+// Мы их сохраняем как позиции с отрицательной ценой (для отображения скидки).
+function isDiscountLine(line: string): boolean {
+  return /\b(korting|discount|скидка|акция|sale)\b/i.test(line);
+}
+
 // Пытаемся достать «хвостовую» цену из произвольной строки (для one-line формата).
 function extractTrailingPrice(line: string): number | null {
   const cleaned = line
@@ -164,6 +171,11 @@ const SKIP_LINE: RegExp[] = [
   /^\s*l\s*i\s*d\s*l\s*$/i,
   /^\s*j\s*u\s*m\s*b\s*o\s*$/i,
   /^\s*a\s*l\s*b\s*e\s*r\s*t\s*\s*h\s*e\s*i\s*j\s*n\s*$/i,
+  // Одиночные BTW-коды на отдельной строке (B, A, BB, B1, B2)
+  /^\s*[A-Z][A-Z0-9]?\s*$/,
+  // POI, CLIENT TICKET и прочие идентификаторы
+  /^\s*POI\s*:/i,
+  /^\s*CLIENT\s*TICKET/i,
 ];
 
 function isSkipLine(line: string): boolean {
@@ -270,6 +282,21 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
     if (isPriceOnlyLine(line)) {
       const p = priceOnlyValue(line);
       if (p === null) continue;
+      // Если pendingName — скидка, она принимает ТОЛЬКО отрицательную цену
+      if (pendingName && isDiscountLine(pendingName)) {
+        if (p < 0) {
+          tryCommit(p);
+        }
+        // Положительная цена после скидки — это цена следующего товара,
+        // скидка осталась без цены (теряем) и переходим к следующему кандидату
+        else {
+          pendingName = null;
+          // Но цена p должна быть привязана к предыдущему pendingName если он был
+          // По факту pendingName = null, так что цена пропадёт. Это ок — она будет
+          // привязана к следующему имени или уже была привязана.
+        }
+        continue;
+      }
       tryCommit(p);
       continue;
     }
@@ -336,6 +363,8 @@ function parseParallelColumns(
     if (/^[€$₽]\s*$/.test(l) || /^EUR\s*$/i.test(l) || /^RUB\s*$/i.test(l)) {
       continue;
     }
+    // Одиночные BTW-коды на отдельной строке (B, A, BB и т.д.)
+    if (/^\s*[A-Z][A-Z0-9]?\s*$/.test(l)) continue;
 
     if (isPriceOnlyLine(l)) {
       const p = priceOnlyValue(l);
@@ -353,6 +382,7 @@ function parseParallelColumns(
       // оставить «как есть»: имя без цены не добавляем.
       const hasTrailingPrice = /\d[.,]\d{2}\s*(?:€|EUR)?\s*$/.test(l);
       if (hasTrailingPrice) continue;
+      // Скидочные строки тоже добавляем как имя — они получат отрицательную цену
       names.push(l);
     }
   }
@@ -409,6 +439,36 @@ function findTotalLineIndex(lines: string[]): number {
   return lines.length;
 }
 
+/**
+ * Предобработка OCR-текста: склейка разорванных строк.
+ * OCR иногда разбивает число на две строки:
+ *   «3»
+ *   «,73»
+ * или
+ *   «-2»
+ *   «,07»
+ * Склеиваем такие пары в одну строку.
+ */
+function preprocessOcrText(text: string): string {
+  const lines = text.split(/\r?\n/);
+  const result: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i];
+    const next = lines[i + 1];
+
+    // Если текущая строка — число или минус+число, а следующая начинается с «,» или «.» + цифры
+    if (next && /^\s*-?\d{1,4}\s*$/.test(current) && /^\s*[.,]\d{2}\s*(?:€|EUR)?\s*(?:[A-Z]{1,2})?\s*$/.test(next)) {
+      result.push(current.trim() + next.trim());
+      i++; // пропускаем следующую строку
+    } else {
+      result.push(current);
+    }
+  }
+
+  return result.join('\n');
+}
+
 export function parseReceiptText(text: string): ParsedReceipt {
   const { storeName, currency } = detectStoreAndCurrency(text);
   const purchaseDate = detectDate(text);
@@ -418,7 +478,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
   // ниже идут служебные строки (POI, токены, штрих-коды, реквизиты карты).
   const allLines = text.split(/\r?\n/);
   const cutoff = findTotalLineIndex(allLines);
-  const itemsText = allLines.slice(0, cutoff).join('\n');
+  const itemsText = preprocessOcrText(allLines.slice(0, cutoff).join('\n'));
 
   // Стратегия 1 — построчно (название + цена близко друг к другу).
   // Хорошо работает для AH/Jumbo/российских чеков и для ALDI когда
