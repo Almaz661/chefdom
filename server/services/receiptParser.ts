@@ -148,8 +148,8 @@ function priceOnlyValue(line: string): number | null {
 const SKIP_LINE: RegExp[] = [
   /^\s*$/,
   /^\s*[-=*_+]+\s*$/,
-  // Заголовки служебных разделов
-  /^\s*(итого|всего|сумма|total|totaal|subtotaal|subtotal|te\s*betalen|к\s*оплате|сумма\s*к\s*оплате)\s*$/i,
+  // Заголовки служебных разделов (с опц. префиксом «1 SUBTOTAAL», «TOTAAL»)
+  /^\s*\d*\s*(итого|всего|сумма|total|totaal|subtotaal|subtotal|te\s*betalen|к\s*оплате|сумма\s*к\s*оплате)\b/i,
   /^\s*(EUR|RUB)\s*$/,
   // Налоговые/банковские термины
   /\bbtw\b|\bvat\b|\bnetto\b|\bbruto\b/i,
