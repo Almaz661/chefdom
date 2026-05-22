@@ -387,6 +387,125 @@ export const recipesRouter = router({
     return { cancelled: true };
   }),
 
+  // --- B.4 «Что приготовить» из имеющегося инвентаря ---
+  // Для топ-N рецептов считает сколько ингредиентов есть в инвентаре
+  // и использует ли рецепт скоропортящиеся продукты.
+  matchWithInventory: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(200).default(100),
+        expiringDays: z.number().int().min(1).max(30).default(3),
+      }),
+    )
+    .query(async ({ input }) => {
+      const { inventory } = await import('../db/schema');
+      const { isNotNull, lte } = await import('drizzle-orm');
+
+      // 1. Топ-N последних рецептов
+      const recipeRows = await db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          imageUrl: recipes.imageUrl,
+          totalTime: recipes.totalTime,
+          servings: recipes.servings,
+          difficulty: recipes.difficulty,
+          category: recipes.category,
+        })
+        .from(recipes)
+        .orderBy(desc(recipes.id))
+        .limit(input.limit);
+
+      if (recipeRows.length === 0) {
+        return [];
+      }
+
+      // 2. Все ингредиенты этих рецептов одним запросом
+      const recipeIds = recipeRows.map((r) => r.id);
+      const allIngs = await client<{ recipe_id: number; name: string }[]>`
+        SELECT recipe_id, name
+        FROM recipe_ingredients
+        WHERE recipe_id = ANY(${recipeIds})
+      `;
+
+      // 3. Весь инвентарь (для матчинга)
+      const inv = await db
+        .select({ name: inventory.productName })
+        .from(inventory)
+        .where(eq(inventory.userId, 1));
+
+      // 4. Истекающие продукты
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + input.expiringDays);
+      const limitStr = limitDate.toISOString().slice(0, 10);
+      const expiringRows = await db
+        .select({ name: inventory.productName })
+        .from(inventory)
+        .where(
+          and(
+            eq(inventory.userId, 1),
+            isNotNull(inventory.expiryDate),
+            lte(inventory.expiryDate, limitStr),
+          ),
+        );
+
+      // Нормализуем имена для матчинга (lowercase, trim)
+      const norm = (s: string) => s.toLowerCase().trim();
+      const invSet = new Set(inv.map((i) => norm(i.name)));
+      const expiringSet = new Set(expiringRows.map((e) => norm(e.name)));
+
+      // Проверка: ингредиент есть в инвентаре?
+      // Делаем нечёткий поиск — ingredient name содержит inv name (или наоборот)
+      const ingredientInInventory = (ingName: string, set: Set<string>): boolean => {
+        const n = norm(ingName);
+        if (set.has(n)) return true;
+        for (const invName of set) {
+          if (n.includes(invName) || invName.includes(n)) return true;
+        }
+        return false;
+      };
+
+      // Группируем ингредиенты по recipe_id
+      const ingsByRecipe = new Map<number, string[]>();
+      for (const row of allIngs) {
+        if (!ingsByRecipe.has(row.recipe_id)) ingsByRecipe.set(row.recipe_id, []);
+        ingsByRecipe.get(row.recipe_id)!.push(row.name);
+      }
+
+      // Считаем для каждого рецепта
+      const result = recipeRows.map((r) => {
+        const ings = ingsByRecipe.get(r.id) ?? [];
+        const totalCount = ings.length;
+        let haveCount = 0;
+        let expiringCount = 0;
+
+        for (const ing of ings) {
+          if (ingredientInInventory(ing, invSet)) haveCount++;
+          if (expiringSet.size > 0 && ingredientInInventory(ing, expiringSet)) {
+            expiringCount++;
+          }
+        }
+
+        return {
+          ...r,
+          totalCount,
+          haveCount,
+          expiringCount,
+          missingCount: totalCount - haveCount,
+        };
+      });
+
+      // Сортируем: сначала рецепты со скоропортящимися, потом по % имеющихся
+      result.sort((a, b) => {
+        if (a.expiringCount !== b.expiringCount) return b.expiringCount - a.expiringCount;
+        const aPct = a.totalCount === 0 ? 0 : a.haveCount / a.totalCount;
+        const bPct = b.totalCount === 0 ? 0 : b.haveCount / b.totalCount;
+        return bPct - aPct;
+      });
+
+      return result;
+    }),
+
   // --- ГОТОВИТЬ (п.8 Этап 0) ---
   // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие)
   // и пишет факт готовки в cooking_history (для HistoryPage / Dashboard).

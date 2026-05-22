@@ -36,8 +36,8 @@ export function Dashboard() {
   const name = auth?.name || "Семья";
   const todayIdx = (new Date().getDay() + 6) % 7;
 
-  // B.1 — продукты истекающие в ближайшие 2 дня
-  const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 2 });
+  // B.1 — продукты истекающие в ближайшие 3 дня
+  const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 3 });
   // Список покупок — для счётчика
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
   // «Недавно готовила» — последние 5 (раздел 6.4 макета)
@@ -62,7 +62,7 @@ export function Dashboard() {
             <AlertTriangle size={20} className="text-warning mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink mb-1">
-                {expiring.length} {expiring.length === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 2 дня
+                {expiring.length} {expiring.length === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 3 дня
               </p>
               <p className="text-sm text-ink-soft truncate">
                 {expiring.map(e => e.productName).join(" · ")}

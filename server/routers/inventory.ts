@@ -18,9 +18,9 @@ export const inventoryRouter = router({
     return items;
   }),
 
-  // B.1 — продукты истекающие в ближайшие N дней
+  // B.1 — продукты истекающие в ближайшие N дней (по умолчанию 3)
   getExpiring: publicProcedure
-    .input(z.object({ days: z.number().int().min(1).max(30).default(2) }))
+    .input(z.object({ days: z.number().int().min(1).max(30).default(3) }))
     .query(async ({ input }) => {
       const limitDate = new Date();
       limitDate.setDate(limitDate.getDate() + input.days);
