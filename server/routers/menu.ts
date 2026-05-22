@@ -109,6 +109,56 @@ export const menuRouter = router({
       return { id: input.itemId };
     }),
 
+  // Блюдо дня: рецепт из меню на сегодня по времени суток
+  getTodayMeal: publicProcedure.query(async () => {
+    // Определяем день недели (0=Пн...6=Вс)
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    // Определяем приём пищи по времени
+    const hour = new Date().getHours();
+    let mealType: string;
+    if (hour >= 5 && hour < 11) mealType = 'breakfast';
+    else if (hour >= 11 && hour < 17) mealType = 'lunch';
+    else mealType = 'dinner';
+
+    // weekStartDate = понедельник текущей недели в формате YYYY-MM-DD
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - todayIdx);
+    const weekStartDate = monday.toISOString().slice(0, 10);
+
+    // Ищем меню на эту неделю
+    const [menu] = await db
+      .select()
+      .from(menus)
+      .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, weekStartDate)))
+      .limit(1);
+    if (!menu) return null;
+
+    // Ищем слот на сегодня + текущий приём пищи
+    const [item] = await db
+      .select()
+      .from(menuItems)
+      .where(
+        and(
+          eq(menuItems.menuId, menu.id),
+          eq(menuItems.dayOfWeek, todayIdx),
+          eq(menuItems.mealType, mealType),
+        ),
+      )
+      .limit(1);
+    if (!item) return null;
+
+    // Получаем рецепт
+    const [recipe] = await db
+      .select()
+      .from(recipes)
+      .where(eq(recipes.id, item.recipeId))
+      .limit(1);
+    if (!recipe) return null;
+
+    return { recipe, mealType };
+  }),
+
   // Собрать ингредиенты из меню недели → добавить в список покупок (без дублей)
   toShopping: publicProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))

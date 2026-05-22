@@ -32,6 +32,12 @@ function formatToday(): string {
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
+function mealTypeLabel(type: string): string {
+  if (type === "breakfast") return "Завтрак";
+  if (type === "lunch") return "Обед";
+  return "Ужин";
+}
+
 export function Dashboard() {
   const auth = getAuth();
   const name = auth?.name || "Семья";
@@ -47,6 +53,8 @@ export function Dashboard() {
   const { data: recentCooks = [] } = trpc.cooking.recent.useQuery({ limit: 5 });
   // C.2 — «Любимое в этом месяце»
   const { data: topRecipe } = trpc.cooking.topThisMonth.useQuery();
+  // Блюдо дня — рецепт из меню на сегодня по времени суток
+  const { data: todayMeal } = trpc.menu.getTodayMeal.useQuery();
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
@@ -111,34 +119,75 @@ export function Dashboard() {
         Пока скрыт — не показываем пустой алерт «у вас всё хорошо», это шум.
       */}
 
-      {/* Блюдо дня — пустое состояние */}
+      {/* Блюдо дня */}
       <section className="bg-paper rounded-2xl border border-line overflow-hidden">
-        <div className="aspect-[16/9] bg-cream flex items-center justify-center border-b border-line">
-          <ChefHat
-            size={56}
-            className="text-line-strong"
-            strokeWidth={1.5}
-          />
-        </div>
-        <div className="p-6">
-          <p className="text-xs text-ink-muted font-medium uppercase tracking-wider mb-2">
-            Сегодня в меню
-          </p>
-          <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
-            На сегодня меню ещё не запланировано
-          </h2>
-          <p className="text-ink-soft mb-4 max-w-md">
-            Добавь рецепты в меню недели, и здесь появится блюдо дня с фото и
-            кнопкой «Готовить сейчас».
-          </p>
-          <Link
-            to="/menu"
-            className="inline-flex items-center gap-2 text-primary font-medium hover:text-primary-dark transition-colors"
-          >
-            Открыть меню недели
-            <ArrowRight size={18} />
-          </Link>
-        </div>
+        {todayMeal ? (
+          <>
+            <div className="aspect-[16/9] bg-cream flex items-center justify-center border-b border-line overflow-hidden">
+              {todayMeal.recipe.imageUrl ? (
+                <img
+                  src={todayMeal.recipe.imageUrl}
+                  alt={todayMeal.recipe.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                    (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                      '<div class="flex items-center justify-center w-full h-full"><svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-line-strong"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg></div>';
+                  }}
+                />
+              ) : (
+                <ChefHat size={56} className="text-line-strong" strokeWidth={1.5} />
+              )}
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-ink-muted font-medium uppercase tracking-wider mb-2">
+                {mealTypeLabel(todayMeal.mealType)}
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
+                {todayMeal.recipe.title}
+              </h2>
+              {todayMeal.recipe.totalTime && (
+                <p className="text-ink-soft text-sm mb-4 inline-flex items-center gap-1">
+                  <Clock size={14} /> {todayMeal.recipe.totalTime} мин
+                </p>
+              )}
+              <div>
+                <Link
+                  to={`/recipes/${todayMeal.recipe.id}`}
+                  className="inline-flex items-center gap-2 text-primary font-medium hover:text-primary-dark transition-colors"
+                >
+                  Готовить сейчас
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="aspect-[16/9] bg-cream flex items-center justify-center border-b border-line">
+              <ChefHat size={56} className="text-line-strong" strokeWidth={1.5} />
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-ink-muted font-medium uppercase tracking-wider mb-2">
+                Сегодня в меню
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
+                На сегодня меню ещё не запланировано
+              </h2>
+              <p className="text-ink-soft mb-4 max-w-md">
+                Добавь рецепты в меню недели, и здесь появится блюдо дня с фото и
+                кнопкой «Готовить сейчас».
+              </p>
+              <Link
+                to="/menu"
+                className="inline-flex items-center gap-2 text-primary font-medium hover:text-primary-dark transition-colors"
+              >
+                Открыть меню недели
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+          </>
+        )}
       </section>
 
       {/* Две главные карточки */}
