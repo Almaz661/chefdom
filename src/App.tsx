@@ -15,6 +15,7 @@ import { ProductsPage } from "./pages/ProductsPage";
 import { ReceiptsPage } from "./pages/ReceiptsPage";
 import { WhatToCookPage } from "./pages/WhatToCookPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { ReceiptDetailPage } from "./pages/ReceiptDetailPage";
 import { isAuthenticated } from "./utils/auth";
 
@@ -83,6 +84,10 @@ export default function App() {
       <Route
         path="/history"
         element={<PrivatePage><HistoryPage /></PrivatePage>}
+      />
+      <Route
+        path="/analytics"
+        element={<PrivatePage><AnalyticsPage /></PrivatePage>}
       />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
