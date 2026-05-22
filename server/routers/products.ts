@@ -8,23 +8,83 @@ import { products, ingredients, recipes, recipeIngredients, ingredientSubstituti
 
 export const productsRouter = router({
 
-  // G.3 — поиск товара по штрих-коду
+  // G.3 — поиск товара по штрих-коду.
+  // Сначала ищем в локальной БД. Если нет — запрашиваем Open Food Facts API
+  // в реальном времени. Если OFF знает этот штрих-код — сохраняем в локальную
+  // БД (чтобы повторно не спрашивать) и возвращаем пользователю.
   getByBarcode: publicProcedure
     .input(z.object({ barcode: z.string().min(1) }))
     .query(async ({ input }) => {
-      const [product] = await db
+      // 1. Локальная БД
+      const [local] = await db
         .select()
         .from(products)
         .where(eq(products.barcode, input.barcode))
         .limit(1);
+      if (local) return local;
 
-      if (!product) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Товар не найден по штрих-коду',
-        });
+      // 2. Open Food Facts API (бесплатно, без ключа)
+      try {
+        const res = await fetch(
+          `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(input.barcode)}.json`,
+          { headers: { 'User-Agent': 'ShefDom/1.0 (home kitchen app)' } },
+        );
+        if (res.ok) {
+          const data = await res.json() as {
+            status: number;
+            product?: {
+              product_name?: string;
+              product_name_ru?: string;
+              product_name_nl?: string;
+              brands?: string;
+              quantity?: string;
+              image_url?: string;
+            };
+          };
+          if (data.status === 1 && data.product) {
+            const p = data.product;
+            const nameRu = p.product_name_ru || p.product_name || 'Без названия';
+            const nameNl = p.product_name_nl || null;
+            const brand = p.brands || null;
+            // Парсим количество: "250 g" → 250 / g
+            let packageQuantity: string | null = null;
+            let packageUnit: string | null = null;
+            if (p.quantity) {
+              const m = p.quantity.match(/(\d+(?:[.,]\d+)?)\s*([a-zA-Zа-яА-Я]+)/);
+              if (m) {
+                packageQuantity = m[1].replace(',', '.');
+                packageUnit = m[2].toLowerCase();
+              }
+            }
+            // Сохраняем в локальную БД
+            const [saved] = await db
+              .insert(products)
+              .values({
+                barcode: input.barcode,
+                nameRu,
+                nameNl,
+                brand,
+                packageQuantity,
+                packageUnit,
+                imageUrl: p.image_url || null,
+                offId: input.barcode,
+              })
+              .onConflictDoUpdate({
+                target: products.barcode,
+                set: { nameRu, nameNl, brand, packageQuantity, packageUnit, imageUrl: p.image_url || null },
+              })
+              .returning();
+            return saved;
+          }
+        }
+      } catch {
+        // OFF недоступен — не блокируем, просто не нашли
       }
-      return product;
+
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Товар не найден по штрих-коду',
+      });
     }),
 
   // G.3 — поиск товара по названию
