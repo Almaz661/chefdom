@@ -307,25 +307,14 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
 
     // Кандидат-имя. Проверяем сначала однострочный формат.
     if (looksLikeProductName(line)) {
-      // Хвостовая цена в этой же строке?
-      // Пробуем несколько паттернов:
-      // 1. «Молоко 1,29»
-      // 2. «Kippenvleugels 1,29 6,89» (ALDI — две цены, берём последнюю)
-      // 3. «BLUE BAND romig wikkel 1,49»
-      const tailMatch = line.match(/(.+?)\s+(-?\d{1,4}[.,]\d{2})(?:\s+\d{1,4}[.,]\d{2})?\s*(?:€|EUR)?\s*(?:[A-Z]{1,2})?\s*$/);
-      if (tailMatch) {
-        const namePart = tailMatch[1].trim();
-        const pricePart = parseNumber(tailMatch[2]);
-        if (
-          pricePart !== null &&
-          looksLikePrice(pricePart) &&
-          looksLikeProductName(namePart) &&
-          (total === null || Math.abs(pricePart - total) > 0.01)
-        ) {
-          // Однострочная позиция. pendingName сбрасываем (на случай если
-          // оно зависло без цены — лучше потерять, чем привязать к чужой).
+      // Хвостовая цена? Используем extractTrailingPrice для надёжности.
+      const trailingPrice = extractTrailingPrice(line);
+      if (trailingPrice !== null && looksLikePrice(trailingPrice) && (total === null || Math.abs(trailingPrice - total) > 0.01)) {
+        // Проверяем что после удаления цены осталось валидное имя
+        const withoutPrice = line.replace(/\s*-?\d{1,4}[.,]\d{2}.*$/, '').trim();
+        if (looksLikeProductName(withoutPrice)) {
           pendingName = null;
-          items.push({ name: namePart, price: pricePart });
+          items.push({ name: withoutPrice, price: trailingPrice });
           continue;
         }
       }
