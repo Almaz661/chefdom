@@ -1,12 +1,22 @@
 import { useState } from "react";
-import { Search, Package, Barcode } from "lucide-react";
+import { Search, Package, Barcode, Plus, Check } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
+
+const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[] = [
+  { key: "fridge", label: "Холодильник" },
+  { key: "freezer", label: "Морозилка" },
+  { key: "pantry", label: "Кладовая" },
+];
 
 export function ProductsPage() {
   const [query, setQuery] = useState("");
   const [barcode, setBarcode] = useState("");
   const [mode, setMode] = useState<"search" | "barcode">("search");
+  const [showAddToInventory, setShowAddToInventory] = useState(false);
+  const [addedSuccess, setAddedSuccess] = useState(false);
+  const [storageType, setStorageType] = useState<"fridge" | "freezer" | "pantry">("fridge");
+  const [expiryDate, setExpiryDate] = useState("");
 
   const searchResults = trpc.products.search.useQuery(
     { query },
@@ -17,6 +27,30 @@ export function ProductsPage() {
     { barcode },
     { enabled: barcode.length >= 4, retry: false }
   );
+
+  const utils = trpc.useUtils();
+  const addToInventory = trpc.inventory.add.useMutation({
+    onSuccess: () => {
+      utils.inventory.list.invalidate();
+      setShowAddToInventory(false);
+      setAddedSuccess(true);
+      setTimeout(() => setAddedSuccess(false), 3000);
+    },
+  });
+
+  const handleAddToInventory = () => {
+    const product = barcodeResult.data;
+    if (!product) return;
+    addToInventory.mutate({
+      productName: product.brand
+        ? `${product.brand} ${product.nameRu}`
+        : product.nameRu,
+      quantity: product.packageQuantity ? Number(product.packageQuantity) : null,
+      unit: product.packageUnit || null,
+      storageType,
+      expiryDate: expiryDate || null,
+    });
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 lg:p-8">
@@ -82,7 +116,11 @@ export function ProductsPage() {
         <>
           {/* Фото-сканер */}
           <div className="mb-4">
-            <BarcodeScanner onDetected={(code) => setBarcode(code)} />
+            <BarcodeScanner onDetected={(code) => {
+              setBarcode(code);
+              setShowAddToInventory(false);
+              setAddedSuccess(false);
+            }} />
           </div>
 
           {/* Ручной ввод */}
@@ -91,12 +129,18 @@ export function ProductsPage() {
             <input
               type="text"
               value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
+              onChange={(e) => {
+                setBarcode(e.target.value);
+                setShowAddToInventory(false);
+                setAddedSuccess(false);
+              }}
               placeholder="Введите штрих-код..."
               inputMode="numeric"
               className="w-full h-12 pl-24 pr-4 bg-paper border border-line rounded-lg text-ink focus:outline-none focus:border-primary font-mono"
             />
           </div>
+
+          {/* Результат */}
           {barcodeResult.data ? (
             <div className="bg-paper border border-line rounded-xl px-4 py-4">
               <p className="text-base font-medium text-ink mb-1">{barcodeResult.data.nameRu}</p>
@@ -107,17 +151,87 @@ export function ProductsPage() {
                 </p>
               )}
               <p className="text-xs text-ink-muted font-mono mt-2">{barcodeResult.data.barcode}</p>
+
+              {/* Кнопка "Добавить в инвентарь" */}
+              {!showAddToInventory && !addedSuccess && (
+                <button
+                  onClick={() => setShowAddToInventory(true)}
+                  className="mt-3 w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-paper font-medium text-sm hover:bg-primary/90 transition-colors"
+                >
+                  <Plus size={18} />
+                  Добавить в инвентарь
+                </button>
+              )}
+
+              {/* Успех */}
+              {addedSuccess && (
+                <div className="mt-3 flex items-center gap-2 justify-center text-green-700 bg-green-50 border border-green-200 rounded-lg py-2.5">
+                  <Check size={18} />
+                  <span className="text-sm font-medium">Добавлено в инвентарь!</span>
+                </div>
+              )}
+
+              {/* Форма выбора места хранения */}
+              {showAddToInventory && (
+                <div className="mt-3 space-y-3 border-t border-line pt-3">
+                  <fieldset>
+                    <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+                    <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+                      {STORAGE_OPTIONS.map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setStorageType(key)}
+                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                            storageType === key
+                              ? "bg-primary text-paper"
+                              : "text-ink-soft hover:text-ink"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <label className="block">
+                    <span className="block text-xs text-ink-soft mb-1">Срок годности (необязательно)</span>
+                    <input
+                      type="date"
+                      value={expiryDate}
+                      onChange={(e) => setExpiryDate(e.target.value)}
+                      className="w-full h-10 px-3 bg-cream border border-line rounded-lg text-ink text-sm focus:outline-none focus:border-primary"
+                    />
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddToInventory(false)}
+                      className="flex-1 h-10 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-cream transition-colors"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddToInventory}
+                      disabled={addToInventory.isPending}
+                      className="flex-1 h-10 rounded-lg bg-primary text-paper text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    >
+                      {addToInventory.isPending ? "Добавляю…" : "Добавить"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : barcodeResult.isError ? (
             <div className="text-center py-8 text-ink-muted text-sm">
               Товар не найден по этому штрих-коду
             </div>
-          ) : (
+          ) : barcode.length < 4 ? (
             <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
               <Barcode size={32} className="text-line-strong mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-ink-soft text-sm">Введите штрих-код с упаковки</p>
+              <p className="text-ink-soft text-sm">Сфотографируйте или введите штрих-код</p>
             </div>
-          )}
+          ) : null}
         </>
       )}
     </div>
