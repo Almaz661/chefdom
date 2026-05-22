@@ -108,8 +108,12 @@ const PRICE_ONLY_RE = /^-?\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s
 
 // «N x X,XX €» — строка о количестве. Проверяет что это именно
 // «количество × цена-за-штуку», а не позиция товара.
+// Также покрывает весовые: «0,558 kg x 2,09 €/kg»
 function isQuantityLine(line: string): boolean {
-  return /^\s*\d+\s*[xXхХ\*×]\s*\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*$/.test(line);
+  if (/^\s*\d+\s*[xXхХ\*×]\s*\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*$/.test(line)) return true;
+  // Весовой формат: «0,558 kg x 2,09 €/kg» или «1,200 kg X 3,49»
+  if (/^\s*\d+[.,]\d+\s*(?:kg|кг|g|г|l|л)\s*[xXхХ\*×]\s*\d+[.,]\d+\s*(?:€|EUR)?/i.test(line)) return true;
+  return false;
 }
 
 // Строки-скидки: «Artikelkorting 30%», «Korting», «Скидка 10%» и т.д.
@@ -193,6 +197,8 @@ function looksLikeProductName(s: string): boolean {
   if (!/\p{L}/u.test(t)) return false;
   const digits = (t.match(/\d/g) ?? []).length;
   if (digits / t.length > 0.4) return false;
+  // OCR-мусор: вопросительные знаки, случайные символы
+  if ((t.match(/\?/g) ?? []).length >= 2) return false;
   if (isSkipLine(t)) return false;
   if (isQuantityLine(t)) return false;
   if (isPriceOnlyLine(t)) return false;
@@ -303,19 +309,24 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
 
     // Кандидат-имя. Проверяем сначала однострочный формат.
     if (looksLikeProductName(line)) {
-      // Хвостовая цена в этой же строке («Молоко 1,29»)?
-      const tailMatch = line.match(/(.+?)\s+(-?\d{1,4}[.,]\d{2})\s*(?:€|EUR)?\s*$/);
-      if (tailMatch) {
-        const namePart = tailMatch[1].trim();
-        const pricePart = parseNumber(tailMatch[2]);
+      // Хвостовая цена в этой же строке («Молоко 1,29» или «Komkommer 0,75 € B»)?
+      // Если на строке несколько цен — берём ПОСЛЕДНЮЮ (правый край чека = цена этого товара).
+      // Имя = всё до ПЕРВОЙ цены.
+      const pricePattern = /-?\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*(?:[A-Z]{1,2})?/g;
+      const priceMatches = [...line.matchAll(pricePattern)];
+      if (priceMatches.length > 0) {
+        const lastPriceMatch = priceMatches[priceMatches.length - 1];
+        const firstPriceMatch = priceMatches[0];
+        const namePart = line.slice(0, firstPriceMatch.index).trim();
+        const priceStr = lastPriceMatch[0].replace(/[€A-Z\s]/g, '').trim();
+        const pricePart = parseNumber(priceStr);
         if (
           pricePart !== null &&
           looksLikePrice(pricePart) &&
+          namePart.length >= 2 &&
           looksLikeProductName(namePart) &&
           (total === null || Math.abs(pricePart - total) > 0.01)
         ) {
-          // Однострочная позиция. pendingName сбрасываем (на случай если
-          // оно зависло без цены — лучше потерять, чем привязать к чужой).
           pendingName = null;
           items.push({ name: namePart, price: pricePart });
           continue;
@@ -443,15 +454,10 @@ function findTotalLineIndex(lines: string[]): number {
 }
 
 /**
- * Предобработка OCR-текста: склейка разорванных строк.
- * OCR иногда разбивает число на несколько строк:
- *   «3»        «-2»        «3»
- *   «,73»      «,07»       «€»
- *                           «,73»
- *                           «€»
- * Склеиваем такие группы в одну строку-цену.
- *
- * Также: строки, состоящие только из «€» между частями числа — удаляем.
+ * Предобработка OCR-текста:
+ * 1. Склейка разорванных строк (число на одной строке, десятичная часть на другой)
+ * 2. Нормализация пробелов внутри цен: «0 ,93» → «0,93», «1, 99» → «1,99»
+ * 3. Удаление одиночных «€» строк
  */
 function preprocessOcrText(text: string): string {
   const lines = text.split(/\r?\n/);
@@ -489,21 +495,18 @@ function preprocessOcrText(text: string): string {
     }
     // Одиночные «€» — пропускаем (они уже были обработаны выше или не несут смысла)
     else if (/^\s*€\s*$/.test(current)) {
-      // Проверяем: может это «€» перед «,XX» (часть разбитой цены)
-      const next = lines[i + 1]?.trim();
-      if (next && /^[.,]\d{2}/.test(next)) {
-        // Пропускаем — будет обработано когда дойдём до числа перед этим €
-        // Но если числа перед этим не было — просто пропускаем €
-        continue;
-      }
-      // Иначе пропускаем одиночный €
       continue;
     } else {
       result.push(lines[i]);
     }
   }
 
-  return result.join('\n');
+  // Нормализация пробелов внутри цен на каждой строке:
+  // «0 ,93» → «0,93», «1, 99» → «1,99», «2 , 09» → «2,09»
+  return result.map((line) =>
+    line.replace(/(\d)\s+([.,])\s*(\d)/g, '$1$2$3')
+        .replace(/(\d)\s*([.,])\s+(\d)/g, '$1$2$3')
+  ).join('\n');
 }
 
 export function parseReceiptText(text: string): ParsedReceipt {
