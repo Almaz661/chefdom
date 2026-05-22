@@ -302,6 +302,21 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE receipts ADD COLUMN IF NOT EXISTS ocr_raw TEXT`;
     },
   },
+  {
+    version: '010_product_master_prices',
+    up: async (sql) => {
+      // Product Master — история цен для автоматической привязки
+      // цен к товарам в двухблочном формате чеков.
+      // last_price: последняя известная цена (обновляется после каждого чека)
+      // avg_price: средняя цена (для будущих улучшений — сейчас не используется)
+      // price_updated_at: когда последний раз обновлялась цена
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS last_price NUMERIC`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS avg_price NUMERIC`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_updated_at TIMESTAMPTZ`;
+      // Индекс для быстрого поиска по имени товара (для нечёткого поиска)
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_name_ru_lower ON products(LOWER(name_ru))`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

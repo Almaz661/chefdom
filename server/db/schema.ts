@@ -164,6 +164,10 @@ export const products = pgTable('products', {
   packageUnit: text('package_unit'),
   imageUrl: text('image_url'),
   offId: text('off_id').unique(),
+  // Product Master — история цен (миграция 010)
+  lastPrice: numeric('last_price'),
+  avgPrice: numeric('avg_price'),
+  priceUpdatedAt: timestamp('price_updated_at', { withTimezone: true }),
 });
 
 // Этап G — замены ингредиентов

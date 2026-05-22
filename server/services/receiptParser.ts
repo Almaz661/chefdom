@@ -14,6 +14,10 @@
 //      «Barissimo intense»
 //      «4,78 € B»
 //
+// 3) Двухблочный (ALDI, плохое OCR) — все имена сверху, все цены снизу:
+//      Используется Product Master для автоматической привязки цен к товарам
+//      по истории покупок.
+//
 // Если распозналось плохо — пользователь правит позиции на месте
 // или удаляет чек и фотографирует снова.
 
@@ -28,6 +32,12 @@ export interface ParsedReceipt {
 export interface ParsedItem {
   productName: string;
   price: number | null;
+}
+
+// Интерфейс для Product Master (используется в роутере receipts)
+export interface ProductMasterEntry {
+  nameRu: string;
+  lastPrice: number;
 }
 
 // Известные сети. `\s*` между буквами — на случай если OCR разорвал
@@ -345,11 +355,13 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
  *   4. Если имён больше чем цен — пробуем склеить соседние имена,
  *      где второе начинается со строчной буквы (продолжение фразы,
  *      например «Barissimo» + «intense»).
- *   5. Если в итоге `len(names) === len(prices)`, матчим по индексу.
+ *   5. Используем Product Master для привязки цен к товарам
+ *   6. Если Product Master не помог — fallback по индексу.
  */
 function parseParallelColumns(
   text: string,
   total: number | null,
+  productMaster: ProductMasterEntry[],
 ): ItemCandidate[] {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
@@ -412,16 +424,9 @@ function parseParallelColumns(
   }
 
   if (names.length === 0 || prices.length === 0) return [];
-  // Если всё-таки не сошлось по числу — берём min(names, prices)
-  // (лучше показать половину чем ничего).
-  const n = Math.min(names.length, prices.length);
-  if (n < 2) return [];
-
-  const out: ItemCandidate[] = [];
-  for (let i = 0; i < n; i++) {
-    out.push({ name: names[i], price: prices[i] });
-  }
-  return out;
+  
+  // Используем Product Master для привязки цен к товарам
+  return matchItemsWithProductMaster(names, prices, productMaster);
 }
 
 /**
@@ -440,6 +445,85 @@ function findTotalLineIndex(lines: string[]): number {
     }
   }
   return lines.length;
+}
+
+/**
+ * Product Master — автоматическая привязка цен к товарам в двухблочном формате.
+ *
+ * Алгоритм:
+ * 1. Для каждого имени товара ищем в Product Master по нечёткому совпадению
+ *    (ILIKE % %name% % — учитываем разные варианты написания).
+ * 2. Если нашли last_price, находим БЛИЖАЙШУЮ цену из списка (минимальная разница).
+ * 3. Цену помечаем как «использованную», чтобы не привязать дважды.
+ * 4. Если товар не найден в Product Master — fallback: берём цену по индексу.
+ *
+ * @param names — список имён товаров (из двухблочного формата)
+ * @param prices — список цен (из двухблочного формата)
+ * @param productMaster — массив {nameRu, lastPrice} из БД (таблица products)
+ * @returns — массив ItemCandidate с привязанными ценами
+ */
+export function matchItemsWithProductMaster(
+  names: string[],
+  prices: number[],
+  productMaster: ProductMasterEntry[],
+): ItemCandidate[] {
+  const result: ItemCandidate[] = [];
+  const usedPrices = new Set<number>(); // индексы использованных цен
+
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+
+    // 1. Ищем товар в Product Master (нечёткий поиск по подстроке)
+    const normalizedName = name.toLowerCase().trim();
+    const masterEntry = productMaster.find((entry) => {
+      const entryName = entry.nameRu.toLowerCase().trim();
+      // Проверяем вхождение подстроки в обе стороны (имя в базе может быть длиннее или короче)
+      return (
+        normalizedName.includes(entryName) ||
+        entryName.includes(normalizedName)
+      );
+    });
+
+    if (masterEntry && masterEntry.lastPrice) {
+      // 2. Найден last_price — ищем БЛИЖАЙШУЮ цену из списка
+      const targetPrice = masterEntry.lastPrice;
+      let bestIdx = -1;
+      let bestDiff = Infinity;
+
+      for (let j = 0; j < prices.length; j++) {
+        if (usedPrices.has(j)) continue; // цена уже использована
+        const diff = Math.abs(prices[j] - targetPrice);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestIdx = j;
+        }
+      }
+
+      if (bestIdx !== -1) {
+        result.push({ name, price: prices[bestIdx] });
+        usedPrices.add(bestIdx);
+        continue;
+      }
+    }
+
+    // 3. Fallback: товар не найден или last_price отсутствует — берём по индексу
+    if (i < prices.length && !usedPrices.has(i)) {
+      result.push({ name, price: prices[i] });
+      usedPrices.add(i);
+    } else {
+      // Все цены по индексу заняты — пробуем первую неиспользованную
+      const firstUnused = prices.findIndex((_, idx) => !usedPrices.has(idx));
+      if (firstUnused !== -1) {
+        result.push({ name, price: prices[firstUnused] });
+        usedPrices.add(firstUnused);
+      } else {
+        // Цен не осталось — позиция без цены
+        result.push({ name, price: 0 });
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -506,7 +590,10 @@ function preprocessOcrText(text: string): string {
   return result.join('\n');
 }
 
-export function parseReceiptText(text: string): ParsedReceipt {
+export function parseReceiptText(
+  text: string,
+  productMaster: ProductMasterEntry[] = [],
+): ParsedReceipt {
   const { storeName, currency } = detectStoreAndCurrency(text);
   const purchaseDate = detectDate(text);
   const totalAmount = detectTotal(text);
@@ -524,8 +611,9 @@ export function parseReceiptText(text: string): ParsedReceipt {
 
   // Если основная стратегия дала мало результатов, пробуем «параллельные
   // колонки»: OCR мог расщепить чек на два блока (все имена → все цены).
+  // Используем Product Master для привязки цен к товарам.
   if (items.length <= 1) {
-    const parallel = parseParallelColumns(itemsText, totalAmount);
+    const parallel = parseParallelColumns(itemsText, totalAmount, productMaster);
     if (parallel.length > items.length) items = parallel;
   }
 
