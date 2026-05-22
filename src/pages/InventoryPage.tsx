@@ -415,15 +415,22 @@ function AddInventoryDialog({
 
 // --- Диалог результата сканирования штрих-кода ---
 
+const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[] = [
+  { key: "fridge", label: "Холодильник" },
+  { key: "freezer", label: "Морозилка" },
+  { key: "pantry", label: "Кладовая" },
+];
+
 function ScanResultDialog({
   barcode,
-  storageType,
+  storageType: defaultStorage,
   onClose,
 }: {
   barcode: string;
   storageType: "fridge" | "freezer" | "pantry";
   onClose: () => void;
 }) {
+  const [storageType, setStorageType] = useState<"fridge" | "freezer" | "pantry">(defaultStorage);
   const [expiryDate, setExpiryDate] = useState("");
   const [customName, setCustomName] = useState("");
   const [customQty, setCustomQty] = useState("");
@@ -508,6 +515,25 @@ function ScanResultDialog({
             <p className="text-xs text-ink-muted mb-3">
               Штрих-код: {barcode}
             </p>
+            <fieldset className="mb-3">
+              <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+              <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+                {STORAGE_OPTIONS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStorageType(key)}
+                    className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                      storageType === key
+                        ? "bg-primary text-paper"
+                        : "text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <label className="block mb-4">
               <span className="block text-xs text-ink-soft mb-1">
                 Срок годности (необязательно)
@@ -548,6 +574,25 @@ function ScanResultDialog({
               Штрих-код: {barcode}. Добавьте вручную:
             </p>
             <div className="space-y-3">
+              <fieldset>
+                <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+                <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+                  {STORAGE_OPTIONS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setStorageType(key)}
+                      className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                        storageType === key
+                          ? "bg-primary text-paper"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <input
                 type="text"
                 value={customName}
