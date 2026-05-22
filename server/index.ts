@@ -65,39 +65,29 @@ app.get("/api/seed-products", async (req, res) => {
   });
 });
 
-// Авто-расчёт КБЖУ для всех рецептов (G.4)
+// Авто-расчёт КБЖУ для всех рецептов (G.4).
+// Использует общий helper calcRecipeNutrition. Best-effort:
+// рецепты которые не получилось рассчитать (нет в USDA) пропускаются
+// без затирания существующих значений.
 app.get("/api/calc-nutrition", async (req, res) => {
   res.json({ ok: true, message: "Расчёт КБЖУ запущен в фоне. Смотри логи Render." });
   setImmediate(async () => {
     try {
       const { db } = await import("./db/index");
-      const { recipes, recipeIngredients, ingredients } = await import("./db/schema");
-      const { eq, ilike, sql } = await import("drizzle-orm");
+      const { recipes } = await import("./db/schema");
+      const { calcRecipeNutrition } = await import("./services/nutritionCalc");
 
-      const allRecipes = await db.select({ id: recipes.id, servings: recipes.servings }).from(recipes);
+      const allRecipes = await db.select({ id: recipes.id }).from(recipes);
       console.log(`[calc-nutrition] Рецептов для обработки: ${allRecipes.length}`);
       let updated = 0;
 
       for (const recipe of allRecipes) {
-        const ings = await db.select().from(recipeIngredients).where(eq(recipeIngredients.recipeId, recipe.id));
-        let kcal = 0, protein = 0, fats = 0, carbs = 0, matched = 0;
-
-        for (const ing of ings) {
-          const [found] = await db.select().from(ingredients).where(ilike(ingredients.nameRu, `%${ing.name}%`)).limit(1);
-          if (!found) continue;
-          const amount = ing.amount ? parseFloat(ing.amount) : 100;
-          const f = amount / 100;
-          kcal += found.kcalPer100g ? parseFloat(found.kcalPer100g) * f : 0;
-          protein += found.proteinG ? parseFloat(found.proteinG) * f : 0;
-          fats += found.fatsG ? parseFloat(found.fatsG) * f : 0;
-          carbs += found.carbsG ? parseFloat(found.carbsG) * f : 0;
-          matched++;
+        try {
+          const result = await calcRecipeNutrition(recipe.id);
+          if (result && result.matched > 0) updated++;
+        } catch (err) {
+          console.warn(`[calc-nutrition] рецепт ${recipe.id}:`, err instanceof Error ? err.message : err);
         }
-
-        if (matched === 0) continue;
-        const s = recipe.servings || 1;
-        await db.execute(sql`UPDATE recipes SET calories=${Math.round(kcal/s)}, protein_g=${Math.round(protein/s*10)/10}, fats_g=${Math.round(fats/s*10)/10}, carbs_g=${Math.round(carbs/s*10)/10} WHERE id=${recipe.id}`);
-        updated++;
       }
 
       console.log(`[calc-nutrition] Готово. Обновлено: ${updated}/${allRecipes.length}`);

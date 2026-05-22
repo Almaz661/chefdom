@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { nanoid } from "nanoid";
 import { scrapeRecipe } from "./recipeScraper";
+import { calcRecipeNutrition } from "./nutritionCalc";
 import { db } from "../db/index";
 import { recipes, recipeIngredients, recipeSteps } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -222,7 +223,7 @@ async function runImport(job: ImportJob): Promise<void> {
       // иначе оставляем то что определил scrapeRecipe (по названию)
       const finalCategory = sectionCategory ?? scraped.category;
 
-      await db.transaction(async (tx) => {
+      const newRecipeId = await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(recipes)
           .values({
@@ -266,7 +267,21 @@ async function runImport(job: ImportJob): Promise<void> {
             })),
           );
         }
+
+        return created.id;
       });
+
+      // G.4 — авто-расчёт КБЖУ из USDA-справочника. Best-effort:
+      // если не удалось (нет ингредиентов в USDA, ошибка) — рецепт
+      // всё равно сохранён, просто без КБЖУ. Не блокирует импорт.
+      try {
+        await calcRecipeNutrition(newRecipeId);
+      } catch (err) {
+        console.warn(
+          `[sectionImport] ${job.id}: не удалось рассчитать КБЖУ для рецепта ${newRecipeId}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
 
       job.success++;
     } catch (err) {
