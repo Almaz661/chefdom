@@ -1,11 +1,12 @@
 import { useState, useRef, FormEvent } from "react";
-import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle, Coins } from "lucide-react";
+import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle, Coins, RefreshCw } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 export function SettingsPage() {
   const [showChangePin, setShowChangePin] = useState(false);
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
   const [importError, setImportError] = useState("");
+  const [isClearingCache, setIsClearingCache] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stats } = trpc.settings.getStats.useQuery();
@@ -89,6 +90,45 @@ export function SettingsPage() {
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  // --- Очистить кэш и перезагрузить ---
+  // Удаляет все Cache Storage записи + перерегистрирует Service Worker.
+  // Полезно если приложение «застряло» на старой версии или какой-то ассет
+  // закэшировался битым. По сути — программная замена «Hard Refresh» в браузере.
+  // НЕ трогает локальные данные пользователя (БД, токены — на сервере).
+  const handleClearCache = async () => {
+    const confirmed = window.confirm(
+      "Очистить кэш и перезагрузить приложение?\n\n" +
+        "Твои данные (рецепты, чеки, инвентарь) останутся на месте — они хранятся на сервере. " +
+        "Очистится только локальная копия страниц."
+    );
+    if (!confirmed) return;
+
+    setIsClearingCache(true);
+    try {
+      // Удалить все кеши (Cache Storage API). На некоторых старых браузерах
+      // caches может отсутствовать — тогда просто перезагружаем без ошибки.
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      // Снять регистрацию Service Worker — при следующей загрузке он
+      // зарегистрируется заново со свежей версией.
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch (err) {
+      // Не критично — если что-то не удалилось, всё равно перезагрузимся
+      // с принудительным обходом кеша. Логируем для дебага.
+      console.warn("[clear-cache] частичная ошибка:", err);
+    }
+    // Жёсткая перезагрузка с сервера (не из браузерного кеша).
+    // location.reload() без аргументов в современных браузерах эквивалентен
+    // обычному reload; используем replace на текущий URL, чтобы гарантированно
+    // сделать полный navigate.
+    window.location.replace(window.location.pathname + window.location.search);
   };
 
   return (
@@ -228,6 +268,32 @@ export function SettingsPage() {
               {importError || "Ошибка при восстановлении"}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* КЭШ ПРИЛОЖЕНИЯ */}
+      <section className="mb-6">
+        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+          Кэш приложения
+        </h2>
+        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
+          <p className="text-sm text-ink-muted">
+            Если приложение «застряло» на старой версии или что-то отображается
+            странно — нажми, чтобы загрузить свежие страницы. Твои данные (рецепты,
+            чеки, инвентарь) не пострадают: они на сервере.
+          </p>
+          <button
+            onClick={handleClearCache}
+            disabled={isClearingCache}
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-sm font-medium text-ink hover:bg-cream disabled:opacity-50 transition-colors"
+          >
+            {isClearingCache ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <RefreshCw size={18} />
+            )}
+            Очистить кэш и перезагрузить
+          </button>
         </div>
       </section>
 

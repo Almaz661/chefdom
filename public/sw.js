@@ -12,7 +12,7 @@
 // При смене CACHE_NAME (бамп версии при деплое) старые кеши очищаются
 // в activate. Это страховка от ситуации «пользователь застрял на v1».
 
-const CACHE_NAME = 'shefdom-v4';
+const CACHE_NAME = 'shefdom-v5';
 const STATIC_ASSETS = ['/manifest.json', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {
