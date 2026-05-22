@@ -8,18 +8,19 @@ import { ServerWakeUp } from "./components/ServerWakeUp";
 import "./index.css";
 
 // F.3 — регистрация Service Worker для offline режима.
-// Дополнительно: при загрузке проверяем, нет ли «зависшего» старого кеша
-// (shefdom-v1) — если есть, чистим всё и перезагружаемся один раз. Это
-// освобождает пользователей, у которых браузер застрял на pre-v2 версии.
+// При загрузке: если текущий кеш не соответствует CURRENT_CACHE_VERSION,
+// чистим ВСЕ кеши, unregister SW, перезагружаемся. Это гарантирует что
+// после деплоя пользователь получает свежий код.
+const CURRENT_CACHE_VERSION = "shefdom-v3";
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
       const cacheKeys = "caches" in window ? await caches.keys() : [];
-      const hasOldCache = cacheKeys.includes("shefdom-v1");
-      const alreadyCleaned = sessionStorage.getItem("sw-cleaned-v2") === "1";
-      if (hasOldCache && !alreadyCleaned) {
-        sessionStorage.setItem("sw-cleaned-v2", "1");
-        // unregister все SW и удалить все cacheStorage
+      const hasCurrentCache = cacheKeys.includes(CURRENT_CACHE_VERSION);
+      const hasAnyOldCache = cacheKeys.some((k) => k !== CURRENT_CACHE_VERSION);
+      const alreadyCleaned = sessionStorage.getItem(`sw-cleaned-${CURRENT_CACHE_VERSION}`) === "1";
+      if (hasAnyOldCache && !hasCurrentCache && !alreadyCleaned) {
+        sessionStorage.setItem(`sw-cleaned-${CURRENT_CACHE_VERSION}`, "1");
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
         await Promise.all(cacheKeys.map((k) => caches.delete(k)));
