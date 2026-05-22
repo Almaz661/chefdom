@@ -6,6 +6,7 @@ import { client, db } from '../db/index';
 import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
 import { scrapeRecipe } from '../services/recipeScraper';
 import { startSectionImport, getActiveJob, cancelActiveJob } from '../services/sectionImport';
+import { calcRecipeNutrition } from '../services/nutritionCalc';
 
 const PAGE_SIZE = 20;
 
@@ -307,7 +308,7 @@ export const recipesRouter = router({
         });
       }
 
-      return await db.transaction(async (tx) => {
+      const result = await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(recipes)
           .values({
@@ -354,6 +355,23 @@ export const recipesRouter = router({
 
         return { id: created.id };
       });
+
+      // Авто-расчёт КБЖУ по справочнику USDA (best-effort).
+      // Сайты-источники редко указывают КБЖУ в JSON-LD, особенно русские.
+      // Поэтому после сохранения проходимся по ингредиентам и считаем
+      // калории/белки/жиры/углеводы из локального справочника.
+      // Не блокирует импорт: если расчёт упал (нет данных в USDA для
+      // этих ингредиентов и т.п.) — рецепт всё равно сохранён.
+      try {
+        await calcRecipeNutrition(result.id);
+      } catch (err) {
+        console.warn(
+          `[importFromUrl] calcRecipeNutrition failed for recipe ${result.id}:`,
+          err,
+        );
+      }
+
+      return result;
     }),
 
   // --- SECTION IMPORT (Блок 7) ---
