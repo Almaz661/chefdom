@@ -3,10 +3,21 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { router, publicProcedure } from '../trpc';
 import { db } from '../db/index';
-import { receipts, receiptItems } from '../db/schema';
+import { receipts, receiptItems, users } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
 import { parseReceiptText } from '../services/receiptParser';
 import { translateBatchToRu } from '../services/translate';
+
+// Валюта по умолчанию из настроек пользователя (Settings → Валюта).
+// Используется когда currency не указан явно при создании чека и как
+// fallback в парсере OCR для нераспознанных магазинов.
+async function getUserDefaultCurrency(): Promise<'EUR' | 'RUB'> {
+  const [user] = await db
+    .select({ defaultCurrency: users.defaultCurrency })
+    .from(users)
+    .limit(1);
+  return user?.defaultCurrency === 'RUB' ? 'RUB' : 'EUR';
+}
 
 // G.19 — роутер чеков.
 // Сценарий: пользователь фотографирует бумажный чек из магазина,
@@ -62,22 +73,24 @@ export const receiptsRouter = router({
     }),
 
   // Создать пустой чек вручную (на случай если OCR не работает / нет фото).
+  // Если currency не передан — берём валюту по умолчанию из настроек.
   create: publicProcedure
     .input(
       z.object({
         storeName: z.string().max(200).optional(),
         purchaseDate: z.string().max(20).optional(),
-        currency: z.enum(['EUR', 'RUB']).default('EUR'),
+        currency: z.enum(['EUR', 'RUB']).optional(),
       }),
     )
     .mutation(async ({ input }) => {
+      const currency = input.currency ?? (await getUserDefaultCurrency());
       const [created] = await db
         .insert(receipts)
         .values({
           userId: 1,
           storeName: input.storeName ?? null,
           purchaseDate: input.purchaseDate ?? null,
-          currency: input.currency,
+          currency,
         })
         .returning({ id: receipts.id });
       return { id: created.id };
@@ -121,8 +134,9 @@ export const receiptsRouter = router({
         });
       }
 
-      // 2. Парсинг
-      const parsed = parseReceiptText(recognized.text);
+      // 2. Парсинг (если магазин не распознан — берём валюту из настроек)
+      const userDefaultCurrency = await getUserDefaultCurrency();
+      const parsed = parseReceiptText(recognized.text, userDefaultCurrency);
 
       // 3. Переводим названия товаров NL→RU (DeepL, best-effort)
       if (parsed.items.length > 0) {
@@ -194,7 +208,8 @@ export const receiptsRouter = router({
         });
       }
 
-      const parsed = parseReceiptText(receipt.ocrRaw);
+      const userDefaultCurrency = await getUserDefaultCurrency();
+      const parsed = parseReceiptText(receipt.ocrRaw, userDefaultCurrency);
 
       // Переводим названия товаров NL→RU
       if (parsed.items.length > 0) {

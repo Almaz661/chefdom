@@ -1,5 +1,5 @@
 import { useState, useRef, FormEvent } from "react";
-import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Download, Upload, KeyRound, Loader2, CheckCircle2, AlertCircle, Coins } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 export function SettingsPage() {
@@ -9,6 +9,28 @@ export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: stats } = trpc.settings.getStats.useQuery();
+
+  // --- Валюта по умолчанию (EUR/RUB) ---
+  // Влияет на: значение по умолчанию в форме «Новый чек вручную»
+  // и fallback в парсере OCR, если магазин не распознан.
+  const utils = trpc.useUtils();
+  const currencyQuery = trpc.settings.getCurrency.useQuery();
+  const setCurrency = trpc.settings.setCurrency.useMutation({
+    onMutate: async ({ currency }) => {
+      // Оптимистично обновим, чтобы переключатель сработал мгновенно
+      await utils.settings.getCurrency.cancel();
+      const prev = utils.settings.getCurrency.getData();
+      utils.settings.getCurrency.setData(undefined, { currency });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) utils.settings.getCurrency.setData(undefined, ctx.prev);
+    },
+    onSettled: () => {
+      utils.settings.getCurrency.invalidate();
+    },
+  });
+  const currency = currencyQuery.data?.currency ?? "EUR";
 
   // --- Скачать backup ---
   const exportQuery = trpc.settings.exportBackup.useQuery(undefined, {
@@ -93,6 +115,62 @@ export function SettingsPage() {
               <KeyRound size={16} />
               Изменить PIN
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ВАЛЮТА */}
+      <section className="mb-6">
+        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+          Валюта
+        </h2>
+        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <Coins
+              size={20}
+              className="text-primary mt-0.5 shrink-0"
+              strokeWidth={2}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink">Валюта по умолчанию</p>
+              <p className="text-sm text-ink-muted">
+                Подставляется в новый чек и используется для отображения цен,
+                если магазин не распознан.
+              </p>
+            </div>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label="Валюта по умолчанию"
+            className="inline-flex bg-cream rounded-lg p-0.5"
+          >
+            {(["EUR", "RUB"] as const).map((c) => {
+              const selected = currency === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => {
+                    if (!selected && !setCurrency.isPending) {
+                      setCurrency.mutate({ currency: c });
+                    }
+                  }}
+                  disabled={
+                    currencyQuery.isLoading ||
+                    (setCurrency.isPending && !selected)
+                  }
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    selected
+                      ? "bg-primary text-paper"
+                      : "text-ink-soft hover:text-ink"
+                  } disabled:opacity-50`}
+                >
+                  {c === "EUR" ? "€ EUR" : "₽ RUB"}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>

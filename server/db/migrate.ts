@@ -353,6 +353,20 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '015_users_default_currency',
+    up: async (sql) => {
+      // Настройки → переключатель валюты (EUR/RUB).
+      // Хранится на пользователе, чтобы у каждого «семейного» аккаунта
+      // могли быть свои предпочтения (актуально для будущего multi-user).
+      // Используется как валюта по умолчанию при создании чека вручную
+      // и как fallback в парсере OCR, если магазин не распознан.
+      await sql`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS default_currency TEXT NOT NULL DEFAULT 'EUR'
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

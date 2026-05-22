@@ -14,10 +14,14 @@ export const schemaMigrations = pgTable('schema_migrations', {
 });
 
 // Этап 0 — пользователи (на старте один: «Семья» c PIN 1234)
+// defaultCurrency — выбор валюты в Настройках (миграция 015).
+// Используется как валюта по умолчанию при создании чека вручную и
+// как fallback в парсере OCR, если магазин не распознан.
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   pin: text('pin').notNull(),
   name: text('name').notNull(),
+  defaultCurrency: text('default_currency').notNull().default('EUR'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
