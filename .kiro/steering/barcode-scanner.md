@@ -24,3 +24,25 @@
 ## Deploy Rules
 
 - **НЕ деплоить после каждого PR** — делать Manual Deploy на Render только когда все нужные PR слиты в main.
+
+## Receipt Parser — Status (сессия 22.05.2026)
+
+### Что работает:
+- Определение магазина (Aldi, AH, Jumbo, Lidl, российские сети)
+- Определение итога чека
+- Основной парсер (parseAll) для однострочных чеков (AH, Jumbo)
+- Параллельные колонки (parseParallelColumns) — частично
+
+### Что НЕ работает (нужно починить):
+- **ALDI формат**: OCR выдаёт цены в ДРУГОМ порядке чем имена. Простой матчинг по индексу не работает.
+- Конкретный пример OCR-текста (Aldi, Lent):
+  - Имена: Fijn volkorenbrood, Scharreleieren 12st, Kippenvleugels, Volle kwark, Paprikamix Net, Barissimo intense, Komkommer, Kruimige aardappelen
+  - Artikelkorting 30% — скидка (не товар), цена -2,07
+  - Цены в OCR: 0,99 | 3,73 | 6,89 | -2,07 | 1,29 | 1,99 | 4,78 | 0,79 | 0,89
+  - Правильное сопоставление: volkorenbrood=0,99, Scharreleieren=6,89, Kippenvleugels+Artikelkorting=-2,07+1,29 (нетто), kwark=1,99, Paprikamix=4,78, Barissimo=0,79, Komkommer=0,89, Kruimige=3,73
+  - Итого: €19,28
+
+### TODO для парсера:
+1. Написать умный матчинг: перебор привязок имя→цена с проверкой суммы = итогу
+2. Учитывать что OCR разбивает цены (3 + € + ,73 + €) — preprocessOcrText уже склеивает, но порядок всё равно неправильный
+3. Протестировать на бумаге ПЕРЕД пушем

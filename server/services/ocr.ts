@@ -38,10 +38,13 @@ export async function recognizeImage(
   form.set('apikey', apiKey);
   form.set('base64Image', dataUrl);
   form.set('language', options.language ?? 'eng');
-  // Намеренно НЕ ставим isTable=true. На чеках ALDI / Albert Heijn / Jumbo
-  // (одна колонка названий + одна колонка цен) табличный режим перестраивает
-  // текст и сливает соседние строки в один блок. Без него OCR.space сохраняет
-  // построчную структуру, и парсер легко находит «название · цена».
+  // isTable=true — режим распознавания таблиц и чеков.
+  // OCR.space рекомендует его для чеков: «isTable=true triggers the receipt
+  // and table scanning logic». Без него OCR разделяет имена и цены
+  // на два блока и путает порядок цен (особенно на ALDI).
+  // С ним — имя и цена оказываются на одной строке, что даёт
+  // правильное однострочное сопоставление.
+  form.set('isTable', 'true');
   form.set('OCREngine', '2'); // 2 устойчивее к шуму бытовых фото
   form.set('scale', 'true'); // увеличивает мелкий текст
   form.set('detectOrientation', 'true'); // фото перевёрнуто? OCR сам повернёт
