@@ -41,7 +41,6 @@ function expiryText(expiryDate: string | null): string {
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [scanResult, setScanResult] = useState<{
