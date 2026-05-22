@@ -162,6 +162,29 @@ export const cookingRouter = router({
       return rows;
     }),
 
+  // C.2 — «Любимое в этом месяце» (самый часто готовимый рецепт за текущий месяц).
+  topThisMonth: publicProcedure.query(async () => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const rows = await db
+      .select({
+        recipeTitle: cookingHistory.recipeTitle,
+        recipeId: cookingHistory.recipeId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(cookingHistory)
+      .where(
+        and(
+          eq(cookingHistory.userId, 1),
+          gte(cookingHistory.cookedAt, new Date(monthStart)),
+        ),
+      )
+      .groupBy(cookingHistory.recipeTitle, cookingHistory.recipeId)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1);
+    return rows[0] ?? null;
+  }),
+
   // --- Удалить ошибочную запись из истории.
   delete: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))

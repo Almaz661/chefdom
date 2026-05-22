@@ -42,6 +42,8 @@ export function Dashboard() {
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
   // «Недавно готовила» — последние 5 (раздел 6.4 макета)
   const { data: recentCooks = [] } = trpc.cooking.recent.useQuery({ limit: 5 });
+  // C.2 — «Любимое в этом месяце»
+  const { data: topRecipe } = trpc.cooking.topThisMonth.useQuery();
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
@@ -158,6 +160,32 @@ export function Dashboard() {
           </span>
         </Link>
       </div>
+
+      {/* C.2 — Любимое в этом месяце */}
+      {topRecipe && topRecipe.count >= 2 && (
+        <section className="bg-paper rounded-2xl border border-line p-5">
+          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+            Любимое в этом месяце
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏆</span>
+            <div className="flex-1 min-w-0">
+              {topRecipe.recipeId ? (
+                <Link to={`/recipes/${topRecipe.recipeId}`} className="font-serif text-lg font-semibold text-ink hover:text-primary transition-colors">
+                  {topRecipe.recipeTitle}
+                </Link>
+              ) : (
+                <p className="font-serif text-lg font-semibold text-ink">
+                  {topRecipe.recipeTitle}
+                </p>
+              )}
+              <p className="text-sm text-ink-soft">
+                Готовили {topRecipe.count} {topRecipe.count >= 5 ? "раз" : topRecipe.count >= 2 ? "раза" : "раз"} в этом месяце
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Недавно готовила — раздел 6.4 макета: горизонтальный скролл */}
       <section>
