@@ -4,11 +4,13 @@ import {
   Snowflake,
   Package,
   Plus,
+  ScanLine,
   Trash2,
   AlertTriangle,
   Loader2,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { BarcodeScanner } from "../components/BarcodeScanner";
 
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
@@ -39,6 +41,15 @@ function expiryText(expiryDate: string | null): string {
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanResult, setScanResult] = useState<{
+    found: boolean;
+    name?: string;
+    brand?: string;
+    packageQuantity?: string | null;
+    packageUnit?: string | null;
+    barcode: string;
+  } | null>(null);
 
   const utils = trpc.useUtils();
   const { data: allItems = [], isLoading } = trpc.inventory.list.useQuery();
@@ -82,13 +93,23 @@ export function InventoryPage() {
         <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
           Инвентарь
         </h1>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="w-10 h-10 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors"
-          aria-label="Добавить продукт"
-        >
-          <Plus size={20} />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowScanner(true)}
+            className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+            aria-label="Сканировать штрих-код"
+            title="Сканировать штрих-код"
+          >
+            <ScanLine size={20} />
+          </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="w-10 h-10 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors"
+            aria-label="Добавить продукт"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Табы */}
@@ -235,6 +256,27 @@ export function InventoryPage() {
           onClose={() => setShowAdd(false)}
         />
       )}
+
+      {/* Сканер штрих-кода */}
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={(code) => {
+            setShowScanner(false);
+            // Ищем товар в каталоге
+            setScanResult({ found: false, barcode: code });
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {/* Результат сканирования */}
+      {scanResult && (
+        <ScanResultDialog
+          barcode={scanResult.barcode}
+          storageType={tab}
+          onClose={() => setScanResult(null)}
+        />
+      )}
     </div>
   );
 }
@@ -339,6 +381,201 @@ function AddInventoryDialog({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+
+
+// --- Диалог результата сканирования штрих-кода ---
+
+function ScanResultDialog({
+  barcode,
+  storageType,
+  onClose,
+}: {
+  barcode: string;
+  storageType: "fridge" | "freezer" | "pantry";
+  onClose: () => void;
+}) {
+  const [expiryDate, setExpiryDate] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customQty, setCustomQty] = useState("");
+  const [customUnit, setCustomUnit] = useState("");
+
+  const utils = trpc.useUtils();
+
+  // Ищем товар по штрих-коду в каталоге products
+  const lookup = trpc.products.getByBarcode.useQuery(
+    { barcode },
+    { retry: false },
+  );
+
+  const add = trpc.inventory.add.useMutation({
+    onSuccess: () => {
+      utils.inventory.list.invalidate();
+      onClose();
+    },
+  });
+
+  const product = lookup.data;
+  const notFound = lookup.isError || (lookup.isSuccess && !product);
+  const isLoading = lookup.isLoading;
+
+  const handleAdd = () => {
+    if (product) {
+      add.mutate({
+        productName: product.brand
+          ? `${product.brand} ${product.nameRu}`
+          : product.nameRu,
+        quantity: product.packageQuantity
+          ? Number(product.packageQuantity)
+          : null,
+        unit: product.packageUnit || null,
+        storageType,
+        expiryDate: expiryDate || null,
+      });
+    } else if (customName.trim()) {
+      add.mutate({
+        productName: customName.trim(),
+        quantity: customQty ? Number(customQty) : null,
+        unit: customUnit.trim() || null,
+        storageType,
+        expiryDate: expiryDate || null,
+      });
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={28} className="animate-spin text-primary" />
+            <span className="ml-3 text-ink-soft">Ищу товар…</span>
+          </div>
+        )}
+
+        {product && !isLoading && (
+          <>
+            <h3 className="font-serif text-lg font-semibold text-ink mb-1">
+              Товар найден
+            </h3>
+            <p className="text-sm text-ink mb-1">
+              <span className="font-medium">
+                {product.brand
+                  ? `${product.brand} ${product.nameRu}`
+                  : product.nameRu}
+              </span>
+            </p>
+            {(product.packageQuantity || product.packageUnit) && (
+              <p className="text-xs text-ink-muted mb-3">
+                {product.packageQuantity} {product.packageUnit}
+              </p>
+            )}
+            <p className="text-xs text-ink-muted mb-3">
+              Штрих-код: {barcode}
+            </p>
+            <label className="block mb-4">
+              <span className="block text-xs text-ink-soft mb-1">
+                Срок годности (необязательно)
+              </span>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+            </label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={add.isPending}
+                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {add.isPending ? "Добавляю…" : "В инвентарь"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {notFound && !isLoading && (
+          <>
+            <h3 className="font-serif text-lg font-semibold text-ink mb-2">
+              Товар не найден в каталоге
+            </h3>
+            <p className="text-xs text-ink-muted mb-3">
+              Штрих-код: {barcode}. Добавьте вручную:
+            </p>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Название продукта"
+                autoFocus
+                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={customQty}
+                  onChange={(e) => setCustomQty(e.target.value)}
+                  placeholder="Кол-во"
+                  step="any"
+                  min="0"
+                  className="flex-1 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                />
+                <input
+                  type="text"
+                  value={customUnit}
+                  onChange={(e) => setCustomUnit(e.target.value)}
+                  placeholder="Ед."
+                  className="w-24 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+              <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!customName.trim() || add.isPending}
+                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {add.isPending ? "Добавляю…" : "Добавить"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
