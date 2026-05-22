@@ -1,4 +1,4 @@
-import { useState, useRef, FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import {
   Refrigerator,
   Snowflake,
@@ -10,7 +10,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
-import { BrowserMultiFormatReader } from "@zxing/library";
+import { BarcodeScanner } from "../components/BarcodeScanner";
 
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
@@ -42,7 +42,7 @@ export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
-  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState<{
     found: boolean;
     name?: string;
@@ -96,42 +96,15 @@ export function InventoryPage() {
         </h1>
         <div className="flex gap-2">
           <button
-            onClick={() => barcodeInputRef.current?.click()}
-            className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft flex items-center justify-center hover:border-primary hover:text-primary transition-colors"
+            onClick={() => setShowScanner(!showScanner)}
+            className={`w-10 h-10 rounded-lg border bg-paper flex items-center justify-center transition-colors ${
+              showScanner ? "border-primary text-primary" : "border-line text-ink-soft hover:border-primary hover:text-primary"
+            }`}
             aria-label="Сканировать штрих-код"
             title="Сфотографировать штрих-код"
           >
             <ScanLine size={20} />
           </button>
-          <input
-            ref={barcodeInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              setScanError(null);
-              try {
-                const reader = new BrowserMultiFormatReader();
-                const img = document.createElement("img");
-                const url = URL.createObjectURL(file);
-                img.src = url;
-                await new Promise((resolve) => { img.onload = resolve; });
-                const result = await reader.decodeFromImageElement(img);
-                URL.revokeObjectURL(url);
-                if (result) {
-                  setScanResult({ found: false, barcode: result.getText() });
-                } else {
-                  setScanError("Штрих-код не распознан. Попробуй сфотографировать ближе и ровнее.");
-                }
-              } catch {
-                setScanError("Штрих-код не распознан на фото. Попробуй ещё раз — ближе, без бликов.");
-              }
-            }}
-          />
           <button
             onClick={() => setShowAdd(true)}
             className="w-10 h-10 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors"
@@ -141,6 +114,16 @@ export function InventoryPage() {
           </button>
         </div>
       </div>
+
+      {/* Сканер (показывается по нажатию кнопки ScanLine) */}
+      {showScanner && (
+        <div className="mb-4 bg-paper border border-line rounded-xl p-4">
+          <BarcodeScanner onDetected={(code) => {
+            setScanResult({ found: false, barcode: code });
+            setShowScanner(false);
+          }} />
+        </div>
+      )}
 
       {/* Табы */}
       <div className="flex gap-1 bg-cream rounded-lg p-1 mb-6">
