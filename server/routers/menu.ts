@@ -227,6 +227,12 @@ export const menuRouter = router({
         return u;
       }
 
+      // DEBUG: логируем все ингредиенты для диагностики дублей
+      console.log(`[toShopping] ingredients (${ingredients.length}):`);
+      for (const ing of ingredients) {
+        console.log(`  name=${JSON.stringify(ing.name)} | amount=${ing.amount} | unit=${JSON.stringify(ing.unit)} | norm=${JSON.stringify(normalizeName(ing.name))}`);
+      }
+
       // Агрегировать: суммировать количества ТОЛЬКО по нормализованному названию.
       // Если один и тот же продукт в разных рецептах указан в разных единицах
       // (г vs шт) — объединяем в одну строку с единицей первого попавшегося.
@@ -254,6 +260,11 @@ export const menuRouter = router({
       }
 
       // Получить текущий список покупок для дедупликации
+      console.log(`[toShopping] aggregated keys (${aggregated.size}):`);
+      for (const [key, val] of aggregated) {
+        console.log(`  key=${JSON.stringify(key)} → name=${JSON.stringify(val.name)} amount=${val.amount} unit=${JSON.stringify(val.unit)}`);
+      }
+
       const existing = await db
         .select({ productName: purchaseItems.productName, unit: purchaseItems.unit })
         .from(purchaseItems)
