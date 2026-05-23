@@ -30,6 +30,71 @@ export interface ParsedItem {
   price: number | null;
 }
 
+// Product Master — запись из таблицы products с последней известной ценой.
+// Используется для точного сопоставления имён с ценами в ALDI-формате.
+export interface ProductMasterEntry {
+  nameRu: string;
+  lastPrice: number | null;
+}
+
+/**
+ * Сопоставляет имена товаров с ценами, используя данные Product Master.
+ *
+ * Для каждого имени:
+ *   1. Ищем запись в Product Master (нечёткое совпадение по первым 8 символам).
+ *   2. Если нашли — берём БЛИЖАЙШУЮ неиспользованную цену к lastPrice.
+ *   3. Fallback — берём цену по порядку (первую неиспользованную).
+ *
+ * Каждая цена используется не более одного раза (usedPrices).
+ */
+export function matchItemsWithProductMaster(
+  names: string[],
+  prices: number[],
+  productMaster: ProductMasterEntry[],
+): Array<{ name: string; price: number }> {
+  const usedPrices = new Set<number>();
+  const result: Array<{ name: string; price: number }> = [];
+
+  names.forEach((name) => {
+    // Нечёткое совпадение: первые 8 символов имени
+    const entry = productMaster.find(e =>
+      e.nameRu.toLowerCase().includes(name.toLowerCase().substring(0, 8)) ||
+      name.toLowerCase().includes(e.nameRu.toLowerCase().substring(0, 8))
+    );
+
+    if (entry && entry.lastPrice !== null) {
+      // Ищем БЛИЖАЙШУЮ неиспользованную цену к lastPrice
+      let closestPrice: number | null = null;
+      let minDiff = Infinity;
+
+      prices.forEach(price => {
+        if (!usedPrices.has(price)) {
+          const diff = Math.abs(price - entry.lastPrice!);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestPrice = price;
+          }
+        }
+      });
+
+      if (closestPrice !== null) {
+        result.push({ name, price: closestPrice });
+        usedPrices.add(closestPrice);
+        return;
+      }
+    }
+
+    // Fallback: берём первую неиспользованную цену по порядку
+    const availablePrices = prices.filter(p => !usedPrices.has(p));
+    if (availablePrices.length > 0) {
+      result.push({ name, price: availablePrices[0] });
+      usedPrices.add(availablePrices[0]);
+    }
+  });
+
+  return result;
+}
+
 // Известные сети. `\s*` между буквами — на случай если OCR разорвал
 // название пробелами (на сканах ALDI часто получается «A L D I»).
 const KNOWN_STORES: Array<[RegExp, string, 'EUR' | 'RUB']> = [
@@ -350,6 +415,7 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
 function parseParallelColumns(
   text: string,
   total: number | null,
+  productMaster?: ProductMasterEntry[],
 ): ItemCandidate[] {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
@@ -416,6 +482,15 @@ function parseParallelColumns(
   // (лучше показать половину чем ничего).
   const n = Math.min(names.length, prices.length);
   if (n < 2) return [];
+
+  // Если передан Product Master и количество имён === количеству цен,
+  // используем умный матчинг по ближайшей известной цене.
+  if (productMaster && productMaster.length > 0 && names.length === prices.length) {
+    const matched = matchItemsWithProductMaster(names, prices, productMaster);
+    if (matched.length > 0) {
+      return matched.map(m => ({ name: m.name, price: m.price }));
+    }
+  }
 
   const out: ItemCandidate[] = [];
   for (let i = 0; i < n; i++) {
@@ -509,6 +584,7 @@ function preprocessOcrText(text: string): string {
 export function parseReceiptText(
   text: string,
   defaultCurrency: 'EUR' | 'RUB' = 'EUR',
+  productMaster?: ProductMasterEntry[],
 ): ParsedReceipt {
   // Извлекаем метаданные которые Gemini кладёт в начало:
   // STORE: <название магазина>
@@ -542,7 +618,7 @@ export function parseReceiptText(
   // Если основная стратегия дала мало результатов, пробуем «параллельные
   // колонки»: OCR мог расщепить чек на два блока (все имена → все цены).
   if (items.length <= 1) {
-    const parallel = parseParallelColumns(itemsText, totalAmount);
+    const parallel = parseParallelColumns(itemsText, totalAmount, productMaster);
     if (parallel.length > items.length) items = parallel;
   }
 

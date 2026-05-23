@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { receipts, receiptItems, users } from '../db/schema';
+import { receipts, receiptItems, users, products } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
-import { parseReceiptText } from '../services/receiptParser';
+import { parseReceiptText, ProductMasterEntry } from '../services/receiptParser';
 import { translateBatchToRu } from '../services/translate';
 
 // Валюта по умолчанию из настроек пользователя (Settings → Валюта).
@@ -17,6 +17,44 @@ async function getUserDefaultCurrency(): Promise<'EUR' | 'RUB'> {
     .from(users)
     .limit(1);
   return user?.defaultCurrency === 'RUB' ? 'RUB' : 'EUR';
+}
+
+// Product Master — загружает последние известные цены товаров из каталога.
+// Используется для точной привязки цен в ALDI чеках с двухблочным форматом.
+async function loadProductMaster(): Promise<ProductMasterEntry[]> {
+  const rows = await db
+    .select({ nameRu: products.nameRu, lastPrice: products.lastPrice })
+    .from(products)
+    .where(isNotNull(products.lastPrice));
+  return rows.map(r => ({
+    nameRu: r.nameRu,
+    lastPrice: r.lastPrice ? parseFloat(r.lastPrice as unknown as string) : null,
+  }));
+}
+
+// Product Master — обновляет/добавляет цены товаров после успешного парсинга чека.
+// Записывает lastPrice и priceUpdatedAt для каждого товара с известной ценой.
+async function updateProductMasterPrices(
+  parsedItems: Array<{ productName: string; price: number | null }>,
+): Promise<void> {
+  for (const item of parsedItems) {
+    if (item.price === null) continue;
+    await db
+      .insert(products)
+      .values({
+        nameRu: item.productName,
+        lastPrice: String(item.price),
+        priceUpdatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: products.nameRu,
+        set: {
+          lastPrice: String(item.price),
+          priceUpdatedAt: new Date(),
+        },
+      })
+      .catch(() => {/* игнорируем если нет уникального ключа на nameRu */});
+  }
 }
 
 // G.19 — роутер чеков.
@@ -136,7 +174,8 @@ export const receiptsRouter = router({
 
       // 2. Парсинг (если магазин не распознан — берём валюту из настроек)
       const userDefaultCurrency = await getUserDefaultCurrency();
-      const parsed = parseReceiptText(recognized.text, userDefaultCurrency);
+      const pm = await loadProductMaster();
+      const parsed = parseReceiptText(recognized.text, userDefaultCurrency, pm);
 
       // 3. Переводим названия товаров NL→RU (DeepL, best-effort)
       if (parsed.items.length > 0) {
@@ -179,6 +218,9 @@ export const receiptsRouter = router({
         return receipt;
       });
 
+      // 5. Обновляем Product Master — сохраняем цены для будущих чеков
+      await updateProductMasterPrices(parsed.items);
+
       return {
         id: created.id,
         recognizedItemsCount: parsed.items.length,
@@ -214,7 +256,8 @@ export const receiptsRouter = router({
       }
 
       const userDefaultCurrency = await getUserDefaultCurrency();
-      const parsed = parseReceiptText(receipt.ocrRaw, userDefaultCurrency);
+      const pm = await loadProductMaster();
+      const parsed = parseReceiptText(receipt.ocrRaw, userDefaultCurrency, pm);
 
       // Переводим названия товаров NL→RU
       if (parsed.items.length > 0) {
@@ -255,6 +298,9 @@ export const receiptsRouter = router({
           );
         }
       });
+
+      // Обновляем Product Master — сохраняем цены для будущих чеков
+      await updateProductMasterPrices(parsed.items);
 
       return {
         id: input.id,
