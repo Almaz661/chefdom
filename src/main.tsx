@@ -8,16 +8,17 @@ import { ServerWakeUp } from "./components/ServerWakeUp";
 import "./index.css";
 
 // F.3 — регистрация Service Worker для offline режима.
-// При загрузке: если текущий кеш не соответствует CURRENT_CACHE_VERSION,
-// чистим ВСЕ кеши, unregister SW, перезагружаемся. Это гарантирует что
-// после деплоя пользователь получает свежий код.
-const CURRENT_CACHE_VERSION = "shefdom-v3";
+// __BUILD_TIMESTAMP__ подставляется Vite при билде (define в vite.config.ts).
+// Используем его как версию кеша — при каждом деплое timestamp меняется,
+// что инвалидирует старые кеши автоматически.
+declare const __BUILD_TIMESTAMP__: string;
+const CURRENT_CACHE_VERSION = `shefdom-v${__BUILD_TIMESTAMP__}`;
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
       const cacheKeys = "caches" in window ? await caches.keys() : [];
       const hasCurrentCache = cacheKeys.includes(CURRENT_CACHE_VERSION);
-      const hasAnyOldCache = cacheKeys.some((k) => k !== CURRENT_CACHE_VERSION);
+      const hasAnyOldCache = cacheKeys.some((k) => k !== CURRENT_CACHE_VERSION && k.startsWith("shefdom-"));
       const alreadyCleaned = sessionStorage.getItem(`sw-cleaned-${CURRENT_CACHE_VERSION}`) === "1";
       if (hasAnyOldCache && !hasCurrentCache && !alreadyCleaned) {
         sessionStorage.setItem(`sw-cleaned-${CURRENT_CACHE_VERSION}`, "1");

@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import { Buffer } from "node:buffer";
+import { validateFetchUrl } from "./urlValidation";
 
 // Парсер рецепта по URL. 4 стратегии в порядке убывания надёжности:
 // 1. JSON-LD Schema.org — современный стандарт, ~80% сайтов
@@ -437,6 +438,7 @@ function truncate(s: string | null | undefined, max: number): string | null {
 // --- Fetch ---
 
 async function fetchHtml(url: string): Promise<string> {
+  validateFetchUrl(url);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {

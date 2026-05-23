@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { nanoid } from "nanoid";
 import { scrapeRecipe } from "./recipeScraper";
 import { calcRecipeNutrition } from "./nutritionCalc";
+import { validateFetchUrl } from "./urlValidation";
 import { db } from "../db/index";
 import { recipes, recipeIngredients, recipeSteps } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -475,6 +476,7 @@ function guessSectionCategory(seedPath: string): string | null {
 // --- Helpers ---
 
 async function fetchHtml(url: string): Promise<string> {
+  validateFetchUrl(url);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
