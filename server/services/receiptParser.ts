@@ -87,23 +87,9 @@ function detectDate(text: string): string | null {
   return null;
 }
 
-// Исправление OCR-артефактов в числах.
-// OCR часто путает буквы и цифры: L→1, O→0, I→1, S→5, Z→2, B→8.
-// Применяем ТОЛЬКО к строкам, которые выглядят как цена (содержат запятую/точку
-// и рядом цифры). Это безопасно — в названиях товаров эти замены не делаются.
-function fixOcrDigits(s: string): string {
-  return s
-    .replace(/[lLIi|]/g, '1')
-    .replace(/[oO]/g, '0')
-    .replace(/[Ss]/g, '5')
-    .replace(/[Zz]/g, '2');
-}
-
 // Преобразуем строку-число с разными разделителями в JS number.
 function parseNumber(raw: string): number | null {
   let s = raw.trim().replace(/\s/g, '');
-  // Исправляем OCR-артефакты в ценах
-  s = fixOcrDigits(s);
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
   if (lastComma !== -1 && lastDot !== -1) {
@@ -121,8 +107,7 @@ function parseNumber(raw: string): number | null {
 
 // Регексп для строк, состоящих ТОЛЬКО из цены (с возможными €, B, BB, A, и т.д.)
 // Покрывает: «1,29», «1,29 €», «-2,07», «4,78 € B», «0,99», «19,28 €»
-// Также допускает OCR-артефакты: L,37 (L вместо 1), O,99 (O вместо 0) и т.д.
-const PRICE_ONLY_RE = /^-?[0-9lLiIoOsSzZ]{1,4}[.,][0-9lLiIoOsSzZ]{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/;
+const PRICE_ONLY_RE = /^-?\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/;
 
 // «N x X,XX €» — строка о количестве. Проверяет что это именно
 // «количество × цена-за-штуку», а не позиция товара.
@@ -142,9 +127,8 @@ function extractTrailingPrice(line: string): number | null {
   const cleaned = line
     .replace(/[€₽$]/g, ' ')
     .replace(/\s+(?:EUR|RUB)\b/gi, ' ');
-  // Допускаем OCR-артефакты (L/O/I/S/Z) на месте цифр
   const matches = cleaned.match(
-    /-?[0-9lLiIoOsSzZ]{1,3}(?:[ .,][0-9lLiIoOsSzZ]{3})*(?:[.,][0-9lLiIoOsSzZ]{1,2})|-?[0-9lLiIoOsSzZ]+[.,][0-9lLiIoOsSzZ]{1,2}/g,
+    /-?\d{1,3}(?:[ .,]\d{3})*(?:[.,]\d{1,2})|-?\d+[.,]\d{1,2}/g,
   );
   if (!matches || matches.length === 0) return null;
   return parseNumber(matches[matches.length - 1]);
