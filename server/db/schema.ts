@@ -286,3 +286,31 @@ export const receiptItems = pgTable('receipt_items', {
   }),
   sortOrder: integer('sort_order').notNull().default(0),
 });
+
+
+// Этап D — заготовки. Единая таблица под три типа: заморозка ('frozen'),
+// консервация ('preserved'), открытые продукты ('opened'). См. миграцию 019.
+//
+// Поля по типу (null для других — нормально):
+//   frozen: name, quantity, unit, servings, preparedAt (когда заморозили),
+//     expiryDate (до какого числа хранить).
+//   preserved: name, quantity, unit, preparedAt (когда заготовили),
+//     expiryDate (годен до).
+//   opened: name, quantity, unit, preparedAt (когда открыли),
+//     expiryDate (годен после открытия до).
+export const preserves = pgTable('preserves', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  preserveType: text('preserve_type').notNull(), // 'frozen' | 'preserved' | 'opened'
+  name: text('name').notNull(),
+  quantity: numeric('quantity'),
+  unit: text('unit'),
+  servings: integer('servings'),
+  preparedAt: text('prepared_at'), // YYYY-MM-DD
+  expiryDate: text('expiry_date'), // YYYY-MM-DD
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

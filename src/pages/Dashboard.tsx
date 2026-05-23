@@ -7,6 +7,7 @@ import {
   CalendarDays,
   AlertTriangle,
   Clock,
+  Snowflake,
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -235,6 +236,33 @@ export function Dashboard() {
           </span>
         </Link>
       </div>
+
+      {/* Карточка «Заготовки» — отдельная строка, чтобы быстро попасть
+          в раздел с телефона (в нижней нав-баре только 5 пунктов). */}
+      <Link
+        to="/preserves"
+        className="block bg-paper rounded-2xl border border-line p-5 hover:border-primary hover:shadow-sm transition-all group"
+      >
+        <div className="flex items-center gap-4">
+          <Snowflake
+            size={28}
+            className="text-primary shrink-0"
+            strokeWidth={1.5}
+          />
+          <div className="flex-1 min-w-0">
+            <h3 className="font-serif text-lg font-semibold text-ink">
+              Заготовки
+            </h3>
+            <p className="text-ink-soft text-sm">
+              Заморозка, консервация, открытые продукты
+            </p>
+          </div>
+          <ArrowRight
+            size={18}
+            className="text-primary shrink-0 group-hover:translate-x-0.5 transition-transform"
+          />
+        </div>
+      </Link>
 
       {/* C.2 — Любимое в этом месяце */}
       {topRecipe && topRecipe.count >= 2 && (

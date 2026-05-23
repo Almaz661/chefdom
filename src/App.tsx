@@ -17,6 +17,7 @@ import { WhatToCookPage } from "./pages/WhatToCookPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { ReceiptDetailPage } from "./pages/ReceiptDetailPage";
+import { PreservesPage } from "./pages/PreservesPage";
 import { isAuthenticated } from "./utils/auth";
 
 // Helper: страница за PIN, обёрнутая в общий Layout (сайдбар + нижняя нав).
@@ -60,6 +61,10 @@ export default function App() {
       <Route
         path="/inventory"
         element={<PrivatePage><InventoryPage /></PrivatePage>}
+      />
+      <Route
+        path="/preserves"
+        element={<PrivatePage><PreservesPage /></PrivatePage>}
       />
       <Route
         path="/settings"
