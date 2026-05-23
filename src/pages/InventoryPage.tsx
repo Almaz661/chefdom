@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
@@ -54,13 +55,69 @@ export function InventoryPage() {
 
   const utils = trpc.useUtils();
   const { data: allItems = [], isLoading } = trpc.inventory.list.useQuery();
+  // Заготовки frozen физически лежат в морозилке — показываем их во
+  // вкладке «Морозилка» вместе с обычными продуктами. Остальные типы
+  // заготовок (preserved, opened) остаются только на странице /preserves.
+  const { data: allPreserves = [] } = trpc.preserves.list.useQuery();
 
   const remove = trpc.inventory.remove.useMutation({
     onSuccess: () => utils.inventory.list.invalidate(),
   });
+  const removePreserve = trpc.preserves.remove.useMutation({
+    onSuccess: () => utils.preserves.list.invalidate(),
+  });
 
-  // Фильтр по табу
-  const items = allItems.filter((i) => i.storageType === tab);
+  // Универсальный тип карточки в списке. source различает обычный
+  // инвентарь и заготовку — кнопка «Удалить» использует разный мутатор.
+  type ViewItem = {
+    id: number;
+    source: "inventory" | "preserve";
+    productName: string;
+    quantity: string | null;
+    unit: string | null;
+    expiryDate: string | null;
+    category: string | null;
+  };
+
+  // Преобразуем оба источника к общему виду.
+  const inventoryView: ViewItem[] = allItems
+    .filter((i) => i.storageType === tab)
+    .map((i) => ({
+      id: i.id,
+      source: "inventory" as const,
+      productName: i.productName,
+      quantity: i.quantity,
+      unit: i.unit,
+      expiryDate: i.expiryDate,
+      category: i.category,
+    }));
+
+  // Заготовки frozen добавляем только во вкладке «Морозилка».
+  const preservesView: ViewItem[] =
+    tab === "freezer"
+      ? allPreserves
+          .filter((p) => p.preserveType === "frozen")
+          .map((p) => ({
+            id: p.id,
+            source: "preserve" as const,
+            productName: p.name,
+            quantity: p.quantity,
+            unit: p.unit,
+            expiryDate: p.expiryDate,
+            category: "Заготовки",
+          }))
+      : [];
+
+  const items: ViewItem[] = [...inventoryView, ...preservesView];
+
+  // Удаление зависит от источника — выбираем нужный мутатор.
+  const handleRemove = (it: ViewItem) => {
+    if (it.source === "preserve") {
+      removePreserve.mutate({ id: it.id });
+    } else {
+      remove.mutate({ id: it.id });
+    }
+  };
 
   // Скоро истекает (<=2 дней) для текущего таба
   const expiring = items.filter((i) => {
@@ -83,6 +140,9 @@ export function InventoryPage() {
   }, {});
 
   const categories = Object.keys(grouped).sort((a, b) => {
+    // «Заготовки» всегда наверху, «Без категории» — внизу.
+    if (a === "Заготовки") return -1;
+    if (b === "Заготовки") return 1;
     if (a === "Без категории") return 1;
     if (b === "Без категории") return -1;
     return a.localeCompare(b, "ru");
@@ -162,7 +222,7 @@ export function InventoryPage() {
                   const isExpired = days !== null && days < 0;
                   return (
                     <li
-                      key={item.id}
+                      key={`${item.source}-${item.id}`}
                       className={`flex items-center gap-3 rounded-lg px-4 py-3 border ${
                         isExpired
                           ? "bg-alert/5 border-alert/30"
@@ -176,6 +236,12 @@ export function InventoryPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink truncate">
+                          {item.source === "preserve" && (
+                            <Snowflake
+                              size={12}
+                              className="inline-block mr-1 text-cool align-text-bottom"
+                            />
+                          )}
                           {item.productName}
                           {item.quantity && (
                             <span className="text-ink-muted ml-1">
@@ -189,10 +255,13 @@ export function InventoryPage() {
                           }`}
                         >
                           {expiryText(item.expiryDate)}
+                          {item.source === "preserve" && (
+                            <span className="text-ink-muted"> · из заготовок</span>
+                          )}
                         </p>
                       </div>
                       <button
-                        onClick={() => remove.mutate({ id: item.id })}
+                        onClick={() => handleRemove(item)}
                         className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
                         aria-label="Удалить"
                       >
@@ -216,18 +285,42 @@ export function InventoryPage() {
               <p className="text-ink-soft text-sm">
                 Пусто. Добавьте продукты кнопкой [+] сверху.
               </p>
+              {tab === "freezer" && (
+                <p className="text-ink-soft text-xs mt-2">
+                  Котлеты, фарш, ягоды и другие заморозки удобнее заводить
+                  через раздел{" "}
+                  <Link
+                    to="/preserves"
+                    className="text-primary underline"
+                  >
+                    Заготовки
+                  </Link>
+                  {" "}— срок хранения подставится автоматически.
+                </p>
+              )}
             </div>
           ) : normal.length > 0 ? (
             <div className="space-y-5">
               {categories.map((cat) => (
                 <section key={cat}>
-                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+                    {cat === "Заготовки" && (
+                      <Snowflake size={12} className="text-cool" />
+                    )}
                     {cat}
+                    {cat === "Заготовки" && (
+                      <Link
+                        to="/preserves"
+                        className="ml-auto text-primary normal-case font-normal tracking-normal"
+                      >
+                        в раздел →
+                      </Link>
+                    )}
                   </h3>
                   <ul className="space-y-1">
                     {grouped[cat].map((item) => (
                       <li
-                        key={item.id}
+                        key={`${item.source}-${item.id}`}
                         className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
                       >
                         <div className="flex-1 min-w-0">
@@ -246,7 +339,7 @@ export function InventoryPage() {
                           )}
                         </div>
                         <button
-                          onClick={() => remove.mutate({ id: item.id })}
+                          onClick={() => handleRemove(item)}
                           className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
                           aria-label="Удалить"
                         >
