@@ -66,15 +66,13 @@ export const shoppingRouter = router({
       }
     }
 
-    // Удалить дубли в фоне (не блокируем ответ)
+    // Удалить дубли из базы
     if (dupeIds.length > 0) {
-      db.delete(purchaseItems)
-        .where(inArray(purchaseItems.id, dupeIds))
-        .then(() => console.log(`[shopping.list] удалено ${dupeIds.length} дублей`))
-        .catch((err) => console.error('[shopping.list] ошибка дедупликации:', err));
+      await db.delete(purchaseItems).where(inArray(purchaseItems.id, dupeIds));
+      console.log(`[shopping.list] удалено ${dupeIds.length} дублей`);
     }
 
-    // Возвращаем список БЕЗ дублей (фильтруем на уровне JS)
+    // Возвращаем список БЕЗ дублей
     const dupeSet = new Set(dupeIds);
     return items.filter(i => !dupeSet.has(i.id));
   }),
