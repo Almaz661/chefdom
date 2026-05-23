@@ -92,11 +92,15 @@ function detectDate(text: string): string | null {
 // Применяем ТОЛЬКО к строкам, которые выглядят как цена (содержат запятую/точку
 // и рядом цифры). Это безопасно — в названиях товаров эти замены не делаются.
 function fixOcrDigits(s: string): string {
-  return s
-    .replace(/[lLIi|]/g, '1')
+  // Одиночная буква ПЕРЕД запятой (L,37) — это OCR-мусор, не цифра 1.
+  // Реальная цена 0,37. Заменяем на "0".
+  let fixed = s.replace(/^([^0-9,.]*)([lLIi|])([.,]\d{2})/, '$10$3');
+  // Остальные замены для цифр внутри числа
+  fixed = fixed
+    .replace(/[Ii|]/g, '1')
     .replace(/[oO]/g, '0')
-    .replace(/[Ss]/g, '5')
     .replace(/[Zz]/g, '2');
+  return fixed;
 }
 
 // Преобразуем строку-число с разными разделителями в JS number.
@@ -330,7 +334,9 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
       const trailingPrice = extractTrailingPrice(line);
       if (trailingPrice !== null && looksLikePrice(trailingPrice) && (total === null || Math.abs(trailingPrice - total) > 0.01)) {
         // Проверяем что после удаления цены осталось валидное имя
-        const withoutPrice = line.replace(/\s*-?\d{1,4}[.,]\d{2}.*$/, '').trim();
+        const withoutPrice = line
+          .replace(/\s*-?[0-9lLiIoOsSzZ]{1,4}[.,][0-9lLiIoOsSzZ]{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/, '')
+          .trim();
         if (looksLikeProductName(withoutPrice)) {
           pendingName = null;
           items.push({ name: withoutPrice, price: trailingPrice });
