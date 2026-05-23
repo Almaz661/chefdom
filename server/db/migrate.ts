@@ -1,5 +1,6 @@
 import { client } from './index';
 import { seedSubstitutions } from './seed-substitutions';
+import bcrypt from 'bcryptjs';
 
 type Sql = typeof client;
 
@@ -397,6 +398,75 @@ const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_sessions_expires_at
         ON sessions(expires_at)
       `;
+    },
+  },
+  {
+    version: '017_auth_attempts',
+    up: async (sql) => {
+      // Защита от перебора PIN — счётчик попыток, который ПЕРЕЖИВАЕТ
+      // перезапуск сервера. До этой миграции attempts хранились в Map в
+      // памяти процесса; на Render Free сервер засыпает каждые 15 мин
+      // и счётчик сбрасывался → brute force 4-цифрового PIN был реален
+      // (10 000 вариантов / 5 попыток × 15 мин ≈ 500 часов = 21 день).
+      //
+      // С этой миграцией: попытки в БД, блок на 30 мин выживает рестарты.
+      //
+      // key — IP клиента (или 'unknown' если не определился).
+      // count — количество ПОДРЯД неверных попыток с этого IP.
+      // blocked_until — UTC timestamp до которого вход с этого IP заблокирован.
+      // updated_at — для будущей очистки старых записей (cron-job).
+      await sql`
+        CREATE TABLE IF NOT EXISTS auth_attempts (
+          key TEXT PRIMARY KEY,
+          count INTEGER NOT NULL DEFAULT 0,
+          blocked_until TIMESTAMPTZ,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      // Индекс для очистки устаревших записей (count=0, blocked_until истёк).
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_auth_attempts_updated
+        ON auth_attempts(updated_at)
+      `;
+    },
+  },
+  {
+    version: '018_pin_hash',
+    up: async (sql) => {
+      // Хеширование PIN через bcrypt. До этой миграции PIN хранился plain
+      // text в users.pin — при компрометации БД (утечка дампа Neon, кража
+      // backup-файла) злоумышленник сразу получал PIN.
+      //
+      // Стратегия:
+      //   1. Добавляем колонку pin_hash TEXT (nullable пока).
+      //   2. Для всех существующих юзеров считаем bcrypt(pin) и пишем в pin_hash.
+      //   3. Делаем pin_hash NOT NULL.
+      //   4. Колонку pin НЕ удаляем в этом релизе — оставляем как backup на
+      //      случай отката. В следующей миграции (019) можно дропнуть.
+      //
+      // Code-path: auth.ts читает только pin_hash. Старая колонка pin
+      // остаётся «осиротелой», но не мешает.
+      //
+      // bcrypt cost: 10. Это ~80 мс на современном CPU — баланс между
+      // защитой от перебора и UX (пользователь не ждёт логин секунду).
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_hash TEXT`;
+
+      // Бэкфилл: считаем bcrypt для каждого существующего юзера.
+      // Делаем последовательно, не параллельно — bcrypt CPU-intensive,
+      // параллельность не ускорит на одном ядре.
+      const users = await sql<{ id: number; pin: string; pin_hash: string | null }[]>`
+        SELECT id, pin, pin_hash FROM users
+      `;
+      for (const u of users) {
+        if (u.pin_hash) continue; // уже захешировано — пропуск
+        const hash = await bcrypt.hash(u.pin, 10);
+        await sql`UPDATE users SET pin_hash = ${hash} WHERE id = ${u.id}`;
+      }
+
+      // Делаем pin_hash NOT NULL — для свежей БД (0 юзеров) это безопасно
+      // (ALTER на пустой колонке всегда проходит); для существующей БД
+      // уже все строки заполнены выше.
+      await sql`ALTER TABLE users ALTER COLUMN pin_hash SET NOT NULL`;
     },
   },
 ];

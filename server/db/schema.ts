@@ -14,12 +14,16 @@ export const schemaMigrations = pgTable('schema_migrations', {
 });
 
 // Этап 0 — пользователи (на старте один: «Семья» c PIN 1234)
+// pinHash — bcrypt-хеш PIN (миграция 018). До этого PIN хранился plain
+// text в `pin` колонке — теперь оставлена для backwards compat, но
+// весь код читает/пишет ТОЛЬКО pinHash.
 // defaultCurrency — выбор валюты в Настройках (миграция 015).
 // Используется как валюта по умолчанию при создании чека вручную и
 // как fallback в парсере OCR, если магазин не распознан.
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   pin: text('pin').notNull(),
+  pinHash: text('pin_hash').notNull(),
   name: text('name').notNull(),
   defaultCurrency: text('default_currency').notNull().default('EUR'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -41,6 +45,19 @@ export const sessions = pgTable('sessions', {
     .references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Попытки входа — счётчик неверных PIN, переживает рестарт сервера
+// (миграция 017). До этого Map в памяти, на Render Free сервер засыпает
+// каждые 15 мин и счётчик сбрасывался.
+//
+// key — IP клиента (или 'unknown'). count — подряд неверных попыток.
+// blocked_until — до этого момента вход с этого IP заблокирован.
+export const authAttempts = pgTable('auth_attempts', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull().default(0),
+  blockedUntil: timestamp('blocked_until', { withTimezone: true }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Этап 0 — рецепты (Блок 4)
