@@ -22,10 +22,18 @@ function getKey(ip: string | undefined): string {
  * Создаёт сессию для пользователя.
  * token — 32 байта криптостойкой случайности → 64 hex символа.
  * Не угадывается перебором (2^256 вариантов).
+ *
+ * expiresAt передаём в SQL как ISO-строку, а не как объект Date. Колонка
+ * sessions.expires_at имеет тип TIMESTAMPTZ и корректно парсит ISO-формат
+ * (YYYY-MM-DDTHH:mm:ss.sssZ). Это страхует от случая, когда драйвер
+ * postgres.js не успевает применить свой сериализатор для Date и пытается
+ * писать объект Date как строковый параметр — тогда Node бросает
+ * "The string argument must be of type string... Received an instance of Date"
+ * прямо в момент входа по PIN, и пользователь не может авторизоваться.
  */
 async function createSession(userId: number): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
   await client`
     INSERT INTO sessions (token, user_id, expires_at)
     VALUES (${token}, ${userId}, ${expiresAt})
