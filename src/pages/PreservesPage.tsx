@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import {
   Snowflake,
   Archive,
@@ -7,6 +7,7 @@ import {
   Trash2,
   AlertTriangle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
@@ -286,6 +287,12 @@ function AddPreserveDialog({
   const [servings, setServings] = useState("");
   const [preparedAt, setPreparedAt] = useState(today);
   const [expiryDate, setExpiryDate] = useState("");
+  // Подсказка от справочника шефа: какой ключ совпал и какой срок дан.
+  // Показываем только для frozen — для других типов нет смысла авто-считать.
+  const [shelfHint, setShelfHint] = useState<{ keyword: string; days: number } | null>(null);
+  // Помечаем что пользователь сам редактировал поле даты — тогда не
+  // перезатираем его автоподсказкой при изменении названия.
+  const [expiryDirty, setExpiryDirty] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -295,6 +302,49 @@ function AddPreserveDialog({
       onClose();
     },
   });
+
+  // Авто-подстановка срока хранения для типа frozen.
+  // Дебаунс 400 мс — не заваливаем сервер при наборе по букве.
+  // Срабатывает на изменение name или preparedAt.
+  // Не трогает expiryDate если пользователь его сам менял (expiryDirty).
+  useEffect(() => {
+    if (preserveType !== "frozen") {
+      setShelfHint(null);
+      return;
+    }
+    const trimmed = name.trim();
+    if (trimmed.length < 3) {
+      setShelfHint(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await utils.preserves.suggestExpiry.fetch({
+          name: trimmed,
+          preparedAt: preparedAt || undefined,
+        });
+        if (cancelled) return;
+        if (res.matched) {
+          setShelfHint({ keyword: res.keyword, days: res.days });
+          if (!expiryDirty) {
+            setExpiryDate(res.expiryDate);
+          }
+        } else {
+          setShelfHint(null);
+        }
+      } catch {
+        // Молча игнорируем — авто-подсказка не критична
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, preparedAt, preserveType]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -404,9 +454,38 @@ function AddPreserveDialog({
             <input
               type="date"
               value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
+              onChange={(e) => {
+                setExpiryDate(e.target.value);
+                setExpiryDirty(true);
+              }}
               className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
+            {/* Шеф-подсказка: показываем только для frozen и если справочник
+                нашёл совпадение. Если пользователь сам ввёл дату — мягко
+                напоминаем что подсказка проигнорирована (но не давим). */}
+            {preserveType === "frozen" && shelfHint && (
+              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-fresh">
+                <Sparkles size={12} />
+                Шеф советует: «{shelfHint.keyword}» — {shelfHint.days} дн.
+                {expiryDirty && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Возвращаем подсказанную дату — пересчитаем от preparedAt + days
+                      const base = preparedAt
+                        ? new Date(preparedAt + "T00:00:00")
+                        : new Date();
+                      base.setDate(base.getDate() + shelfHint.days);
+                      setExpiryDate(base.toISOString().slice(0, 10));
+                      setExpiryDirty(false);
+                    }}
+                    className="ml-1 text-primary underline"
+                  >
+                    применить
+                  </button>
+                )}
+              </span>
+            )}
           </label>
 
           <div className="flex gap-3 pt-2">
