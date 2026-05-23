@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { receipts, receiptItems, users } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
@@ -34,7 +34,7 @@ const ItemInput = z.object({
 
 export const receiptsRouter = router({
   // Список чеков (для ReceiptsPage)
-  list: publicProcedure.query(async () => {
+  list: protectedProcedure.query(async () => {
     const rows = await db
       .select({
         id: receipts.id,
@@ -53,7 +53,7 @@ export const receiptsRouter = router({
   }),
 
   // Один чек со всеми позициями (для ReceiptDetailPage)
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
       const [receipt] = await db
@@ -74,7 +74,7 @@ export const receiptsRouter = router({
 
   // Создать пустой чек вручную (на случай если OCR не работает / нет фото).
   // Если currency не передан — берём валюту по умолчанию из настроек.
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         storeName: z.string().max(200).optional(),
@@ -102,7 +102,7 @@ export const receiptsRouter = router({
   // Если хотя бы что-то распозналось — чек создаётся. Если не получилось
   // вытащить даже одну позицию — чек всё равно создаётся (пустой,
   // пользователь добавит вручную).
-  createFromPhoto: publicProcedure
+  createFromPhoto: protectedProcedure
     .input(
       z.object({
         imageBase64: z.string().min(100), // base64 фото
@@ -189,7 +189,7 @@ export const receiptsRouter = router({
   // вставляет новые. Полезно после улучшения парсера или ручной правки
   // ocr_raw в БД (например через Neon SQL Console).
   // Шапка чека (магазин/дата/итог/валюта) тоже обновляется.
-  reparse: publicProcedure
+  reparse: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const [receipt] = await db
@@ -255,7 +255,7 @@ export const receiptsRouter = router({
     }),
 
   // Обновить «шапку» чека
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.number().int().positive(),
@@ -291,7 +291,7 @@ export const receiptsRouter = router({
     }),
 
   // Удалить чек (cascade удалит позиции — FK ON DELETE CASCADE)
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db
@@ -305,7 +305,7 @@ export const receiptsRouter = router({
     }),
 
   // Добавить позицию вручную (если OCR что-то пропустил)
-  addItem: publicProcedure
+  addItem: protectedProcedure
     .input(z.object({ receiptId: z.number().int().positive(), item: ItemInput }))
     .mutation(async ({ input }) => {
       const [created] = await db
@@ -328,7 +328,7 @@ export const receiptsRouter = router({
     }),
 
   // Редактировать позицию (название / количество / единица / цена)
-  updateItem: publicProcedure
+  updateItem: protectedProcedure
     .input(
       z.object({
         id: z.number().int().positive(),
@@ -362,7 +362,7 @@ export const receiptsRouter = router({
     }),
 
   // Удалить позицию
-  deleteItem: publicProcedure
+  deleteItem: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       await db.delete(receiptItems).where(eq(receiptItems.id, input.id));

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { and, desc, eq, ilike, lt, type SQL } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { client, db } from '../db/index';
 import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
 import { scrapeRecipe } from '../services/recipeScraper';
@@ -66,7 +66,7 @@ function toRecipeRow(input: z.infer<typeof recipeFields>) {
 export const recipesRouter = router({
   // --- READ ---
 
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -113,7 +113,7 @@ export const recipesRouter = router({
       return { items: rows, nextCursor };
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
       const [recipe] = await db
@@ -144,7 +144,7 @@ export const recipesRouter = router({
       return { recipe, ingredients, steps };
     }),
 
-  getCategories: publicProcedure.query(async () => {
+  getCategories: protectedProcedure.query(async () => {
     const rows = await client<{ category: string; count: number }[]>`
       SELECT category, COUNT(*)::int AS count
       FROM recipes
@@ -155,7 +155,7 @@ export const recipesRouter = router({
     return rows;
   }),
 
-  getCuisines: publicProcedure.query(async () => {
+  getCuisines: protectedProcedure.query(async () => {
     const rows = await client<{ cuisine: string; count: number }[]>`
       SELECT cuisine, COUNT(*)::int AS count
       FROM recipes
@@ -166,7 +166,7 @@ export const recipesRouter = router({
     return rows;
   }),
 
-  getStats: publicProcedure.query(async () => {
+  getStats: protectedProcedure.query(async () => {
     const rows = await client<{ count: number }[]>`
       SELECT COUNT(*)::int AS count FROM recipes
     `;
@@ -176,7 +176,7 @@ export const recipesRouter = router({
   // --- WRITE ---
 
   // Создание: вставка recipe + ингредиентов + шагов в одной транзакции.
-  create: publicProcedure
+  create: protectedProcedure
     .input(recipeFields)
     .mutation(async ({ input }) => {
       return await db.transaction(async (tx) => {
@@ -216,7 +216,7 @@ export const recipesRouter = router({
 
   // Обновление: ингредиенты и шаги перезаписываются полностью (DELETE + INSERT).
   // Это проще и безопаснее чем diff'ить, для домашнего приложения подходит.
-  update: publicProcedure
+  update: protectedProcedure
     .input(recipeFields.extend({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       return await db.transaction(async (tx) => {
@@ -275,7 +275,7 @@ export const recipesRouter = router({
     }),
 
   // Удаление: каскадно удаляет ингредиенты и шаги (FK ON DELETE CASCADE).
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db
@@ -292,7 +292,7 @@ export const recipesRouter = router({
     }),
 
   // Импорт по URL: скрейп с сайта → сохранение в БД одной транзакцией.
-  importFromUrl: publicProcedure
+  importFromUrl: protectedProcedure
     .input(z.object({ url: z.string().url('Некорректный URL') }))
     .mutation(async ({ input }) => {
       let scraped;
@@ -376,7 +376,7 @@ export const recipesRouter = router({
 
   // --- SECTION IMPORT (Блок 7) ---
 
-  importSectionStart: publicProcedure
+  importSectionStart: protectedProcedure
     .input(z.object({ url: z.string().url('Некорректный URL раздела') }))
     .mutation(({ input }) => {
       try {
@@ -390,11 +390,11 @@ export const recipesRouter = router({
       }
     }),
 
-  importSectionStatus: publicProcedure.query(() => {
+  importSectionStatus: protectedProcedure.query(() => {
     return getActiveJob();
   }),
 
-  importSectionCancel: publicProcedure.mutation(() => {
+  importSectionCancel: protectedProcedure.mutation(() => {
     const ok = cancelActiveJob();
     if (!ok) {
       throw new TRPCError({
@@ -414,7 +414,7 @@ export const recipesRouter = router({
   // и сети до Neon). Для 100 рецептов это ~1–2 минуты — запрос блокирующий,
   // фронт показывает спиннер. Если рецептов сильно больше — нужно будет
   // переделать в job с прогрессом, как sectionImport.
-  recalcAllNutrition: publicProcedure.mutation(async () => {
+  recalcAllNutrition: protectedProcedure.mutation(async () => {
     const allRecipes = await db.select({ id: recipes.id }).from(recipes);
     let updated = 0;
     let failed = 0;
@@ -433,7 +433,7 @@ export const recipesRouter = router({
   // --- B.4 «Что приготовить» из имеющегося инвентаря ---
   // Для топ-N рецептов считает сколько ингредиентов есть в инвентаре
   // и использует ли рецепт скоропортящиеся продукты.
-  matchWithInventory: publicProcedure
+  matchWithInventory: protectedProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(200).default(100),
@@ -552,7 +552,7 @@ export const recipesRouter = router({
   // --- ГОТОВИТЬ (п.8 Этап 0) ---
   // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие)
   // и пишет факт готовки в cooking_history (для HistoryPage / Dashboard).
-  cook: publicProcedure
+  cook: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const { inventory, cookingHistory } = await import('../db/schema');

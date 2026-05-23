@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { cookingHistory, recipeIngredients } from '../db/schema';
 
@@ -27,7 +27,7 @@ function periodStart(period: Period): Date {
 
 export const analyticsRouter = router({
   // Топ-5 рецептов за период
-  topRecipes: publicProcedure
+  topRecipes: protectedProcedure
     .input(z.object({ period: PeriodSchema.optional() }))
     .query(async ({ input }) => {
       const from = periodStart(input.period ?? 'month');
@@ -52,7 +52,7 @@ export const analyticsRouter = router({
 
   // Расход продуктов за период — суммируем ингредиенты из всех приготовленных рецептов.
   // Группировка по имени ингредиента + единице измерения.
-  productConsumption: publicProcedure
+  productConsumption: protectedProcedure
     .input(z.object({ period: PeriodSchema.optional() }))
     .query(async ({ input }) => {
       const from = periodStart(input.period ?? 'month');

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import type { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import path from "node:path";
 import fs from "node:fs";
@@ -9,6 +10,7 @@ import { runMigrations } from "./db/migrate";
 import { runSeed } from "./db/seed";
 import { appRouter } from "./routers/_app";
 import { createContext } from "./trpc";
+import { client } from "./db/index";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,8 +41,37 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Middleware для админских GET-эндпоинтов (/api/seed-*, /api/calc-nutrition).
+// Требует валидный Bearer-токен из таблицы sessions — так же как
+// protectedProcedure в tRPC. До этого эндпоинты были полностью публичные
+// и любой по URL мог запустить реселектинг USDA на ~30 минут (DoS вектор).
+async function requireSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : null;
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const rows = await client<{ user_id: number }[]>`
+    SELECT user_id FROM sessions
+    WHERE token = ${token} AND expires_at > NOW()
+    LIMIT 1
+  `;
+  if (rows.length === 0) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+}
+
 // Одноразовый запуск импорта ингредиентов из USDA (G.1)
-app.get("/api/seed-ingredients", async (req, res) => {
+app.get("/api/seed-ingredients", requireSession, async (_req, res) => {
   res.json({ ok: true, message: "Импорт запущен в фоне. Смотри логи Render." });
   setImmediate(async () => {
     try {
@@ -53,7 +84,7 @@ app.get("/api/seed-ingredients", async (req, res) => {
 });
 
 // Одноразовый запуск импорта товаров из Open Food Facts (G.2)
-app.get("/api/seed-products", async (req, res) => {
+app.get("/api/seed-products", requireSession, async (_req, res) => {
   res.json({ ok: true, message: "Импорт товаров запущен в фоне. Смотри логи Render." });
   setImmediate(async () => {
     try {
@@ -69,7 +100,10 @@ app.get("/api/seed-products", async (req, res) => {
 // Использует общий helper calcRecipeNutrition. Best-effort:
 // рецепты которые не получилось рассчитать (нет в USDA) пропускаются
 // без затирания существующих значений.
-app.get("/api/calc-nutrition", async (req, res) => {
+//
+// NB: дублирует tRPC recipes.recalcAllNutrition (там кнопка в Настройках),
+// оставлен для обратной совместимости с админ-флоу через curl.
+app.get("/api/calc-nutrition", requireSession, async (_req, res) => {
   res.json({ ok: true, message: "Расчёт КБЖУ запущен в фоне. Смотри логи Render." });
   setImmediate(async () => {
     try {

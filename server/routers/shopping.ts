@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { eq, and } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { purchaseItems, inventory } from '../db/schema';
 
 export const shoppingRouter = router({
   // Весь список покупок (userId=1)
-  list: publicProcedure.query(async () => {
+  list: protectedProcedure.query(async () => {
     const items = await db
       .select()
       .from(purchaseItems)
@@ -17,7 +17,7 @@ export const shoppingRouter = router({
   }),
 
   // Добавить позицию
-  add: publicProcedure
+  add: protectedProcedure
     .input(
       z.object({
         productName: z.string().min(1).max(200),
@@ -41,7 +41,7 @@ export const shoppingRouter = router({
     }),
 
   // Переключить чекбокс
-  toggle: publicProcedure
+  toggle: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const [item] = await db
@@ -64,7 +64,7 @@ export const shoppingRouter = router({
     }),
 
   // Удалить одну позицию
-  remove: publicProcedure
+  remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db
@@ -79,7 +79,7 @@ export const shoppingRouter = router({
     }),
 
   // Купить и положить в инвентарь
-  buyAndStore: publicProcedure
+  buyAndStore: protectedProcedure
     .input(
       z.object({
         id: z.number().int().positive(),
@@ -117,7 +117,7 @@ export const shoppingRouter = router({
     }),
 
   // Очистить отмеченные (купленные)
-  clearChecked: publicProcedure.mutation(async () => {
+  clearChecked: protectedProcedure.mutation(async () => {
     const deleted = await db
       .delete(purchaseItems)
       .where(and(eq(purchaseItems.userId, 1), eq(purchaseItems.isChecked, 1)))

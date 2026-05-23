@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { router, publicProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { db } from "../db/index";
 import {
   recipes,
@@ -21,7 +21,7 @@ export const settingsRouter = router({
   // Текущая валюта по умолчанию (для отображения в Настройках и
   // подстановки в форме создания чека).
   // Берём первого пользователя — мульти-юзер пока не поддерживается.
-  getCurrency: publicProcedure.query(async () => {
+  getCurrency: protectedProcedure.query(async () => {
     const [user] = await db
       .select({ defaultCurrency: users.defaultCurrency })
       .from(users)
@@ -33,7 +33,7 @@ export const settingsRouter = router({
   // Сохранить валюту. Влияет на:
   //  - значение по умолчанию в форме «Новый чек вручную»;
   //  - fallback в парсере OCR, если магазин не распознан.
-  setCurrency: publicProcedure
+  setCurrency: protectedProcedure
     .input(z.object({ currency: currencySchema }))
     .mutation(async ({ input }) => {
       const [user] = await db.select({ id: users.id }).from(users).limit(1);
@@ -46,7 +46,7 @@ export const settingsRouter = router({
     }),
 
   // Экспорт всех данных в JSON (раздел 15.1 плана)
-  exportBackup: publicProcedure.query(async () => {
+  exportBackup: protectedProcedure.query(async () => {
     const [
       allRecipes,
       allIngredients,
@@ -87,7 +87,7 @@ export const settingsRouter = router({
   }),
 
   // Восстановление из backup (раздел 15.2 плана)
-  importBackup: publicProcedure
+  importBackup: protectedProcedure
     .input(
       z.object({
         version: z.number(),
@@ -194,7 +194,7 @@ export const settingsRouter = router({
     }),
 
   // Статистика для страницы «О приложении»
-  getStats: publicProcedure.query(async () => {
+  getStats: protectedProcedure.query(async () => {
     const allRecipes = await db.select({ id: recipes.id }).from(recipes);
     return {
       recipesCount: allRecipes.length,

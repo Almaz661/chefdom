@@ -16,7 +16,7 @@ export function LoginPage() {
 
   const login = trpc.auth.login.useMutation({
     onSuccess: (data) => {
-      setAuth(data.userId, data.name);
+      setAuth(data.userId, data.name, data.token);
       navigate("/", { replace: true });
     },
     onError: (err) => {

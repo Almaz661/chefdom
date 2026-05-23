@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { eq, and, inArray } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { menus, menuItems, recipes, recipeIngredients, purchaseItems } from '../db/schema';
 
@@ -9,7 +9,7 @@ const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
 
 export const menuRouter = router({
   // Получить меню недели. Если нет — создать пустое.
-  getWeek: publicProcedure
+  getWeek: protectedProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ input }) => {
       // Найти или создать меню на эту неделю (userId=1 — одна семья)
@@ -45,7 +45,7 @@ export const menuRouter = router({
     }),
 
   // Добавить рецепт в слот
-  addItem: publicProcedure
+  addItem: protectedProcedure
     .input(
       z.object({
         weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -94,7 +94,7 @@ export const menuRouter = router({
     }),
 
   // Удалить из слота
-  removeItem: publicProcedure
+  removeItem: protectedProcedure
     .input(z.object({ itemId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db
@@ -110,7 +110,7 @@ export const menuRouter = router({
     }),
 
   // Блюдо дня: рецепт из меню на сегодня по времени суток
-  getTodayMeal: publicProcedure.query(async () => {
+  getTodayMeal: protectedProcedure.query(async () => {
     // Определяем день недели (0=Пн...6=Вс)
     const todayIdx = (new Date().getDay() + 6) % 7;
     // Определяем приём пищи по времени
@@ -160,7 +160,7 @@ export const menuRouter = router({
   }),
 
   // Собрать ингредиенты из меню недели → добавить в список покупок (без дублей)
-  toShopping: publicProcedure
+  toShopping: protectedProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .mutation(async ({ input }) => {
       // Найти меню

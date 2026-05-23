@@ -25,6 +25,24 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Сессии — аутентификация по Bearer-токену.
+// Создаются при auth.login (после проверки PIN), хранятся 30 дней.
+// Используются всеми protectedProcedure для авторизации запросов.
+//
+// token — криптостойкая случайная строка (64 hex char = 32 байта энтропии),
+// первичный ключ. Не угадывается перебором.
+//
+// ON DELETE CASCADE: при удалении пользователя сессии тоже удаляются.
+// (миграция 016)
+export const sessions = pgTable('sessions', {
+  token: text('token').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Этап 0 — рецепты (Блок 4)
 // Поля времени в минутах. calories — на порцию.
 // difficulty: «легко» / «средне» / «сложно».
