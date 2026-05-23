@@ -481,6 +481,55 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE users ALTER COLUMN pin_hash SET NOT NULL`;
     },
   },
+  {
+    version: '019_preserves',
+    up: async (sql) => {
+      // Этап D — заготовки. Единая таблица под три типа: заморозка,
+      // консервация, открытые продукты. Тип хранится в preserve_type.
+      //
+      // Зачем единая таблица, а не три:
+      //   1. Поля 80% общие (название, количество, единица, даты).
+      //   2. Будущая аналитика «вся заготовленная еда» — один SELECT.
+      //   3. Перевести продукт из «открытое» в «заморозить» = один UPDATE.
+      //
+      // Поля по типу (то что null для других — нормально):
+      //   frozen: name, quantity, unit, servings, prepared_at (когда
+      //     заморозили), expiry_date (до какого числа хранить).
+      //   preserved: name, quantity, unit, prepared_at (когда заготовили),
+      //     expiry_date (годен до).
+      //   opened: name, quantity, unit, prepared_at (когда открыли),
+      //     expiry_date (годен после открытия до).
+      //
+      // CHECK в БД — защита от опечаток в коде (если кто-то напишет
+      // 'froozen', база отвергнет вставку, не дав мусору попасть в данные).
+      await sql`
+        CREATE TABLE IF NOT EXISTS preserves (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          preserve_type TEXT NOT NULL CHECK (preserve_type IN ('frozen','preserved','opened')),
+          name TEXT NOT NULL,
+          quantity NUMERIC,
+          unit TEXT,
+          servings INTEGER,
+          prepared_at TEXT,
+          expiry_date TEXT,
+          notes TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      // Главный индекс — выборка по пользователю и типу для табов UI.
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_preserves_user_type
+        ON preserves(user_id, preserve_type)
+      `;
+      // Индекс по сроку — для будущих алертов «истекает скоро».
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_preserves_expiry
+        ON preserves(expiry_date)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
