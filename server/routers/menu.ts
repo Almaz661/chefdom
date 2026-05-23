@@ -234,13 +234,24 @@ export const menuRouter = router({
         "куриное", "куриная", "куриный", "свиная", "свиной", "говяжий", "говяжья",
       ]);
 
-      function normalizeName(name: string): string {
-        let n = name.toLowerCase().trim();
-        // Отрезаем всё после первого тире (-, –, —)
-        const dashIdx = n.search(/\s*[-–—]/);
+      // Извлечь чистое название продукта из строки ингредиента.
+      // «Соль – по вкусу» → «Соль»
+      // «Перец черный – по вкусу» → «Перец черный»
+      // «Помидор – 2 шт. среднего размера» → «Помидор»
+      function extractProductName(name: string): string {
+        let n = name.trim();
+        // Отрезаем всё после любого тире (все Unicode варианты)
+        const dashIdx = n.search(/[\u002D\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFF0D]/);
         if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
+        // Убираем «по вкусу» если осталось
+        n = n.replace(/\s*по вкусу\s*/gi, "").trim();
         // Убираем скобки и их содержимое
         n = n.replace(/\([^)]*\)/g, "").trim();
+        return n || name.trim();
+      }
+
+      function normalizeName(name: string): string {
+        let n = extractProductName(name).toLowerCase();
         // Разбиваем на слова и убираем модификаторы
         const words = n.split(/\s+/).filter(w => !MODIFIER_WORDS.has(w));
         n = words.join(" ");
@@ -330,7 +341,7 @@ export const menuRouter = router({
 
           await tx.insert(purchaseItems).values({
             userId: 1,
-            productName: agg.name,
+            productName: extractProductName(agg.name),
             quantity: agg.amount !== null ? String(agg.amount) : null,
             unit: agg.unit,
             category: agg.category,
