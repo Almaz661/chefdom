@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { purchaseItems, inventory } from '../db/schema';
 
 // Словарь слов-модификаторов для дедупликации.
-// Совпадает с menu.ts toShopping — при изменении обновлять оба!
 const MODIFIER_WORDS = new Set([
   "чёрный", "черный", "белый", "красный",
   "молотый", "молотая", "молотое", "молотые",
@@ -30,8 +29,8 @@ const MODIFIER_WORDS = new Set([
 /** Нормализация названия для сравнения дублей */
 function normalizeName(name: string): string {
   let n = name.toLowerCase().trim();
-  // Отрезаем всё после первого тире (-, –, —)
-  const dashIdx = n.search(/\s*[-–—]/);
+  // Отрезаем всё после любого тире (все Unicode варианты)
+  const dashIdx = n.search(/\s*[\u002D\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFF0D]/);
   if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
   // Убираем скобки и их содержимое
   n = n.replace(/\([^)]*\)/g, "").trim();
@@ -45,14 +44,17 @@ function normalizeName(name: string): string {
 
 export const shoppingRouter = router({
   // Весь список покупок (userId=1).
-  // При загрузке автоматически удаляет дубли, которые появились
-  // из-за разного написания одного и того же продукта в рецептах.
+  // При загрузке автоматически удаляет дубли.
   list: protectedProcedure.query(async () => {
+    console.log("[shopping.list] вызван");
+
     const items = await db
       .select()
       .from(purchaseItems)
       .where(eq(purchaseItems.userId, 1))
       .orderBy(purchaseItems.addedAt);
+
+    console.log(`[shopping.list] загружено ${items.length} позиций`);
 
     // Найти дубли по нормализованному ключу
     const seen = new Map<string, number>(); // key → первый id
@@ -61,20 +63,32 @@ export const shoppingRouter = router({
       const key = normalizeName(item.productName);
       if (seen.has(key)) {
         dupeIds.push(item.id);
+        console.log(`[dedup] ДУБЛЬ id=${item.id} "${item.productName}" → "${key}" (первый=${seen.get(key)})`);
       } else {
         seen.set(key, item.id);
       }
     }
 
-    // Удалить дубли из базы
+    // Удалить дубли из базы — по одному, чтобы не зависеть от inArray
     if (dupeIds.length > 0) {
-      await db.delete(purchaseItems).where(inArray(purchaseItems.id, dupeIds));
-      console.log(`[shopping.list] удалено ${dupeIds.length} дублей`);
+      console.log(`[dedup] удаляю ${dupeIds.length} дублей...`);
+      for (const id of dupeIds) {
+        try {
+          await db.delete(purchaseItems).where(eq(purchaseItems.id, id));
+        } catch (err) {
+          console.error(`[dedup] ошибка удаления id=${id}:`, err);
+        }
+      }
+      console.log(`[dedup] готово`);
+    } else {
+      console.log("[dedup] дублей нет");
     }
 
     // Возвращаем список БЕЗ дублей
     const dupeSet = new Set(dupeIds);
-    return items.filter(i => !dupeSet.has(i.id));
+    const result = items.filter(i => !dupeSet.has(i.id));
+    console.log(`[shopping.list] возвращаю ${result.length} позиций`);
+    return result;
   }),
 
   // Добавить позицию
@@ -139,11 +153,7 @@ export const shoppingRouter = router({
       return { id: input.id };
     }),
 
-  // Купить и положить в инвентарь.
-  // Транзакция гарантирует: либо товар отмечен купленным И добавлен в
-  // холодильник, либо ничего не происходит. Без транзакции при сбое
-  // между двумя шагами товар мог оказаться «купленным» в списке, но
-  // не попасть в инвентарь.
+  // Купить и положить в инвентарь
   buyAndStore: protectedProcedure
     .input(
       z.object({
@@ -163,13 +173,11 @@ export const shoppingRouter = router({
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
         }
 
-        // Отметить купленным
         await tx
           .update(purchaseItems)
           .set({ isChecked: 1 })
           .where(eq(purchaseItems.id, input.id));
 
-        // Добавить в инвентарь
         await tx.insert(inventory).values({
           userId: 1,
           productName: item.productName,
