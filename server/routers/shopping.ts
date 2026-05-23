@@ -56,6 +56,16 @@ export const shoppingRouter = router({
 
     console.log(`[shopping.list] загружено ${items.length} позиций`);
 
+    // Диагностика: показать hex-коды для позиций с тире
+    for (const item of items) {
+      if (item.productName.includes("оль") || item.productName.includes("ерец")) {
+        const hex = [...item.productName].map(c => c.charCodeAt(0).toString(16).padStart(4, "0")).join(" ");
+        console.log(`[diag] id=${item.id} "${item.productName}" hex=[${hex}]`);
+        const norm = normalizeName(item.productName);
+        console.log(`[diag]   → normalized: "${norm}"`);
+      }
+    }
+
     // Найти дубли по нормализованному ключу
     const seen = new Map<string, number>(); // key → первый id
     const dupeIds: number[] = [];
