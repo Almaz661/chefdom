@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql as rawSql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { preserves } from '../db/schema';
+import { preserves, freezerShelfLife } from '../db/schema';
 
 // Этап D — роутер заготовок. Три типа в одной таблице.
 // list/listByType работают как у inventory: один SELECT, фильтр на клиенте
@@ -130,5 +130,74 @@ export const preservesRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });
       }
       return { id: input.id };
+    }),
+
+  // Этап D — авто-подсказка срока хранения для типа frozen.
+  // По названию ('Свиные котлеты') ищет в справочнике freezer_shelf_life
+  // подходящий ключ ('котлет' → 4 мес) и возвращает количество дней
+  // и предполагаемую дату «годен до» = preparedAt + days.
+  //
+  // Логика выбора лучшего ключа:
+  //  1. Берём все ключи где LOWER(name) LIKE '%LOWER(keyword)%'
+  //  2. Сортируем: сначала длиннее keyword (специфичнее),
+  //     потом больше priority (явное предпочтение).
+  //  3. Возвращаем первый.
+  // Если ни один ключ не совпал — вернём { matched: false } и фронт
+  // оставит поле пустым.
+  suggestExpiry: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(200),
+        preparedAt: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const nameLower = input.name.toLowerCase().trim();
+      if (nameLower.length === 0) return { matched: false as const };
+
+      // SQL-запрос: ищем ключи, для которых nameLower содержит keyword.
+      // ILIKE работает в обе стороны — нам нужно ${nameLower} LIKE %keyword%,
+      // т.е. nameLower содержит keyword. Используем POSITION или просто
+      // фильтруем на уровне приложения, чтобы не плодить SQL-инъекций.
+      const all = await db
+        .select({
+          keyword: freezerShelfLife.keyword,
+          days: freezerShelfLife.days,
+          priority: freezerShelfLife.priority,
+          description: freezerShelfLife.description,
+        })
+        .from(freezerShelfLife)
+        .where(rawSql`${nameLower} LIKE '%' || LOWER(${freezerShelfLife.keyword}) || '%'`);
+
+      if (all.length === 0) return { matched: false as const };
+
+      // Лучшее совпадение: длиннее keyword > больше priority
+      all.sort((a, b) => {
+        if (b.keyword.length !== a.keyword.length) {
+          return b.keyword.length - a.keyword.length;
+        }
+        return b.priority - a.priority;
+      });
+      const best = all[0];
+
+      // Считаем дату «годен до»: preparedAt + days, либо просто days
+      // от сегодня, если preparedAt не передан.
+      const baseDate = input.preparedAt
+        ? new Date(input.preparedAt + 'T00:00:00')
+        : new Date();
+      const expiry = new Date(baseDate);
+      expiry.setDate(expiry.getDate() + best.days);
+      const expiryDate = expiry.toISOString().slice(0, 10);
+
+      return {
+        matched: true as const,
+        keyword: best.keyword,
+        days: best.days,
+        description: best.description,
+        expiryDate,
+      };
     }),
 });

@@ -314,3 +314,20 @@ export const preserves = pgTable('preserves', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+
+// Этап D — справочник сроков заморозки. У шефов на холодильниках весит
+// табличка «что сколько хранить» — это её цифровая копия (миграция 020).
+// При добавлении заготовки типа frozen роутер preserves.suggestExpiry
+// ищет ключ среди entries и возвращает рекомендованную дату «годен до».
+//
+// keyword — подстрока для LIKE-поиска (нижний регистр). Для одного
+// названия может матчиться несколько ключей; выигрывает самый длинный
+// (наиболее специфичный), при равной длине — больший priority.
+export const freezerShelfLife = pgTable('freezer_shelf_life', {
+  id: serial('id').primaryKey(),
+  keyword: text('keyword').notNull().unique(),
+  days: integer('days').notNull(),
+  priority: integer('priority').notNull().default(0),
+  description: text('description'),
+});
