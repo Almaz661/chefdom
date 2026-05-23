@@ -198,7 +198,7 @@ if (fs.existsSync(indexHtml)) {
 const PORT = Number(process.env.PORT) || 3000;
 
 async function start(): Promise<void> {
-  console.log("[boot] старт ШефДом!");
+  console.log("[boot] старт ШефДом! (PR58-v2)");
   console.log("[boot] запуск миграций...");
   await runMigrations();
 
