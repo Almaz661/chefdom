@@ -1,25 +1,18 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { client } from "../db/index";
 
-// Защита от перебора: 5 неверных попыток → блок на 30 минут.
-// Счётчик в памяти процесса — сбрасывается при перезапуске сервера.
-// На Render Free сервер засыпает каждые 15 мин, поэтому это слабая защита;
-// в будущей итерации перенесём счётчик в БД (TODO в аудите).
+// Защита от перебора PIN. Попытки и блокировка хранятся в БД (auth_attempts),
+// поэтому переживают перезапуск сервера. До миграции 017 это было in-memory
+// и на Render Free сбрасывалось каждые 15 мин.
 const MAX_ATTEMPTS = 5;
 const BLOCK_MS = 30 * 60 * 1000;
 
 // Срок жизни сессии. 30 дней — соответствует TTL клиентского localStorage.
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-interface AttemptState {
-  count: number;
-  blockedUntil: number;
-}
-
-const attempts = new Map<string, AttemptState>();
 
 function getKey(ip: string | undefined): string {
   return ip || "unknown";
@@ -40,6 +33,70 @@ async function createSession(userId: number): Promise<string> {
   return token;
 }
 
+/**
+ * Проверяет, заблокирован ли IP. Возвращает оставшиеся минуты блокировки
+ * или null если не заблокирован.
+ */
+async function checkBlocked(key: string): Promise<number | null> {
+  const rows = await client<{ blocked_until: Date | null }[]>`
+    SELECT blocked_until FROM auth_attempts
+    WHERE key = ${key} AND blocked_until > NOW()
+    LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  const blockedUntil = rows[0].blocked_until;
+  if (!blockedUntil) return null;
+  const ms = blockedUntil.getTime() - Date.now();
+  return Math.max(1, Math.ceil(ms / 60000));
+}
+
+/**
+ * Регистрирует неуспешную попытку. Атомарно увеличивает счётчик в БД.
+ * Если достигли MAX_ATTEMPTS — выставляет blocked_until на BLOCK_MS вперёд
+ * и сбрасывает счётчик.
+ *
+ * Возвращает: { left, blocked } — сколько попыток осталось до блока,
+ * или blocked=true если только что заблокировали.
+ */
+async function recordFailedAttempt(
+  key: string,
+): Promise<{ left: number; blocked: boolean }> {
+  // ON CONFLICT DO UPDATE — атомарный upsert.
+  // Когда count после инкремента >= MAX_ATTEMPTS: ставим блок и обнуляем
+  // счётчик (чтобы после разблокировки начать заново с 0).
+  const blockMinutes = Math.floor(BLOCK_MS / 60000);
+  const rows = await client<{ count: number; blocked_until: Date | null }[]>`
+    INSERT INTO auth_attempts (key, count, blocked_until, updated_at)
+    VALUES (${key}, 1, NULL, NOW())
+    ON CONFLICT (key) DO UPDATE SET
+      count = CASE
+        WHEN auth_attempts.count + 1 >= ${MAX_ATTEMPTS} THEN 0
+        ELSE auth_attempts.count + 1
+      END,
+      blocked_until = CASE
+        WHEN auth_attempts.count + 1 >= ${MAX_ATTEMPTS}
+          THEN NOW() + make_interval(mins => ${blockMinutes})
+        ELSE auth_attempts.blocked_until
+      END,
+      updated_at = NOW()
+    RETURNING count, blocked_until
+  `;
+  const result = rows[0];
+  // count=0 означает, что мы только что заблокировали.
+  if (result.count === 0 && result.blocked_until && result.blocked_until > new Date()) {
+    return { left: 0, blocked: true };
+  }
+  return { left: MAX_ATTEMPTS - result.count, blocked: false };
+}
+
+/**
+ * Сбрасывает счётчик попыток после успешного входа.
+ * Удаляем строку целиком — это и обнуляет count, и снимает blocked_until.
+ */
+async function clearAttempts(key: string): Promise<void> {
+  await client`DELETE FROM auth_attempts WHERE key = ${key}`;
+}
+
 export const authRouter = router({
   // Вход по PIN. Создаёт сессию, возвращает токен.
   // Клиент сохраняет токен в localStorage и шлёт его в Authorization
@@ -48,41 +105,40 @@ export const authRouter = router({
     .input(z.object({ pin: z.string().regex(/^\d{4}$/, "PIN — 4 цифры") }))
     .mutation(async ({ input, ctx }) => {
       const key = getKey(ctx.req.ip);
-      const now = Date.now();
-      const state = attempts.get(key) ?? { count: 0, blockedUntil: 0 };
 
-      if (state.blockedUntil > now) {
-        const minutesLeft = Math.ceil((state.blockedUntil - now) / 60000);
+      const blockedMinutes = await checkBlocked(key);
+      if (blockedMinutes !== null) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
-          message: `Слишком много попыток. Подождите ${minutesLeft} мин.`,
+          message: `Слишком много попыток. Подождите ${blockedMinutes} мин.`,
         });
       }
 
-      const rows = await client<{ id: number; pin: string; name: string }[]>`
-        SELECT id, pin, name FROM users WHERE pin = ${input.pin} LIMIT 1
+      const rows = await client<{ id: number; pin_hash: string; name: string }[]>`
+        SELECT id, pin_hash, name FROM users LIMIT 1
       `;
 
-      if (rows.length === 0) {
-        const newCount = state.count + 1;
-        if (newCount >= MAX_ATTEMPTS) {
-          attempts.set(key, { count: 0, blockedUntil: now + BLOCK_MS });
+      // PIN хешируется bcrypt'ом (миграция 018). Используем bcrypt.compare —
+      // оно constant-time, не позволяет timing-атаки.
+      const user = rows[0];
+      const valid = user ? await bcrypt.compare(input.pin, user.pin_hash) : false;
+
+      if (!valid) {
+        const result = await recordFailedAttempt(key);
+        if (result.blocked) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
             message: "Слишком много попыток. Подождите 30 мин.",
           });
         }
-        attempts.set(key, { count: newCount, blockedUntil: 0 });
-        const left = MAX_ATTEMPTS - newCount;
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: `Неверный PIN-код. Осталось попыток: ${left}`,
+          message: `Неверный PIN-код. Осталось попыток: ${result.left}`,
         });
       }
 
       // Успешный вход — сбрасываем счётчик попыток и создаём сессию.
-      attempts.delete(key);
-      const user = rows[0];
+      await clearAttempts(key);
       const token = await createSession(user.id);
       return { userId: user.id, name: user.name, token };
     }),
@@ -117,27 +173,33 @@ export const authRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Проверяем текущий PIN именно у того пользователя, чья сессия.
-      // Без AND user_id = ctx.userId был бы баг: знаешь чужой PIN —
-      // меняешь его (но это меняло бы поле в той же строке, так что
-      // практически безвредно для одного юзера; всё равно сделаем строго).
-      const rows = await client<{ id: number }[]>`
-        SELECT id FROM users
-        WHERE id = ${ctx.userId} AND pin = ${input.currentPin}
-        LIMIT 1
+      const rows = await client<{ id: number; pin_hash: string }[]>`
+        SELECT id, pin_hash FROM users WHERE id = ${ctx.userId} LIMIT 1
       `;
-      if (rows.length === 0) {
+      const user = rows[0];
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Пользователь не найден" });
+      }
+      const valid = await bcrypt.compare(input.currentPin, user.pin_hash);
+      if (!valid) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "Текущий PIN неверный",
         });
       }
+      const newHash = await bcrypt.hash(input.newPin, 10);
+      // Обновляем pin_hash; колонку pin (plain) обновляем тем же значением,
+      // что и newPin, чтобы NOT NULL constraint не сломался — после
+      // следующей миграции, которая дропнет pin, эту строчку можно убрать.
       await client`
-        UPDATE users SET pin = ${input.newPin} WHERE id = ${rows[0].id}
+        UPDATE users
+        SET pin_hash = ${newHash}, pin = ${input.newPin}
+        WHERE id = ${user.id}
       `;
       // Удаляем все старые сессии этого пользователя — после смены PIN
       // безопаснее перелогинить везде. Текущая сессия тоже инвалидируется,
       // клиент должен обработать UNAUTHORIZED и перенаправить на /login.
-      await client`DELETE FROM sessions WHERE user_id = ${rows[0].id}`;
+      await client`DELETE FROM sessions WHERE user_id = ${user.id}`;
       return { ok: true };
     }),
 

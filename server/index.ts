@@ -32,11 +32,45 @@ app.use(
   }),
 );
 
-// Health-check для Render и для проверки после деплоя
-app.get("/api/health", (_req, res) => {
-  res.json({
+// Health-check для Render и для проверки после деплоя.
+// Проверяет не только что Express отвечает, но и что БД достижима —
+// раньше Render думал «всё ок» даже когда Neon недоступен.
+//
+// Возвращаем ВСЕГДА 200 (а не 503 при сбое БД) намеренно:
+//   - Render использует HTTP-статус для решения "rollback при failure";
+//     на Render Free + Neon Free cold-start БД может занять >3с при
+//     первом обращении после простоя, и 503 спровоцировал бы rollback
+//     совершенно здорового деплоя.
+//   - Внешние мониторинги (UptimeRobot и т.п.) умеют парсить body и
+//     алертить на `db: "error"` — то что нужно для реальных алертов.
+//   - При полном падении Neon Render всё равно увидит ошибки в логах
+//     запросов на /trpc/* (они отвалятся 500), а не от health.
+//
+// SELECT 1 с таймаутом 5 секунд — Neon обычно отвечает <100мс, при
+// холодном старте до 2-3с, 5с — запас.
+app.get("/api/health", async (_req, res) => {
+  let dbOk = false;
+  let dbError: string | null = null;
+  const dbStart = Date.now();
+  try {
+    await Promise.race([
+      client`SELECT 1`,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout 5s")), 5000),
+      ),
+    ]);
+    dbOk = true;
+  } catch (err) {
+    dbError = err instanceof Error ? err.message : String(err);
+    console.error(`[health] DB check failed: ${dbError}`);
+  }
+  const dbMs = Date.now() - dbStart;
+  res.status(200).json({
     ok: true,
     service: "chefdom",
+    db: dbOk ? "ok" : "error",
+    dbMs,
+    dbError: dbOk ? undefined : dbError,
     ts: new Date().toISOString(),
   });
 });
