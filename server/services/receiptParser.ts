@@ -87,9 +87,28 @@ function detectDate(text: string): string | null {
   return null;
 }
 
+// Исправление OCR-артефактов в числах.
+// OCR часто путает буквы и цифры: O→0, I→1, Z→2, S→5.
+// Особый случай: одиночная буква ПЕРЕД запятой (L,37 / l,37) — это мусор,
+// а не цифра 1. Реальная цена 0,37 (OCR добавил артефакт перед запятой).
+// Применяем ТОЛЬКО к строкам-ценам, не к названиям товаров.
+function fixOcrDigits(s: string): string {
+  // Если строка начинается с одиночной буквы + запятая/точка + 2 цифры — 
+  // это артефакт перед десятичной частью, заменяем на "0"
+  let fixed = s.replace(/^([^0-9,.]*)([lLIi|])([.,]\d{2})/, '$10$3');
+  // Остальные замены для цифр внутри числа
+  fixed = fixed
+    .replace(/[Ii|]/g, '1')
+    .replace(/[oO]/g, '0')
+    .replace(/[Zz]/g, '2');
+  return fixed;
+}
+
 // Преобразуем строку-число с разными разделителями в JS number.
 function parseNumber(raw: string): number | null {
   let s = raw.trim().replace(/\s/g, '');
+  // Исправляем OCR-артефакты в ценах
+  s = fixOcrDigits(s);
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
   if (lastComma !== -1 && lastDot !== -1) {
@@ -107,7 +126,8 @@ function parseNumber(raw: string): number | null {
 
 // Регексп для строк, состоящих ТОЛЬКО из цены (с возможными €, B, BB, A, и т.д.)
 // Покрывает: «1,29», «1,29 €», «-2,07», «4,78 € B», «0,99», «19,28 €»
-const PRICE_ONLY_RE = /^-?\d{1,4}[.,]\d{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/;
+// Также допускает OCR-артефакты: L,37 (L вместо 1), O,99 (O вместо 0) и т.д.
+const PRICE_ONLY_RE = /^-?[0-9lLiIoOsSzZ]{1,4}[.,][0-9lLiIoOsSzZ]{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/;
 
 // «N x X,XX €» — строка о количестве. Проверяет что это именно
 // «количество × цена-за-штуку», а не позиция товара.
@@ -127,8 +147,9 @@ function extractTrailingPrice(line: string): number | null {
   const cleaned = line
     .replace(/[€₽$]/g, ' ')
     .replace(/\s+(?:EUR|RUB)\b/gi, ' ');
+  // Допускаем OCR-артефакты (L/O/I/S/Z) на месте цифр в конце строки
   const matches = cleaned.match(
-    /-?\d{1,3}(?:[ .,]\d{3})*(?:[.,]\d{1,2})|-?\d+[.,]\d{1,2}/g,
+    /-?[0-9lLiIoOsSzZ]{1,3}(?:[ .,][0-9lLiIoOsSzZ]{3})*(?:[.,][0-9lLiIoOsSzZ]{1,2})|-?[0-9lLiIoOsSzZ]+[.,][0-9lLiIoOsSzZ]{1,2}/g,
   );
   if (!matches || matches.length === 0) return null;
   return parseNumber(matches[matches.length - 1]);
@@ -314,7 +335,9 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
       const trailingPrice = extractTrailingPrice(line);
       if (trailingPrice !== null && looksLikePrice(trailingPrice) && (total === null || Math.abs(trailingPrice - total) > 0.01)) {
         // Проверяем что после удаления цены осталось валидное имя
-        const withoutPrice = line.replace(/\s*-?\d{1,4}[.,]\d{2}.*$/, '').trim();
+        const withoutPrice = line
+          .replace(/\s*-?[0-9lLiIoOsSzZ]{1,4}[.,][0-9lLiIoOsSzZ]{2}\s*(?:€|EUR)?\s*(?:[A-Z0-9]{1,3})?\s*$/, '')
+          .trim();
         if (looksLikeProductName(withoutPrice)) {
           pendingName = null;
           items.push({ name: withoutPrice, price: trailingPrice });
