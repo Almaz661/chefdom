@@ -29,8 +29,10 @@ const MODIFIER_WORDS = new Set([
 /** Нормализация названия для сравнения дублей */
 function normalizeName(name: string): string {
   let n = name.toLowerCase().trim();
-  // Отрезаем всё после любого тире (все Unicode варианты)
-  const dashIdx = n.search(/\s*[\u002D\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFF0D]/);
+  // Отрезаем всё после любого тире (все Unicode варианты).
+  // Ищем сам символ тире, а не \s* перед ним — иначе .search()
+  // возвращает 0 (матч пустой строки) и условие > 0 не срабатывает.
+  const dashIdx = n.search(/[\u002D\u2010\u2011\u2012\u2013\u2014\u2015\uFE58\uFF0D]/);
   if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
   // Убираем скобки и их содержимое
   n = n.replace(/\([^)]*\)/g, "").trim();
