@@ -198,11 +198,14 @@ export const menuRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Нормализация названия — убираем окончания чтобы «яйцо» и «яйца» были одним продуктом
+      // Нормализация названия — убираем:
+      // 1. Тире/дефисы в конце (парсер иногда оставляет «Лук репчатый –»)
+      // 2. Гласные окончания (чтобы «яйцо» и «яйца» были одним продуктом)
       function normalizeName(name: string): string {
         return name
           .toLowerCase()
           .trim()
+          .replace(/\s*[-–—]+\s*$/, "") // убираем trailing тире
           .replace(/[аяеёиоуыэюь]+$/, "") // убираем гласные окончания
           .trim();
       }
@@ -222,12 +225,13 @@ export const menuRouter = router({
         return u;
       }
 
-      // Агрегировать: суммировать количества по нормализованному названию + единица
+      // Агрегировать: суммировать количества ТОЛЬКО по нормализованному названию.
+      // Если один и тот же продукт в разных рецептах указан в разных единицах
+      // (г vs шт) — объединяем в одну строку с единицей первого попавшегося.
       const aggregated = new Map<string, { name: string; amount: number | null; unit: string | null; category: string | null }>();
       for (const ing of ingredients) {
         const nameNorm = normalizeName(ing.name);
-        const unitNorm = normalizeUnit(ing.unit);
-        const key = `${nameNorm}|${unitNorm}`;
+        const key = nameNorm;
         const multiplier = recipeCount.get(ing.recipeId) || 1;
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
@@ -254,7 +258,7 @@ export const menuRouter = router({
         .where(eq(purchaseItems.userId, 1));
 
       const existingKeys = new Set(
-        existing.map((e) => `${normalizeName(e.productName)}|${normalizeUnit(e.unit)}`),
+        existing.map((e) => normalizeName(e.productName)),
       );
 
       // Добавить агрегированные ингредиенты которых ещё нет в списке —
