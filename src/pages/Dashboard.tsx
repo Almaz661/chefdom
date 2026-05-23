@@ -46,6 +46,23 @@ export function Dashboard() {
 
   // B.1 — продукты истекающие в ближайшие 3 дня
   const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 3 });
+  // Заготовки тоже считаются — заморозка/консервация/открытые с истекающим
+  // сроком должны попадать в общий алерт «истекает скоро» вместе с инвентарём.
+  const { data: allPreserves = [] } = trpc.preserves.list.useQuery();
+  // Объединяем имена для шапки и счётчика. Берём <=3 дней (или просрочено).
+  const expiringPreserves = allPreserves.filter((p) => {
+    if (!p.expiryDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(p.expiryDate + "T00:00:00");
+    const days = Math.floor((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 3;
+  });
+  const expiringTotal = expiring.length + expiringPreserves.length;
+  const expiringNames = [
+    ...expiring.map((e) => e.productName),
+    ...expiringPreserves.map((p) => p.name + " (заготовка)"),
+  ];
   // B.2 — продукты которые лежат давно (>30 дней)
   const { data: stale = [] } = trpc.inventory.getStale.useQuery({ days: 30 });
   // Список покупок — для счётчика
@@ -67,24 +84,30 @@ export function Dashboard() {
         <p className="text-ink-soft">{formatToday()}</p>
       </header>
 
-      {/* B.1 — Алерт истекающих продуктов */}
-      {expiring.length > 0 && (
+      {/* B.1 — Алерт истекающих продуктов (инвентарь + заготовки) */}
+      {expiringTotal > 0 && (
         <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle size={20} className="text-warning mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink mb-1">
-                {expiring.length} {expiring.length === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 3 дня
+                {expiringTotal} {expiringTotal === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 3 дня
               </p>
               <p className="text-sm text-ink-soft truncate">
-                {expiring.map(e => e.productName).join(" · ")}
+                {expiringNames.join(" · ")}
               </p>
             </div>
             <Link
-              to="/what-to-cook"
+              to={
+                expiringPreserves.length > 0 && expiring.length === 0
+                  ? "/preserves"
+                  : "/what-to-cook"
+              }
               className="text-xs font-medium text-warning hover:text-amber-700 shrink-0"
             >
-              Что приготовить?
+              {expiringPreserves.length > 0 && expiring.length === 0
+                ? "Открыть"
+                : "Что приготовить?"}
             </Link>
           </div>
         </section>
