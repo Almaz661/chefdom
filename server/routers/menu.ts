@@ -290,21 +290,41 @@ export const menuRouter = router({
         }
       }
 
-      // Получить текущий список покупок для дедупликации
+      // Получить текущий список покупок для дедупликации.
+      // Также удалим старые дубли, которые могли попасть в список
+      // до того, как normalizeName стала учитывать модификаторы.
       const existing = await db
-        .select({ productName: purchaseItems.productName, unit: purchaseItems.unit })
+        .select({ id: purchaseItems.id, productName: purchaseItems.productName, unit: purchaseItems.unit })
         .from(purchaseItems)
         .where(eq(purchaseItems.userId, 1));
 
-      const existingKeys = new Set(
-        existing.map((e) => normalizeName(e.productName)),
-      );
+      // Группируем по нормализованному ключу, запоминаем ID дублей
+      const existingByKey = new Map<string, number[]>();
+      for (const e of existing) {
+        const k = normalizeName(e.productName);
+        if (!existingByKey.has(k)) existingByKey.set(k, []);
+        existingByKey.get(k)!.push(e.id);
+      }
 
-      // Добавить агрегированные ингредиенты которых ещё нет в списке —
-      // в одной транзакции. Без неё при сбое посередине часть ингредиентов
-      // попадёт в список покупок, а часть — нет.
+      // Добавить агрегированные ингредиенты которых ещё нет в списке
+      // + удалить старые дубли (оставляем первую запись, остальные убираем).
+      // Всё в одной транзакции.
       let added = 0;
+      let deduped = 0;
       await db.transaction(async (tx) => {
+        // 1. Удалить старые дубли
+        for (const [, ids] of existingByKey) {
+          if (ids.length <= 1) continue;
+          // Оставляем первый, удаляем остальные
+          const toDelete = ids.slice(1);
+          for (const id of toDelete) {
+            await tx.delete(purchaseItems).where(eq(purchaseItems.id, id));
+            deduped++;
+          }
+        }
+
+        // 2. Добавить новые позиции которых ещё нет
+        const existingKeys = new Set(existingByKey.keys());
         for (const [key, agg] of aggregated) {
           if (existingKeys.has(key)) continue;
 
@@ -321,6 +341,6 @@ export const menuRouter = router({
         }
       });
 
-      return { added };
+      return { added, deduped };
     }),
 });

@@ -1,19 +1,82 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { purchaseItems, inventory } from '../db/schema';
 
+// Словарь слов-модификаторов для дедупликации.
+// Совпадает с menu.ts toShopping — при изменении обновлять оба!
+const MODIFIER_WORDS = new Set([
+  "чёрный", "черный", "белый", "красный",
+  "молотый", "молотая", "молотое", "молотые",
+  "морская", "морской", "крупная", "крупный", "мелкая", "мелкий",
+  "репчатый", "репчатая",
+  "сушёный", "сушеный", "сушёная", "сушеная",
+  "свежий", "свежая", "свежее", "свежие",
+  "замороженный", "замороженная", "замороженные",
+  "консервированный", "консервированная", "консервированные",
+  "варёный", "вареный", "варёная", "вареная",
+  "жареный", "жареная", "копчёный", "копченый",
+  "тёртый", "тертый", "тёртая", "тертая",
+  "нарезанный", "нарезанная", "измельчённый", "измельченный",
+  "крупнозернистая", "мелкозернистая", "йодированная",
+  "душистый", "острый", "сладкий", "горький", "кислый",
+  "столовая", "каменная", "экстра", "обычная", "обычный",
+  "пшеничная", "пшеничный", "ржаная", "ржаной",
+  "куриное", "куриная", "куриный", "свиная", "свиной", "говяжий", "говяжья",
+]);
+
+/** Нормализация названия для сравнения дублей */
+function normalizeName(name: string): string {
+  let n = name.toLowerCase().trim();
+  // Отрезаем всё после первого тире (-, –, —)
+  const dashIdx = n.search(/\s*[-–—]/);
+  if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
+  // Убираем скобки и их содержимое
+  n = n.replace(/\([^)]*\)/g, "").trim();
+  // Разбиваем на слова и убираем модификаторы
+  const words = n.split(/\s+/).filter(w => !MODIFIER_WORDS.has(w));
+  n = words.join(" ");
+  // Убираем гласные окончания (базовый стемминг)
+  n = n.replace(/[аяеёиоуыэюь]+$/, "").trim();
+  return n;
+}
+
 export const shoppingRouter = router({
-  // Весь список покупок (userId=1)
+  // Весь список покупок (userId=1).
+  // При загрузке автоматически удаляет дубли, которые появились
+  // из-за разного написания одного и того же продукта в рецептах.
   list: protectedProcedure.query(async () => {
     const items = await db
       .select()
       .from(purchaseItems)
       .where(eq(purchaseItems.userId, 1))
       .orderBy(purchaseItems.addedAt);
-    return items;
+
+    // Найти дубли по нормализованному ключу
+    const seen = new Map<string, number>(); // key → первый id
+    const dupeIds: number[] = [];
+    for (const item of items) {
+      const key = normalizeName(item.productName);
+      if (seen.has(key)) {
+        dupeIds.push(item.id);
+      } else {
+        seen.set(key, item.id);
+      }
+    }
+
+    // Удалить дубли в фоне (не блокируем ответ)
+    if (dupeIds.length > 0) {
+      db.delete(purchaseItems)
+        .where(inArray(purchaseItems.id, dupeIds))
+        .then(() => console.log(`[shopping.list] удалено ${dupeIds.length} дублей`))
+        .catch((err) => console.error('[shopping.list] ошибка дедупликации:', err));
+    }
+
+    // Возвращаем список БЕЗ дублей (фильтруем на уровне JS)
+    const dupeSet = new Set(dupeIds);
+    return items.filter(i => !dupeSet.has(i.id));
   }),
 
   // Добавить позицию
