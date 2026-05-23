@@ -198,21 +198,43 @@ export const menuRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Нормализация названия — убираем окончания чтобы «яйцо» и «яйца» были одним продуктом
+      // Нормализация названия — убираем:
+      // 1. Тире/дефисы в конце (парсер иногда оставляет «Лук репчатый –»)
+      // 2. Гласные окончания (чтобы «яйцо» и «яйца» были одним продуктом)
       function normalizeName(name: string): string {
         return name
           .toLowerCase()
           .trim()
+          .replace(/\s*[-–—]+\s*$/, "") // убираем trailing тире
           .replace(/[аяеёиоуыэюь]+$/, "") // убираем гласные окончания
           .trim();
       }
 
-      // Агрегировать: суммировать количества по нормализованному названию + единица
+      // Нормализация единицы — «г», «гр», «грамм», «граммов» → «г» и т.д.
+      function normalizeUnit(unit: string | null): string {
+        if (!unit) return "";
+        const u = unit.toLowerCase().trim().replace(/\.$/, "");
+        if (["г", "гр", "грамм", "граммов"].includes(u)) return "г";
+        if (["кг", "килограмм", "килограммов"].includes(u)) return "кг";
+        if (["мл", "миллилитр", "миллилитров"].includes(u)) return "мл";
+        if (["л", "литр", "литров"].includes(u)) return "л";
+        if (["шт", "штук", "штука", "штуки"].includes(u)) return "шт";
+        if (["ст.л", "ст.л.", "ст. л.", "ст. ложка", "ст. ложки", "ст. ложек", "столовая", "столовых"].includes(u)) return "ст.л.";
+        if (["ч.л", "ч.л.", "ч. л.", "ч. ложка", "ч. ложки", "ч. ложек", "чайная", "чайных"].includes(u)) return "ч.л.";
+        if (["стакан", "стакана", "стаканов", "стак", "стак."].includes(u)) return "стакан";
+        if (["зубчик", "зубчика", "зубчиков"].includes(u)) return "зубчик";
+        if (["пучок", "пучка"].includes(u)) return "пучок";
+        if (["по вкусу"].includes(u)) return "по вкусу";
+        return u;
+      }
+
+      // Агрегировать: суммировать количества ТОЛЬКО по нормализованному названию
+      // (без учёта единицы — если одно и то же, но г vs шт, всё равно объединяем
+      // и показываем суммарное количество в граммах или первую попавшуюся единицу)
       const aggregated = new Map<string, { name: string; amount: number | null; unit: string | null; category: string | null }>();
       for (const ing of ingredients) {
         const nameNorm = normalizeName(ing.name);
-        const unitLower = (ing.unit || "").toLowerCase().trim();
-        const key = `${nameNorm}|${unitLower}`;
+        const key = nameNorm;
         const multiplier = recipeCount.get(ing.recipeId) || 1;
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
@@ -239,7 +261,7 @@ export const menuRouter = router({
         .where(eq(purchaseItems.userId, 1));
 
       const existingKeys = new Set(
-        existing.map((e) => `${normalizeName(e.productName)}|${(e.unit || "").toLowerCase().trim()}`),
+        existing.map((e) => normalizeName(e.productName)),
       );
 
       // Добавить агрегированные ингредиенты которых ещё нет в списке —
