@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { eq, and, lte, isNotNull } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { inventory } from '../db/schema';
 
@@ -9,7 +9,7 @@ const storageTypes = ['fridge', 'freezer', 'pantry'] as const;
 
 export const inventoryRouter = router({
   // Весь инвентарь (userId=1)
-  list: publicProcedure.query(async () => {
+  list: protectedProcedure.query(async () => {
     const items = await db
       .select()
       .from(inventory)
@@ -19,7 +19,7 @@ export const inventoryRouter = router({
   }),
 
   // B.1 — продукты истекающие в ближайшие N дней (по умолчанию 3)
-  getExpiring: publicProcedure
+  getExpiring: protectedProcedure
     .input(z.object({ days: z.number().int().min(1).max(30).default(3) }))
     .query(async ({ input }) => {
       const limitDate = new Date();
@@ -41,7 +41,7 @@ export const inventoryRouter = router({
 
   // B.2 — продукты которые лежат в инвентаре давно (по умолчанию >30 дней).
   // Не учитываем те у которых явно указан срок годности — для них работает B.1.
-  getStale: publicProcedure
+  getStale: protectedProcedure
     .input(z.object({ days: z.number().int().min(1).max(365).default(30) }))
     .query(async ({ input }) => {
       const cutoffDate = new Date();
@@ -60,7 +60,7 @@ export const inventoryRouter = router({
     }),
 
   // Добавить продукт
-  add: publicProcedure
+  add: protectedProcedure
     .input(
       z.object({
         productName: z.string().min(1).max(200),
@@ -88,7 +88,7 @@ export const inventoryRouter = router({
     }),
 
   // Обновить (количество, срок, локация)
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.number().int().positive(),
@@ -126,7 +126,7 @@ export const inventoryRouter = router({
     }),
 
   // Удалить
-  remove: publicProcedure
+  remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db

@@ -367,6 +367,38 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '016_sessions',
+    up: async (sql) => {
+      // Сессии — аутентификация по Bearer-токену.
+      // До этой миграции все tRPC процедуры были `publicProcedure` и любой
+      // по URL мог скачать/стереть БД через settings.exportBackup/importBackup.
+      // Теперь protectedProcedure требует валидный токен из этой таблицы.
+      //
+      // token — случайная строка (32 байта = 64 hex), первичный ключ.
+      // expires_at — UTC timestamp, проверяется на каждом запросе.
+      // ON DELETE CASCADE — при удалении пользователя сессии тоже удаляются.
+      await sql`
+        CREATE TABLE IF NOT EXISTS sessions (
+          token TEXT PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          expires_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      // Для быстрой выборки сессий пользователя (логаут со всех устройств,
+      // или будущая страница «активные сессии»).
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_sessions_user_id
+        ON sessions(user_id)
+      `;
+      // Для периодической чистки истёкших сессий (если будет фоновая задача).
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_sessions_expires_at
+        ON sessions(expires_at)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

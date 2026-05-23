@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { cookingHistory, recipes } from '../db/schema';
 
@@ -30,7 +30,7 @@ export const cookingRouter = router({
   // --- Запись факта готовки.
   // Снимает снапшот рецепта (title/calories/category/cuisine), чтобы история
   // оставалась читаемой даже если рецепт потом удалят.
-  record: publicProcedure
+  record: protectedProcedure
     .input(
       z.object({
         recipeId: z.number().int().positive(),
@@ -81,7 +81,7 @@ export const cookingRouter = router({
   // По плану 17.1: 30 записей за раз, кнопка «Показать ещё».
   // period — фильтр для переключателей «Этот месяц | 3 месяца | Всё время».
   // total — общее количество записей за выбранный период (для подписи внизу).
-  list: publicProcedure
+  list: protectedProcedure
     .input(
       z.object({
         cursor: z.number().int().positive().optional(),
@@ -143,7 +143,7 @@ export const cookingRouter = router({
     }),
 
   // --- Последние N (для блока «Недавно готовила» на Dashboard, раздел 6.4 плана).
-  recent: publicProcedure
+  recent: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }))
     .query(async ({ input }) => {
       const rows = await db
@@ -163,7 +163,7 @@ export const cookingRouter = router({
     }),
 
   // C.2 — «Любимое в этом месяце» (самый часто готовимый рецепт за текущий месяц).
-  topThisMonth: publicProcedure.query(async () => {
+  topThisMonth: protectedProcedure.query(async () => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const rows = await db
@@ -186,7 +186,7 @@ export const cookingRouter = router({
   }),
 
   // --- Удалить ошибочную запись из истории.
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const result = await db

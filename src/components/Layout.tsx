@@ -12,6 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { clearAuth } from "../utils/auth";
+import { trpc } from "../utils/trpc";
 
 interface NavItem {
   to: string;
@@ -34,9 +35,19 @@ const navItems: NavItem[] = [
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
+  // Логаут: сначала просим сервер удалить сессию из БД (чтобы украденный
+  // токен стал бесполезен), потом чистим localStorage. Если запрос упадёт
+  // (например, сервер засыпает на Render Free) — всё равно делаем локальный
+  // логаут, чтобы пользователь не застревал.
+  const logoutMutation = trpc.auth.logout.useMutation();
+
   const logout = () => {
-    clearAuth();
-    navigate("/login", { replace: true });
+    logoutMutation.mutate(undefined, {
+      onSettled: () => {
+        clearAuth();
+        navigate("/login", { replace: true });
+      },
+    });
   };
 
   return (

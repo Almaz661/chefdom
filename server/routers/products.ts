@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { eq, ilike, or, sql } from 'drizzle-orm';
-import { router, publicProcedure } from '../trpc';
+import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
 import { translateToRu } from '../services/translate';
@@ -10,7 +10,7 @@ import { translateToRu } from '../services/translate';
 export const productsRouter = router({
 
   // G.3 — поиск товара по штрих-коду (с fallback на Open Food Facts API)
-  getByBarcode: publicProcedure
+  getByBarcode: protectedProcedure
     .input(z.object({ barcode: z.string().min(1) }))
     .query(async ({ input }) => {
       // 1. Сначала ищем в локальной БД
@@ -91,7 +91,7 @@ export const productsRouter = router({
     }),
 
   // G.3 — поиск товара по названию
-  search: publicProcedure
+  search: protectedProcedure
     .input(z.object({ query: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
       const rows = await db
@@ -103,7 +103,7 @@ export const productsRouter = router({
     }),
 
   // G.3 — поиск ингредиента по названию
-  searchIngredient: publicProcedure
+  searchIngredient: protectedProcedure
     .input(z.object({ query: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
       const rows = await db
@@ -118,7 +118,7 @@ export const productsRouter = router({
   // Поиск нечувствителен к регистру и работает по подстроке:
   // "Сметана 20%" найдёт замены для "Сметана"
   // "Свежий чеснок" найдёт замены для "чеснок"
-  getSubstitutions: publicProcedure
+  getSubstitutions: protectedProcedure
     .input(z.object({ ingredientName: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
       // Чистим имя: убираем количество и единицы, оставляем только название
@@ -148,7 +148,7 @@ export const productsRouter = router({
 
   // G.4 — рассчитать и сохранить КБЖУ рецепта автоматически
   // Берёт ингредиенты рецепта, ищет их в справочнике USDA, считает сумму на порцию
-  calcNutrition: publicProcedure
+  calcNutrition: protectedProcedure
     .input(z.object({ recipeId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       // Получить рецепт и его ингредиенты
