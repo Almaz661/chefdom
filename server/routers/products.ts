@@ -5,6 +5,7 @@ import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
 import { translateToRu } from '../services/translate';
+import { calcRecipeNutrition } from '../services/nutritionCalc';
 
 
 export const productsRouter = router({
@@ -146,81 +147,17 @@ export const productsRouter = router({
       return rows;
     }),
 
-  // G.4 — рассчитать и сохранить КБЖУ рецепта автоматически
-  // Берёт ингредиенты рецепта, ищет их в справочнике USDA, считает сумму на порцию
+  // G.4 — рассчитать и сохранить КБЖУ рецепта автоматически.
+  // Делегирует в nutritionCalc.calcRecipeNutrition — единственную реализацию.
+  // Если matched === 0 (ингредиенты не нашлись в USDA) — рецепт НЕ обновляется,
+  // существующие значения КБЖУ не затираются нулями.
   calcNutrition: protectedProcedure
     .input(z.object({ recipeId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
-      // Получить рецепт и его ингредиенты
-      const [recipe] = await db
-        .select()
-        .from(recipes)
-        .where(eq(recipes.id, input.recipeId))
-        .limit(1);
-
-      if (!recipe) {
+      const result = await calcRecipeNutrition(input.recipeId);
+      if (!result) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
       }
-
-      const ings = await db
-        .select()
-        .from(recipeIngredients)
-        .where(eq(recipeIngredients.recipeId, input.recipeId));
-
-      let totalKcal = 0;
-      let totalProtein = 0;
-      let totalFats = 0;
-      let totalCarbs = 0;
-      let matchedCount = 0;
-
-      for (const ing of ings) {
-        // Ищем ингредиент в USDA по названию
-        const [found] = await db
-          .select()
-          .from(ingredients)
-          .where(ilike(ingredients.nameRu, `%${ing.name}%`))
-          .limit(1);
-
-        if (!found) continue;
-
-        // Количество в граммах (если нет — считаем 100г)
-        const amountG = ing.amount ? parseFloat(ing.amount) : 100;
-
-        const factor = amountG / 100;
-        totalKcal += found.kcalPer100g ? parseFloat(found.kcalPer100g) * factor : 0;
-        totalProtein += found.proteinG ? parseFloat(found.proteinG) * factor : 0;
-        totalFats += found.fatsG ? parseFloat(found.fatsG) * factor : 0;
-        totalCarbs += found.carbsG ? parseFloat(found.carbsG) * factor : 0;
-        matchedCount++;
-      }
-
-      // На порцию
-      const servings = recipe.servings || 1;
-      const kcalPerServing = Math.round(totalKcal / servings);
-      const proteinPerServing = Math.round((totalProtein / servings) * 10) / 10;
-      const fatsPerServing = Math.round((totalFats / servings) * 10) / 10;
-      const carbsPerServing = Math.round((totalCarbs / servings) * 10) / 10;
-
-      // Сохраняем в рецепт
-      await db
-        .execute(
-          sql`UPDATE recipes SET 
-            calories = ${kcalPerServing},
-            protein_g = ${proteinPerServing},
-            fats_g = ${fatsPerServing},
-            carbs_g = ${carbsPerServing}
-          WHERE id = ${input.recipeId}`
-        );
-
-      return {
-        matched: matchedCount,
-        total: ings.length,
-        perServing: {
-          kcal: kcalPerServing,
-          protein: proteinPerServing,
-          fats: fatsPerServing,
-          carbs: carbsPerServing,
-        },
-      };
+      return result;
     }),
 });

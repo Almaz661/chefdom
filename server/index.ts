@@ -20,7 +20,15 @@ const app = express();
 // а не IP внутреннего прокси.
 app.set("trust proxy", true);
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://chefdom.onrender.com',
+    // Для локальной разработки через `npm run dev:client` (Vite)
+    'http://localhost:5173',
+    'http://localhost:4173',
+  ],
+  credentials: true,
+}));
 app.use(express.json({ limit: "10mb" }));
 
 // tRPC API
