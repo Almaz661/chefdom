@@ -147,32 +147,37 @@ export const receiptsRouter = router({
         }
       }
 
-      // 4. Создаём чек (сохраняем сырой OCR-текст для повторного парсинга)
-      const [created] = await db
-        .insert(receipts)
-        .values({
-          userId: 1,
-          storeName: parsed.storeName,
-          purchaseDate: parsed.purchaseDate,
-          totalAmount:
-            parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
-          currency: parsed.currency,
-          notes: null,
-          ocrRaw: recognized.text,
-        })
-        .returning({ id: receipts.id });
+      // 4. Создаём чек + позиции в одной транзакции. Без транзакции при
+      // сбое после INSERT receipts но до INSERT receiptItems оставался бы
+      // пустой чек-«призрак» в БД.
+      const created = await db.transaction(async (tx) => {
+        const [receipt] = await tx
+          .insert(receipts)
+          .values({
+            userId: 1,
+            storeName: parsed.storeName,
+            purchaseDate: parsed.purchaseDate,
+            totalAmount:
+              parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
+            currency: parsed.currency,
+            notes: null,
+            ocrRaw: recognized.text,
+          })
+          .returning({ id: receipts.id });
 
-      // 4. Добавляем позиции
-      if (parsed.items.length > 0) {
-        await db.insert(receiptItems).values(
-          parsed.items.map((it, idx) => ({
-            receiptId: created.id,
-            productName: it.productName,
-            price: it.price !== null ? String(it.price) : null,
-            sortOrder: idx,
-          })),
-        );
-      }
+        if (parsed.items.length > 0) {
+          await tx.insert(receiptItems).values(
+            parsed.items.map((it, idx) => ({
+              receiptId: receipt.id,
+              productName: it.productName,
+              price: it.price !== null ? String(it.price) : null,
+              sortOrder: idx,
+            })),
+          );
+        }
+
+        return receipt;
+      });
 
       return {
         id: created.id,
@@ -220,33 +225,36 @@ export const receiptsRouter = router({
         }
       }
 
-      // Обновляем шапку
-      await db
-        .update(receipts)
-        .set({
-          storeName: parsed.storeName,
-          purchaseDate: parsed.purchaseDate,
-          totalAmount:
-            parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
-          currency: parsed.currency,
-        })
-        .where(eq(receipts.id, input.id));
+      // Обновляем шапку + удаляем старые позиции + вставляем новые —
+      // в одной транзакции. Без неё при сбое между DELETE и INSERT
+      // терялись бы все позиции чека.
+      await db.transaction(async (tx) => {
+        await tx
+          .update(receipts)
+          .set({
+            storeName: parsed.storeName,
+            purchaseDate: parsed.purchaseDate,
+            totalAmount:
+              parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
+            currency: parsed.currency,
+          })
+          .where(eq(receipts.id, input.id));
 
-      // Удаляем старые позиции и вставляем новые
-      await db
-        .delete(receiptItems)
-        .where(eq(receiptItems.receiptId, input.id));
+        await tx
+          .delete(receiptItems)
+          .where(eq(receiptItems.receiptId, input.id));
 
-      if (parsed.items.length > 0) {
-        await db.insert(receiptItems).values(
-          parsed.items.map((it, idx) => ({
-            receiptId: input.id,
-            productName: it.productName,
-            price: it.price !== null ? String(it.price) : null,
-            sortOrder: idx,
-          })),
-        );
-      }
+        if (parsed.items.length > 0) {
+          await tx.insert(receiptItems).values(
+            parsed.items.map((it, idx) => ({
+              receiptId: input.id,
+              productName: it.productName,
+              price: it.price !== null ? String(it.price) : null,
+              sortOrder: idx,
+            })),
+          );
+        }
+      });
 
       return {
         id: input.id,

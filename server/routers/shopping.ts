@@ -78,7 +78,11 @@ export const shoppingRouter = router({
       return { id: input.id };
     }),
 
-  // Купить и положить в инвентарь
+  // Купить и положить в инвентарь.
+  // Транзакция гарантирует: либо товар отмечен купленным И добавлен в
+  // холодильник, либо ничего не происходит. Без транзакции при сбое
+  // между двумя шагами товар мог оказаться «купленным» в списке, но
+  // не попасть в инвентарь.
   buyAndStore: protectedProcedure
     .input(
       z.object({
@@ -87,33 +91,35 @@ export const shoppingRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      const [item] = await db
-        .select()
-        .from(purchaseItems)
-        .where(eq(purchaseItems.id, input.id))
-        .limit(1);
+      return await db.transaction(async (tx) => {
+        const [item] = await tx
+          .select()
+          .from(purchaseItems)
+          .where(eq(purchaseItems.id, input.id))
+          .limit(1);
 
-      if (!item) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
-      }
+        if (!item) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+        }
 
-      // Отметить купленным
-      await db
-        .update(purchaseItems)
-        .set({ isChecked: 1 })
-        .where(eq(purchaseItems.id, input.id));
+        // Отметить купленным
+        await tx
+          .update(purchaseItems)
+          .set({ isChecked: 1 })
+          .where(eq(purchaseItems.id, input.id));
 
-      // Добавить в инвентарь
-      await db.insert(inventory).values({
-        userId: 1,
-        productName: item.productName,
-        quantity: item.quantity,
-        unit: item.unit,
-        storageType: input.storageType,
-        category: item.category,
+        // Добавить в инвентарь
+        await tx.insert(inventory).values({
+          userId: 1,
+          productName: item.productName,
+          quantity: item.quantity,
+          unit: item.unit,
+          storageType: input.storageType,
+          category: item.category,
+        });
+
+        return { id: input.id };
       });
-
-      return { id: input.id };
     }),
 
   // Очистить отмеченные (купленные)

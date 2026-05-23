@@ -242,22 +242,26 @@ export const menuRouter = router({
         existing.map((e) => `${normalizeName(e.productName)}|${(e.unit || "").toLowerCase().trim()}`),
       );
 
-      // Добавить агрегированные ингредиенты которых ещё нет в списке
+      // Добавить агрегированные ингредиенты которых ещё нет в списке —
+      // в одной транзакции. Без неё при сбое посередине часть ингредиентов
+      // попадёт в список покупок, а часть — нет.
       let added = 0;
-      for (const [key, agg] of aggregated) {
-        if (existingKeys.has(key)) continue;
+      await db.transaction(async (tx) => {
+        for (const [key, agg] of aggregated) {
+          if (existingKeys.has(key)) continue;
 
-        await db.insert(purchaseItems).values({
-          userId: 1,
-          productName: agg.name,
-          quantity: agg.amount !== null ? String(agg.amount) : null,
-          unit: agg.unit,
-          category: agg.category,
-        });
+          await tx.insert(purchaseItems).values({
+            userId: 1,
+            productName: agg.name,
+            quantity: agg.amount !== null ? String(agg.amount) : null,
+            unit: agg.unit,
+            category: agg.category,
+          });
 
-        existingKeys.add(key);
-        added++;
-      }
+          existingKeys.add(key);
+          added++;
+        }
+      });
 
       return { added };
     }),
