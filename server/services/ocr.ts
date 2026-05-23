@@ -40,15 +40,23 @@ export async function recognizeImage(
     : imageBase64;
 
   const prompt = `This is a photo of a grocery store receipt.
-Extract ALL line items with their prices.
-Format: one item per line as: <product name>\t<price>
+
+First output metadata lines (if found on the receipt):
+STORE: <store name>
+DATE: <date in YYYY-MM-DD format>
+
+Then extract ALL line items with their prices, one per line:
+<product name>\t<price>
+
 Rules:
 - Keep product names exactly as printed, do NOT translate
 - Include discount lines with negative prices (e.g. Artikelkorting\t-2.07)
 - Skip quantity info lines (e.g. "2 x 1,99")
 - Add total as last line: TE BETALEN\t<total amount>
 - Use comma as decimal separator (Dutch format): 1,49 not 1.49
-Only output the lines, no explanations, no headers.`;
+- If store name or date not found, skip those metadata lines
+
+Only output the lines described above, no explanations.`;
 
   const body = {
     contents: [
