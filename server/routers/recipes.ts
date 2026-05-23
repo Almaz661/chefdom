@@ -552,76 +552,85 @@ export const recipesRouter = router({
   // --- ГОТОВИТЬ (п.8 Этап 0) ---
   // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие)
   // и пишет факт готовки в cooking_history (для HistoryPage / Dashboard).
+  //
+  // Всё действие обёрнуто в одну транзакцию: либо мы целиком списываем
+  // ингредиенты И пишем запись в историю готовки, либо откатываем всё.
+  // До этого без транзакции мог получиться частичный сбой — например,
+  // половина ингредиентов уже удалена из инвентаря, а insert в
+  // cooking_history упал → пользователь видит «исчезли продукты, а в
+  // истории ничего нет».
   cook: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const { inventory, cookingHistory } = await import('../db/schema');
       const { asc } = await import('drizzle-orm');
 
-      // Получить рецепт (метаданные нужны для снапшота в cooking_history)
-      const [recipe] = await db
-        .select({
-          id: recipes.id,
-          title: recipes.title,
-          servings: recipes.servings,
-          calories: recipes.calories,
-          category: recipes.category,
-          cuisine: recipes.cuisine,
-        })
-        .from(recipes)
-        .where(eq(recipes.id, input.id))
-        .limit(1);
+      return await db.transaction(async (tx) => {
+        // Получить рецепт (метаданные нужны для снапшота в cooking_history)
+        const [recipe] = await tx
+          .select({
+            id: recipes.id,
+            title: recipes.title,
+            servings: recipes.servings,
+            calories: recipes.calories,
+            category: recipes.category,
+            cuisine: recipes.cuisine,
+          })
+          .from(recipes)
+          .where(eq(recipes.id, input.id))
+          .limit(1);
 
-      if (!recipe) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
-      }
-
-      // Получить ингредиенты рецепта
-      const ingredients = await db
-        .select()
-        .from(recipeIngredients)
-        .where(eq(recipeIngredients.recipeId, input.id));
-
-      if (ingredients.length === 0) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'У рецепта нет ингредиентов' });
-      }
-
-      let consumed = 0;
-
-      for (const ing of ingredients) {
-        // Найти в инвентаре по названию (case-insensitive), сортировка по сроку (FEFO)
-        const matches = await db
-          .select()
-          .from(inventory)
-          .where(
-            and(
-              eq(inventory.userId, 1),
-              ilike(inventory.productName, ing.name),
-            ),
-          )
-          .orderBy(asc(inventory.expiryDate));
-
-        if (matches.length > 0) {
-          // Удаляем первый (самый скоро истекающий)
-          await db.delete(inventory).where(eq(inventory.id, matches[0].id));
-          consumed++;
+        if (!recipe) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
         }
-      }
 
-      // Записываем факт готовки в историю — снапшотом, чтобы не зависеть
-      // от рецепта (он может быть позже отредактирован/удалён).
-      await db.insert(cookingHistory).values({
-        userId: 1,
-        recipeId: recipe.id,
-        recipeTitle: recipe.title,
-        servings: recipe.servings ?? 1,
-        caloriesPerServing: recipe.calories ?? null,
-        category: recipe.category ?? null,
-        cuisine: recipe.cuisine ?? null,
-        consumedCount: consumed,
-        totalIngredients: ingredients.length,
+        // Получить ингредиенты рецепта
+        const ingredients = await tx
+          .select()
+          .from(recipeIngredients)
+          .where(eq(recipeIngredients.recipeId, input.id));
+
+        if (ingredients.length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'У рецепта нет ингредиентов' });
+        }
+
+        let consumed = 0;
+
+        for (const ing of ingredients) {
+          // Найти в инвентаре по названию (case-insensitive), сортировка по сроку (FEFO)
+          const matches = await tx
+            .select()
+            .from(inventory)
+            .where(
+              and(
+                eq(inventory.userId, 1),
+                ilike(inventory.productName, ing.name),
+              ),
+            )
+            .orderBy(asc(inventory.expiryDate));
+
+          if (matches.length > 0) {
+            // Удаляем первый (самый скоро истекающий)
+            await tx.delete(inventory).where(eq(inventory.id, matches[0].id));
+            consumed++;
+          }
+        }
+
+        // Записываем факт готовки в историю — снапшотом, чтобы не зависеть
+        // от рецепта (он может быть позже отредактирован/удалён).
+        await tx.insert(cookingHistory).values({
+          userId: 1,
+          recipeId: recipe.id,
+          recipeTitle: recipe.title,
+          servings: recipe.servings ?? 1,
+          caloriesPerServing: recipe.calories ?? null,
+          category: recipe.category ?? null,
+          cuisine: recipe.cuisine ?? null,
+          consumedCount: consumed,
+          totalIngredients: ingredients.length,
+        });
+
+        return { consumed, total: ingredients.length };
       });
-
-      return { consumed, total: ingredients.length };
     }),
 });
