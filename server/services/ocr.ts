@@ -70,7 +70,9 @@ Only output the lines, no explanations, no headers.`;
     },
   };
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // gemini-flash-latest — всегда указывает на актуальную версию Flash модели
+  // (подтверждено официальной документацией Google AI, май 2026)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {
     method: 'POST',
