@@ -61,15 +61,20 @@ export const shoppingRouter = router({
       const key = normalizeName(item.productName);
       if (seen.has(key)) {
         dupeIds.push(item.id);
+        console.log(`[dedup] ДУБЛЬ id=${item.id} "${item.productName}" → key="${key}" (первый id=${seen.get(key)})`);
       } else {
         seen.set(key, item.id);
       }
     }
 
-    // Удалить дубли из базы
+    console.log(`[dedup] всего=${items.length}, дублей=${dupeIds.length}`);
+
+    // Удалить дубли из базы по одному (надёжнее чем inArray)
     if (dupeIds.length > 0) {
-      await db.delete(purchaseItems).where(inArray(purchaseItems.id, dupeIds));
-      console.log(`[shopping.list] удалено ${dupeIds.length} дублей`);
+      for (const id of dupeIds) {
+        await db.delete(purchaseItems).where(eq(purchaseItems.id, id));
+      }
+      console.log(`[dedup] удалено ${dupeIds.length} дублей из БД`);
     }
 
     // Возвращаем список БЕЗ дублей
