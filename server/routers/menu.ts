@@ -198,18 +198,20 @@ export const menuRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Нормализация названия — убираем:
-      // 1. «– по вкусу» / «- по вкусу» (парсер иногда пишет это в имя)
-      // 2. Тире/дефисы в конце (парсер иногда оставляет «Лук репчатый –»)
-      // 3. Гласные окончания (чтобы «яйцо» и «яйца» были одним продуктом)
+      // Нормализация названия для объединения дублей.
+      // Отрезаем ВСЁ после первого тире/дефиса — это убирает:
+      //   «Соль – по вкусу» → «соль»
+      //   «Свекла –» → «свекла»
+      //   «Масло подсолнечное –50 г ароматное» → «масло подсолнечное»
+      // Затем убираем гласные окончания: «яйца» → «яйц» = «яйцо» → «яйц»
       function normalizeName(name: string): string {
-        return name
-          .toLowerCase()
-          .trim()
-          .replace(/\s*[-–—]+\s*по вкусу\s*$/, "") // «– по вкусу» в конце
-          .replace(/\s*[-–—]+\s*$/, "") // trailing тире
-          .replace(/[аяеёиоуыэюь]+$/, "") // гласные окончания
-          .trim();
+        let n = name.toLowerCase().trim();
+        // Отрезаем всё после первого тире (-, –, —)
+        const dashIdx = n.search(/\s*[-–—]/);
+        if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
+        // Убираем гласные окончания
+        n = n.replace(/[аяеёиоуыэюь]+$/, "").trim();
+        return n;
       }
 
       // Нормализация единицы — «г», «гр», «грамм», «граммов» → «г»
@@ -225,12 +227,6 @@ export const menuRouter = router({
         if (["ч.л", "ч.л.", "ч. л.", "ч. ложка", "ч. ложки", "ч. ложек", "чайная", "чайных"].includes(u)) return "ч.л.";
         if (["стакан", "стакана", "стаканов", "стак", "стак."].includes(u)) return "стакан";
         return u;
-      }
-
-      // DEBUG: логируем все ингредиенты для диагностики дублей
-      console.log(`[toShopping] ingredients (${ingredients.length}):`);
-      for (const ing of ingredients) {
-        console.log(`  name=${JSON.stringify(ing.name)} | amount=${ing.amount} | unit=${JSON.stringify(ing.unit)} | norm=${JSON.stringify(normalizeName(ing.name))}`);
       }
 
       // Агрегировать: суммировать количества ТОЛЬКО по нормализованному названию.
@@ -260,11 +256,6 @@ export const menuRouter = router({
       }
 
       // Получить текущий список покупок для дедупликации
-      console.log(`[toShopping] aggregated keys (${aggregated.size}):`);
-      for (const [key, val] of aggregated) {
-        console.log(`  key=${JSON.stringify(key)} → name=${JSON.stringify(val.name)} amount=${val.amount} unit=${JSON.stringify(val.unit)}`);
-      }
-
       const existing = await db
         .select({ productName: purchaseItems.productName, unit: purchaseItems.unit })
         .from(purchaseItems)
