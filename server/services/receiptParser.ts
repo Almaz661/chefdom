@@ -510,13 +510,27 @@ export function parseReceiptText(
   text: string,
   defaultCurrency: 'EUR' | 'RUB' = 'EUR',
 ): ParsedReceipt {
-  const { storeName, currency } = detectStoreAndCurrency(text, defaultCurrency);
-  const purchaseDate = detectDate(text);
-  const totalAmount = detectTotal(text);
+  // Извлекаем метаданные которые Gemini кладёт в начало:
+  // STORE: <название магазина>
+  // DATE: <YYYY-MM-DD>
+  let geminiStore: string | null = null;
+  let geminiDate: string | null = null;
+  const storeMatch = text.match(/^STORE:\s*(.+)$/m);
+  const dateMatch = text.match(/^DATE:\s*(\d{4}-\d{2}-\d{2})$/m);
+  if (storeMatch) geminiStore = storeMatch[1].trim();
+  if (dateMatch) geminiDate = dateMatch[1].trim();
+
+  // Убираем метаданные из текста перед парсингом позиций
+  const textWithoutMeta = text.replace(/^(STORE|DATE):.*$/gm, '').trim();
+
+  const { storeName: detectedStore, currency } = detectStoreAndCurrency(textWithoutMeta, defaultCurrency);
+  const purchaseDate = geminiDate ?? detectDate(textWithoutMeta);
+  const storeName = geminiStore ?? detectedStore;
+  const totalAmount = detectTotal(textWithoutMeta);
 
   // Обрезаем текст до строки итога — позиции находятся ВЫШЕ итога,
   // ниже идут служебные строки (POI, токены, штрих-коды, реквизиты карты).
-  const allLines = text.split(/\r?\n/);
+  const allLines = textWithoutMeta.split(/\r?\n/);
   const cutoff = findTotalLineIndex(allLines);
   const itemsText = preprocessOcrText(allLines.slice(0, cutoff).join('\n'));
 
