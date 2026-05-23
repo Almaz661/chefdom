@@ -43,6 +43,12 @@ export function ReceiptDetailPage() {
   const [showRaw, setShowRaw] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
 
+  // Инлайн-редактирование шапки чека
+  const [editingStore, setEditingStore] = useState(false);
+  const [editingDate, setEditingDate] = useState(false);
+  const [eStore, setEStore] = useState("");
+  const [eDate, setEDate] = useState("");
+
   // Инлайн-редактирование позиции
   const [editingId, setEditingId] = useState<number | null>(null);
   const [eName, setEName] = useState("");
@@ -84,6 +90,14 @@ export function ReceiptDetailPage() {
 
   const reparse = trpc.receipts.reparse.useMutation({
     onSuccess: () => utils.receipts.getById.invalidate({ id }),
+  });
+
+  const updateReceipt = trpc.receipts.update.useMutation({
+    onSuccess: () => {
+      utils.receipts.getById.invalidate({ id });
+      setEditingStore(false);
+      setEditingDate(false);
+    },
   });
 
   const deleteReceipt = trpc.receipts.delete.useMutation({
@@ -150,31 +164,87 @@ export function ReceiptDetailPage() {
         </Link>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h1 className="font-serif text-3xl font-semibold text-ink leading-tight inline-flex items-center gap-3">
-              <ReceiptIcon size={26} className="text-primary" strokeWidth={2} />
-              {receipt.storeName || "Чек без названия"}
-            </h1>
-            <p className="text-ink-soft mt-1">
-              {receipt.purchaseDate
-                ? new Intl.DateTimeFormat("ru-RU", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }).format(new Date(receipt.purchaseDate))
-                : "Дата не указана"}{" "}
-              · {currency}
-              {receipt.totalAmount && (
-                <>
-                  {" "}· итог по чеку:{" "}
-                  <span className="tabular-nums text-ink font-medium">
-                    {formatPrice(
-                      receipt.totalAmount as unknown as string,
-                      currency,
-                    )}
-                  </span>
-                </>
+            {/* Название магазина — кликабельно для редактирования */}
+            {editingStore ? (
+              <div className="flex items-center gap-2 mb-1">
+                <input
+                  autoFocus
+                  className="h-9 px-3 border border-primary rounded-lg text-ink text-lg font-serif focus:outline-none flex-1"
+                  value={eStore}
+                  onChange={e => setEStore(e.target.value)}
+                  placeholder="Название магазина"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') updateReceipt.mutate({ id, storeName: eStore || null });
+                    if (e.key === 'Escape') setEditingStore(false);
+                  }}
+                />
+                <button onClick={() => updateReceipt.mutate({ id, storeName: eStore || null })}
+                  className="w-8 h-8 rounded-lg bg-primary text-paper flex items-center justify-center">
+                  <Check size={16} />
+                </button>
+                <button onClick={() => setEditingStore(false)}
+                  className="w-8 h-8 rounded-lg border border-line text-ink-muted flex items-center justify-center">
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <h1
+                className="font-serif text-3xl font-semibold text-ink leading-tight inline-flex items-center gap-3 cursor-pointer group"
+                onClick={() => { setEStore(receipt.storeName ?? ""); setEditingStore(true); }}
+              >
+                <ReceiptIcon size={26} className="text-primary" strokeWidth={2} />
+                {receipt.storeName || <span className="text-ink-muted">Нажми чтобы добавить магазин</span>}
+                <Pencil size={14} className="text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h1>
+            )}
+
+            {/* Дата — кликабельна для редактирования */}
+            <div className="flex items-center gap-2 mt-1">
+              {editingDate ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    type="date"
+                    className="h-8 px-2 border border-primary rounded-lg text-ink text-sm focus:outline-none"
+                    value={eDate}
+                    onChange={e => setEDate(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') updateReceipt.mutate({ id, purchaseDate: eDate || null });
+                      if (e.key === 'Escape') setEditingDate(false);
+                    }}
+                  />
+                  <button onClick={() => updateReceipt.mutate({ id, purchaseDate: eDate || null })}
+                    className="w-7 h-7 rounded-lg bg-primary text-paper flex items-center justify-center">
+                    <Check size={14} />
+                  </button>
+                  <button onClick={() => setEditingDate(false)}
+                    className="w-7 h-7 rounded-lg border border-line text-ink-muted flex items-center justify-center">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <span
+                  className="text-ink-soft cursor-pointer hover:text-primary transition-colors inline-flex items-center gap-1 group"
+                  onClick={() => { setEDate(receipt.purchaseDate ?? ""); setEditingDate(true); }}
+                >
+                  {receipt.purchaseDate
+                    ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+                        .format(new Date(receipt.purchaseDate))
+                    : <span className="text-alert">Нажми чтобы добавить дату</span>
+                  }
+                  <Pencil size={12} className="text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                </span>
               )}
-            </p>
+              <span className="text-ink-soft">· {currency}</span>
+              {receipt.totalAmount && (
+                <span className="text-ink-soft">
+                  · итог по чеку:{" "}
+                  <span className="tabular-nums text-ink font-medium">
+                    {formatPrice(receipt.totalAmount as unknown as string, currency)}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
           <button
             type="button"
