@@ -305,6 +305,18 @@ const migrations: Migration[] = [
     },
   },
   {
+    version: '010_product_master_prices',
+    up: async (sql) => {
+      // Product Master — хранит последние и средние цены товаров.
+      // Используется для точной привязки цен в ALDI чеках с "двухблочным"
+      // форматом (все имена сверху, все цены снизу).
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS last_price NUMERIC`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS avg_price NUMERIC`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS price_updated_at TIMESTAMPTZ`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_name_ru_lower ON products(LOWER(name_ru))`;
+    },
+  },
+  {
     version: '011_substitutions_seed',
     up: async (sql) => {
       // B.3 — заливаем справочник замен ингредиентов.
