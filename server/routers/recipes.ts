@@ -471,11 +471,21 @@ export const recipesRouter = router({
         WHERE recipe_id = ANY(${recipeIds})
       `;
 
-      // 3. Весь инвентарь (для матчинга)
+      // 3. Весь инвентарь (для матчинга) + заготовки (frozen/preserved/opened)
       const inv = await db
         .select({ name: inventory.productName })
         .from(inventory)
         .where(eq(inventory.userId, 1));
+
+      // Заготовки тоже считаются доступными ингредиентами
+      const { preserves } = await import('../db/schema');
+      const preserveRows = await db
+        .select({ name: preserves.name })
+        .from(preserves)
+        .where(eq(preserves.userId, 1));
+
+      // Объединяем инвентарь + заготовки
+      const allAvailable = [...inv, ...preserveRows];
 
       // 4. Истекающие продукты
       const limitDate = new Date();
@@ -529,7 +539,7 @@ export const recipesRouter = router({
       };
 
       // Для каждого инвентарного продукта храним все варианты имени + ключевые слова
-      const invData = inv.map((i) => ({
+      const invData = allAvailable.map((i) => ({
         names: extractNames(i.name),
         keywords: getKeywords(i.name),
       }));
