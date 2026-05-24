@@ -45,52 +45,40 @@ function normalizeName(name: string): string {
 }
 
 export const shoppingRouter = router({
-  // Весь список покупок (userId=1).
-  // При загрузке автоматически удаляет дубли.
+  // Весь список покупок (userId=1). Чистый GET без побочных эффектов.
   list: protectedProcedure.query(async () => {
-    console.log("[shopping.list] вызван");
+    const items = await db
+      .select()
+      .from(purchaseItems)
+      .where(eq(purchaseItems.userId, 1))
+      .orderBy(purchaseItems.addedAt);
+    return items;
+  }),
 
+  // Удаление дублей — вызывается явно (кнопка в Настройках или при необходимости)
+  deduplicate: protectedProcedure.mutation(async () => {
     const items = await db
       .select()
       .from(purchaseItems)
       .where(eq(purchaseItems.userId, 1))
       .orderBy(purchaseItems.addedAt);
 
-    console.log(`[shopping.list] загружено ${items.length} позиций`);
-
-    // Найти дубли по нормализованному ключу
-    const seen = new Map<string, number>(); // key → первый id
+    const seen = new Map<string, number>();
     const dupeIds: number[] = [];
     for (const item of items) {
       const key = normalizeName(item.productName);
       if (seen.has(key)) {
         dupeIds.push(item.id);
-        console.log(`[dedup] ДУБЛЬ id=${item.id} "${item.productName}" -> "${key}" (первый=${seen.get(key)})`);
       } else {
         seen.set(key, item.id);
       }
     }
 
-    // Удалить дубли из базы — по одному
-    if (dupeIds.length > 0) {
-      console.log(`[dedup] удаляю ${dupeIds.length} дублей...`);
-      for (const id of dupeIds) {
-        try {
-          await db.delete(purchaseItems).where(eq(purchaseItems.id, id));
-        } catch (err) {
-          console.error(`[dedup] ошибка удаления id=${id}:`, err);
-        }
-      }
-      console.log(`[dedup] готово`);
-    } else {
-      console.log("[dedup] дублей нет");
+    for (const id of dupeIds) {
+      await db.delete(purchaseItems).where(eq(purchaseItems.id, id));
     }
 
-    // Возвращаем список БЕЗ дублей
-    const dupeSet = new Set(dupeIds);
-    const result = items.filter(i => !dupeSet.has(i.id));
-    console.log(`[shopping.list] возвращаю ${result.length} позиций`);
-    return result;
+    return { removed: dupeIds.length };
   }),
 
   // Добавить позицию
