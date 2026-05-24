@@ -495,6 +495,25 @@ export const recipesRouter = router({
       // Нормализуем имена для матчинга (lowercase, trim)
       const norm = (s: string) => s.toLowerCase().trim();
 
+      // Простой стемминг русских окончаний для нечёткого сравнения
+      // "куриные" → "курин", "крылышки" → "крылышк", "крылья" → "крыль"
+      const stem = (word: string): string => {
+        return word
+          .replace(/(ые|ие|ое|ой|ый|ий|ая|яя|ых|их|ого|его|ому|ему|ами|ями|ах|ях|ов|ев|ей|ью|ья|ье|ьи|шки|ки|ка|ко|ку|ek|en|er|es)$/i, '')
+          .replace(/(ь|й)$/i, '');
+      };
+
+      // Извлечь значимые слова из строки (убрать предлоги, числа, единицы)
+      const STOP_WORDS = new Set(['в', 'на', 'с', 'из', 'для', 'по', 'или', 'и', 'а', 'не', 'кг', 'г', 'мл', 'л', 'шт', 'ст', 'ч', 'можно', 'заменить', 'иные', 'части', 'часть']);
+      const getKeywords = (s: string): string[] => {
+        return norm(s)
+          .replace(/[–—\-,.:;!?()\[\]«»"']/g, ' ')
+          .split(/\s+/)
+          .filter(w => w.length >= 3 && !STOP_WORDS.has(w) && !/^\d+$/.test(w))
+          .map(stem)
+          .filter(w => w.length >= 3);
+      };
+
       // Извлекаем все варианты имени из формата "Original (Перевод)"
       // → ["original", "перевод", "original (перевод)"]
       const extractNames = (s: string): string[] => {
@@ -509,23 +528,48 @@ export const recipesRouter = router({
         return names;
       };
 
-      // Для каждого инвентарного продукта храним все варианты имени
-      const invNames: string[][] = inv.map((i) => extractNames(i.name));
-      const expiringNames: string[][] = expiringRows.map((e) => extractNames(e.name));
+      // Для каждого инвентарного продукта храним все варианты имени + ключевые слова
+      const invData = inv.map((i) => ({
+        names: extractNames(i.name),
+        keywords: getKeywords(i.name),
+      }));
+      const expiringData = expiringRows.map((e) => ({
+        names: extractNames(e.name),
+        keywords: getKeywords(e.name),
+      }));
 
       // Проверка: ингредиент есть в инвентаре?
-      // Нечёткий поиск — подстрока в обе стороны, минимум 3 символа для совпадения
-      const ingredientInInventory = (ingName: string, namesList: string[][]): boolean => {
+      // 1) Подстрока в обе стороны (как раньше)
+      // 2) Пословный матч: если ≥2 ключевых слова совпадают (по стеммам)
+      const ingredientInInventory = (ingName: string, dataList: typeof invData): boolean => {
         const n = norm(ingName);
         if (n.length < 2) return false;
+        const ingKeywords = getKeywords(ingName);
 
-        for (const variants of namesList) {
-          for (const invName of variants) {
-            // Точное совпадение
+        for (const item of dataList) {
+          // Способ 1: подстрока по вариантам имени
+          for (const invName of item.names) {
             if (n === invName) return true;
-            // Подстрочное — только если подстрока достаточно длинная (≥3 символа)
             if (n.length >= 3 && invName.includes(n)) return true;
             if (invName.length >= 3 && n.includes(invName)) return true;
+          }
+
+          // Способ 2: пословный матч по стеммам (≥2 общих слова)
+          if (ingKeywords.length >= 2 && item.keywords.length >= 2) {
+            let common = 0;
+            for (const kw of ingKeywords) {
+              if (item.keywords.some(ik => ik === kw || ik.includes(kw) || kw.includes(ik))) {
+                common++;
+              }
+            }
+            if (common >= 2) return true;
+          }
+          // Для коротких названий (1 слово) — совпадение одного стемма достаточно
+          if (ingKeywords.length === 1 && item.keywords.length >= 1) {
+            const kw = ingKeywords[0];
+            if (item.keywords.some(ik => ik === kw || ik.includes(kw) || kw.includes(ik))) {
+              return true;
+            }
           }
         }
         return false;
@@ -546,8 +590,8 @@ export const recipesRouter = router({
         let expiringCount = 0;
 
         for (const ing of ings) {
-          if (ingredientInInventory(ing, invNames)) haveCount++;
-          if (expiringNames.length > 0 && ingredientInInventory(ing, expiringNames)) {
+          if (ingredientInInventory(ing, invData)) haveCount++;
+          if (expiringData.length > 0 && ingredientInInventory(ing, expiringData)) {
             expiringCount++;
           }
         }
