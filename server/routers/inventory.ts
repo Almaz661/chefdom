@@ -125,6 +125,42 @@ export const inventoryRouter = router({
       return { id };
     }),
 
+  // Массовое добавление из чека (Чек → Инвентарь)
+  addBulk: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            productName: z.string().min(1).max(200),
+            quantity: z.number().positive().nullable().optional(),
+            unit: z.string().max(50).nullable().optional(),
+            storageType: z.enum(storageTypes).default('fridge'),
+            expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+            category: z.string().max(100).nullable().optional(),
+          }),
+        ).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const created: { id: number; productName: string }[] = [];
+      for (const item of input.items) {
+        const [row] = await db
+          .insert(inventory)
+          .values({
+            userId: 1,
+            productName: item.productName,
+            quantity: item.quantity != null ? String(item.quantity) : null,
+            unit: item.unit ?? null,
+            storageType: item.storageType,
+            expiryDate: item.expiryDate ?? null,
+            category: item.category ?? null,
+          })
+          .returning({ id: inventory.id, productName: inventory.productName });
+        created.push(row);
+      }
+      return { added: created.length, items: created };
+    }),
+
   // Удалить
   remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Package,
   Pencil,
   Plus,
   RefreshCw,
@@ -60,6 +61,12 @@ export function ReceiptDetailPage() {
   const [mUnit, setMUnit] = useState("");
   const [mPrice, setMPrice] = useState("");
 
+  // Диалог «В инвентарь»
+  const [showToInventory, setShowToInventory] = useState(false);
+  const [invSelections, setInvSelections] = useState<
+    Record<number, { checked: boolean; storage: 'fridge' | 'freezer' | 'pantry'; expiryDate: string }>
+  >({});
+
   const utils = trpc.useUtils();
   const query = trpc.receipts.getById.useQuery(
     { id },
@@ -104,6 +111,14 @@ export function ReceiptDetailPage() {
     onSuccess: () => {
       utils.receipts.list.invalidate();
       navigate("/receipts");
+    },
+  });
+
+  const addBulkToInventory = trpc.inventory.addBulk.useMutation({
+    onSuccess: () => {
+      utils.inventory.list.invalidate();
+      setShowToInventory(false);
+      setInvSelections({});
     },
   });
 
@@ -266,8 +281,25 @@ export function ReceiptDetailPage() {
         </div>
       </div>
 
-      {/* Кнопка добавления — теперь только ручная */}
+      {/* Кнопки действий */}
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            // Инициализируем чекбоксы для всех позиций
+            const sel: typeof invSelections = {};
+            items.forEach(it => {
+              sel[it.id] = { checked: true, storage: 'fridge', expiryDate: '' };
+            });
+            setInvSelections(sel);
+            setShowToInventory(true);
+          }}
+          disabled={items.length === 0}
+          className="inline-flex items-center gap-2 h-12 px-4 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Package size={18} />
+          В инвентарь
+        </button>
         <button
           type="button"
           onClick={() => setShowAddManual(true)}
@@ -583,6 +615,177 @@ export function ReceiptDetailPage() {
                 {addItem.isPending ? "Добавляю…" : "Добавить"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Диалог «В инвентарь» — массовое добавление товаров из чека */}
+      {showToInventory && (
+        <div
+          className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+          onClick={() => !addBulkToInventory.isPending && setShowToInventory(false)}
+        >
+          <div
+            className="bg-paper rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h3 className="font-serif text-xl font-semibold text-ink">
+                Добавить в инвентарь
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowToInventory(false)}
+                aria-label="Закрыть"
+                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-cream flex items-center justify-center"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-sm text-ink-soft mb-4">
+              Выбери товары и укажи где хранить и до какого числа годен:
+            </p>
+
+            {/* Быстрые кнопки: выбрать все / снять все */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const sel = { ...invSelections };
+                  Object.keys(sel).forEach(k => { sel[Number(k)].checked = true; });
+                  setInvSelections(sel);
+                }}
+                className="text-xs text-primary hover:underline"
+              >
+                Выбрать все
+              </button>
+              <span className="text-ink-muted">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const sel = { ...invSelections };
+                  Object.keys(sel).forEach(k => { sel[Number(k)].checked = false; });
+                  setInvSelections(sel);
+                }}
+                className="text-xs text-ink-soft hover:underline"
+              >
+                Снять все
+              </button>
+            </div>
+
+            {/* Список позиций */}
+            <ul className="space-y-3 mb-5">
+              {items.map((it) => {
+                const sel = invSelections[it.id];
+                if (!sel) return null;
+                return (
+                  <li key={it.id} className={`rounded-xl border p-3 transition-colors ${sel.checked ? 'border-primary bg-primary/5' : 'border-line bg-paper opacity-60'}`}>
+                    {/* Чекбокс + название */}
+                    <label className="flex items-center gap-3 cursor-pointer mb-2">
+                      <input
+                        type="checkbox"
+                        checked={sel.checked}
+                        onChange={(e) => {
+                          setInvSelections(prev => ({
+                            ...prev,
+                            [it.id]: { ...prev[it.id], checked: e.target.checked },
+                          }));
+                        }}
+                        className="w-5 h-5 rounded border-line text-primary focus:ring-primary"
+                      />
+                      <span className="font-medium text-ink flex-1 min-w-0 truncate">{it.productName}</span>
+                    </label>
+
+                    {/* Настройки хранения (видны если отмечен) */}
+                    {sel.checked && (
+                      <div className="grid grid-cols-2 gap-2 pl-8">
+                        {/* Где хранить */}
+                        <div>
+                          <span className="block text-xs text-ink-muted mb-1">Где хранить</span>
+                          <select
+                            value={sel.storage}
+                            onChange={(e) => {
+                              setInvSelections(prev => ({
+                                ...prev,
+                                [it.id]: { ...prev[it.id], storage: e.target.value as 'fridge' | 'freezer' | 'pantry' },
+                              }));
+                            }}
+                            className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
+                          >
+                            <option value="fridge">🧊 Холодильник</option>
+                            <option value="freezer">❄️ Морозилка</option>
+                            <option value="pantry">🏠 Кладовая</option>
+                          </select>
+                        </div>
+                        {/* Годен до */}
+                        <div>
+                          <span className="block text-xs text-ink-muted mb-1">Годен до</span>
+                          <input
+                            type="date"
+                            value={sel.expiryDate}
+                            onChange={(e) => {
+                              setInvSelections(prev => ({
+                                ...prev,
+                                [it.id]: { ...prev[it.id], expiryDate: e.target.value },
+                              }));
+                            }}
+                            className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Кнопки */}
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowToInventory(false)}
+                disabled={addBulkToInventory.isPending}
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                disabled={
+                  addBulkToInventory.isPending ||
+                  !Object.values(invSelections).some(s => s.checked)
+                }
+                onClick={() => {
+                  const toAdd = items
+                    .filter(it => invSelections[it.id]?.checked)
+                    .map(it => {
+                      const sel = invSelections[it.id];
+                      return {
+                        productName: it.productName,
+                        quantity: it.quantity ? parseFloat(String(it.quantity)) : null,
+                        unit: it.unit ?? null,
+                        storageType: sel.storage,
+                        expiryDate: sel.expiryDate || null,
+                      };
+                    });
+                  addBulkToInventory.mutate({ items: toAdd });
+                }}
+                className="px-5 h-11 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                <Package size={16} />
+                {addBulkToInventory.isPending
+                  ? "Добавляю…"
+                  : `Добавить (${Object.values(invSelections).filter(s => s.checked).length})`
+                }
+              </button>
+            </div>
+
+            {addBulkToInventory.isSuccess && (
+              <p className="text-sm text-primary mt-3 text-center font-medium">
+                ✓ Добавлено в инвентарь!
+              </p>
+            )}
           </div>
         </div>
       )}
