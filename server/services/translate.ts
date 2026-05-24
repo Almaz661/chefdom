@@ -139,3 +139,78 @@ export async function translateBatchToRu(
     return texts;
   }
 }
+
+/**
+ * Перевод массива текстов на русский БЕЗ формата "Оригинал (Перевод)".
+ * Возвращает только перевод. Используется для рецептов где нужен чистый
+ * русский текст в названии, описании, ингредиентах и шагах.
+ *
+ * Если API ключа нет — возвращает оригинал.
+ * Тексты которые уже на русском — не переводятся (возвращаются как есть).
+ */
+export async function translatePlainBatch(
+  texts: string[],
+  sourceLang?: 'NL' | 'EN' | null,
+): Promise<string[]> {
+  const apiKey = getApiKey();
+  if (!apiKey) return texts;
+  if (texts.length === 0) return [];
+
+  // Переводим только то что не на русском (содержит латиницу и нет кириллицы или есть и то и то)
+  const needTranslation = texts.map((t, i) => ({
+    text: t,
+    index: i,
+    needsIt: t.trim().length >= 2 && /[a-zA-Z]/.test(t) && !(/[а-яА-ЯёЁ]/.test(t)),
+  }));
+
+  const toTranslate = needTranslation.filter(n => n.needsIt);
+  if (toTranslate.length === 0) return texts;
+
+  try {
+    // DeepL обрабатывает максимум 50 текстов за раз, разбиваем на батчи
+    const batches: typeof toTranslate[] = [];
+    for (let i = 0; i < toTranslate.length; i += 50) {
+      batches.push(toTranslate.slice(i, i + 50));
+    }
+
+    const result = [...texts];
+
+    for (const batch of batches) {
+      const params = new URLSearchParams({ target_lang: 'RU' });
+      if (sourceLang) params.set('source_lang', sourceLang);
+      for (const item of batch) {
+        params.append('text', item.text);
+      }
+
+      const res = await fetch(DEEPL_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `DeepL-Auth-Key ${apiKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+
+      if (!res.ok) {
+        console.warn(`[translate] translatePlainBatch вернул ${res.status}`);
+        continue;
+      }
+
+      const data = await res.json() as {
+        translations?: Array<{ text: string }>;
+      };
+
+      if (!data.translations || data.translations.length !== batch.length) continue;
+
+      for (let i = 0; i < batch.length; i++) {
+        result[batch[i].index] = data.translations[i].text;
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.warn('[translate] Ошибка translatePlainBatch:', err instanceof Error ? err.message : err);
+    return texts;
+  }
+}
+
