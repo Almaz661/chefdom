@@ -73,6 +73,18 @@ export function Dashboard() {
   const { data: topRecipe } = trpc.cooking.topThisMonth.useQuery();
   // Блюдо дня — рецепт из меню на сегодня по времени суток
   const { data: todayMeal } = trpc.menu.getTodayMeal.useQuery();
+  // Меню недели — для виджета с днями
+  const weekStart = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  })();
+  const { data: weekMenu } = trpc.menu.getWeek.useQuery({ weekStart });
 
   return (
     <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
@@ -390,7 +402,7 @@ export function Dashboard() {
         )}
       </section>
 
-      {/* Меню недели — мини-полоса */}
+      {/* Меню недели — мини-полоса с реальными данными */}
       <section className="bg-paper rounded-2xl border border-line p-6">
         <div className="flex items-baseline justify-between mb-5">
           <h3 className="font-serif text-lg font-semibold text-ink inline-flex items-center gap-2">
@@ -412,8 +424,10 @@ export function Dashboard() {
         <div className="grid grid-cols-7 gap-2">
           {WEEKDAYS.map((label, idx) => {
             const isToday = idx === todayIdx;
+            const dayMeals = weekMenu?.items.filter(i => i.dayOfWeek === idx) || [];
+            const hasRecipes = dayMeals.length > 0;
             return (
-              <div key={label} className="flex flex-col items-center gap-2">
+              <Link key={label} to="/menu" className="flex flex-col items-center gap-2 group">
                 <span
                   className={`text-xs font-medium ${
                     isToday ? "text-primary" : "text-ink-muted"
@@ -422,19 +436,30 @@ export function Dashboard() {
                   {label}
                 </span>
                 <div
-                  className={`w-9 h-9 rounded-full border-2 ${
+                  className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors group-hover:border-primary ${
                     isToday
-                      ? "bg-primary-light border-primary"
-                      : "border-line bg-cream"
+                      ? "bg-primary-light border-primary text-primary"
+                      : hasRecipes
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-line bg-cream text-ink-muted"
                   }`}
-                />
-              </div>
+                  title={dayMeals.map(m => m.recipeTitle).join(', ') || 'Пусто'}
+                >
+                  {hasRecipes ? dayMeals.length : ''}
+                </div>
+              </Link>
             );
           })}
         </div>
-        <p className="text-ink-muted text-xs text-center mt-5">
-          Тапни на день в меню недели, чтобы добавить блюдо.
-        </p>
+        {weekMenu && weekMenu.items.length > 0 ? (
+          <p className="text-ink-muted text-xs text-center mt-4">
+            {weekMenu.items.length} {weekMenu.items.length === 1 ? 'блюдо' : weekMenu.items.length < 5 ? 'блюда' : 'блюд'} запланировано на неделю
+          </p>
+        ) : (
+          <p className="text-ink-muted text-xs text-center mt-4">
+            Меню пусто — добавь рецепты на неделю
+          </p>
+        )}
       </section>
     </div>
   );
