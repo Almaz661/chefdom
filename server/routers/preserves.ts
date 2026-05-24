@@ -29,22 +29,6 @@ export const preservesRouter = router({
       .orderBy(preserves.preserveType, preserves.name);
   }),
 
-  // Только указанного типа (для будущих экранов где нужен один тип)
-  listByType: protectedProcedure
-    .input(z.object({ type: z.enum(preserveTypes) }))
-    .query(async ({ input }) => {
-      return db
-        .select()
-        .from(preserves)
-        .where(
-          and(
-            eq(preserves.userId, 1),
-            eq(preserves.preserveType, input.type),
-          ),
-        )
-        .orderBy(preserves.name);
-    }),
-
   // Создать заготовку. servings разрешён только для frozen
   // (для других не имеет смысла, но если придёт — игнорируем).
   add: protectedProcedure

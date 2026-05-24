@@ -103,18 +103,6 @@ export const productsRouter = router({
       return rows;
     }),
 
-  // G.3 — поиск ингредиента по названию
-  searchIngredient: protectedProcedure
-    .input(z.object({ query: z.string().min(1).max(200) }))
-    .query(async ({ input }) => {
-      const rows = await db
-        .select()
-        .from(ingredients)
-        .where(ilike(ingredients.nameRu, `%${input.query}%`))
-        .limit(20);
-      return rows;
-    }),
-
   // B.3 — получить замены для ингредиента.
   // Поиск нечувствителен к регистру и работает по подстроке:
   // "Сметана 20%" найдёт замены для "Сметана"
