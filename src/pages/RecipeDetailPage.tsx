@@ -431,11 +431,15 @@ export function RecipeDetailPage() {
         <div className="max-w-3xl mx-auto">
           <button
             type="button"
-            disabled
-            title="Готовка появится в Блоке 11"
-            className="w-full bg-primary text-paper py-3 rounded-lg font-medium opacity-50 cursor-not-allowed"
+            disabled={cook.isPending}
+            onClick={() => {
+              if (confirm('Готовить? Ингредиенты будут списаны из инвентаря.')) {
+                cook.mutate({ id });
+              }
+            }}
+            className="w-full bg-primary text-paper py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            Готовить сейчас (Блок 11)
+            {cook.isPending ? 'Готовлю...' : 'Готовить сейчас'}
           </button>
         </div>
       </div>
