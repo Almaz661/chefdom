@@ -186,34 +186,33 @@ export function MenuPage() {
                       return (
                         <td
                           key={dayIdx}
-                          className="border border-line p-1.5 align-top min-w-[120px] h-[100px]"
+                          className="border border-line p-1.5 align-top min-w-[120px] min-h-[100px]"
                         >
-                          {items && items.length > 0 ? (
-                            <div className="space-y-1">
-                              {items.map((item) => (
-                                <MenuSlotCard
-                                  key={item.id}
-                                  item={item}
-                                  onRemove={() =>
-                                    removeItem.mutate({ itemId: item.id })
-                                  }
-                                />
-                              ))}
-                            </div>
-                          ) : (
+                          <div className="space-y-1">
+                            {items && items.map((item) => (
+                              <MenuSlotCard
+                                key={item.id}
+                                item={item}
+                                onRemove={() =>
+                                  removeItem.mutate({ itemId: item.id })
+                                }
+                              />
+                            ))}
                             <button
                               onClick={() =>
                                 setPickSlot({ dayOfWeek: dayIdx, mealType: key })
                               }
-                              className="w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed border-line hover:border-primary hover:bg-primary-light/30 transition-colors"
+                              className={`w-full flex items-center justify-center rounded-lg border-2 border-dashed border-line hover:border-primary hover:bg-primary-light/30 transition-colors ${
+                                items && items.length > 0 ? "h-8" : "h-[90px]"
+                              }`}
                               aria-label={`Добавить ${label} ${DAYS[dayIdx]}`}
                             >
                               <Plus
-                                size={20}
+                                size={items && items.length > 0 ? 14 : 20}
                                 className="text-line-strong"
                               />
                             </button>
-                          )}
+                          </div>
                         </td>
                       );
                     })}
@@ -259,19 +258,16 @@ export function MenuPage() {
                             {mealLabel}
                           </span>
                           <div className="flex-1">
-                            {items && items.length > 0 ? (
-                              <div className="space-y-1">
-                                {items.map((item) => (
-                                  <MenuSlotCard
-                                    key={item.id}
-                                    item={item}
-                                    onRemove={() =>
-                                      removeItem.mutate({ itemId: item.id })
-                                    }
-                                  />
-                                ))}
-                              </div>
-                            ) : (
+                            <div className="space-y-1">
+                              {items && items.map((item) => (
+                                <MenuSlotCard
+                                  key={item.id}
+                                  item={item}
+                                  onRemove={() =>
+                                    removeItem.mutate({ itemId: item.id })
+                                  }
+                                />
+                              ))}
                               <button
                                 onClick={() =>
                                   setPickSlot({
@@ -279,12 +275,14 @@ export function MenuPage() {
                                     mealType: key,
                                   })
                                 }
-                                className="w-full h-10 flex items-center justify-center rounded-lg border-2 border-dashed border-line hover:border-primary transition-colors"
+                                className={`w-full flex items-center justify-center rounded-lg border-2 border-dashed border-line hover:border-primary transition-colors ${
+                                  items && items.length > 0 ? "h-8" : "h-10"
+                                }`}
                                 aria-label={`Добавить ${mealLabel}`}
                               >
-                                <Plus size={16} className="text-line-strong" />
+                                <Plus size={items && items.length > 0 ? 14 : 16} className="text-line-strong" />
                               </button>
-                            )}
+                            </div>
                           </div>
                         </div>
                       );
