@@ -9,6 +9,7 @@ import {
   Snowflake,
   Package,
   Receipt,
+  BarChart3,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { to: "/preserves", label: "Заготовки", icon: Snowflake },
   { to: "/products", label: "Продукты", icon: Package },
   { to: "/receipts", label: "Чеки", icon: Receipt },
+  { to: "/analytics", label: "Аналитика", icon: BarChart3 },
   { to: "/settings", label: "Настройки", icon: Settings },
 ];
 
