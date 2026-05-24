@@ -467,46 +467,40 @@ export function AddRecipePage() {
             <label className="block text-sm font-medium text-ink mb-1.5">
               Категория
             </label>
-            <input
-              type="text"
-              list="dl-categories"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-            <datalist id="dl-categories">
-              {CATEGORIES.map((c) => <option key={c} value={c} />)}
-            </datalist>
+              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
+            >
+              <option value="">— выбрать —</option>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">
               Кухня
             </label>
-            <input
-              type="text"
-              list="dl-cuisines"
+            <select
               value={cuisine}
               onChange={(e) => setCuisine(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-            <datalist id="dl-cuisines">
-              {CUISINES.map((c) => <option key={c} value={c} />)}
-            </datalist>
+              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
+            >
+              <option value="">— выбрать —</option>
+              {CUISINES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">
               Сложность
             </label>
-            <input
-              type="text"
-              list="dl-difficulties"
+            <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-            <datalist id="dl-difficulties">
-              {DIFFICULTIES.map((c) => <option key={c} value={c} />)}
-            </datalist>
+              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
+            >
+              <option value="">— выбрать —</option>
+              {DIFFICULTIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+            </select>
           </div>
         </div>
       </section>
