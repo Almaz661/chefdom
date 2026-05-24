@@ -90,7 +90,11 @@ export function RecipeDetailPage() {
 
   const cook = trpc.recipes.cook.useMutation({
     onSuccess: (result) => {
-      alert(`Готовим! Списано ${result.consumed} из ${result.total} ингредиентов из инвентаря.`);
+      let msg = `Готовим! Списано ${result.consumed} из ${result.total} ингредиентов из инвентаря.`;
+      if (result.addedToShopping > 0) {
+        msg += `\n\n${result.addedToShopping} недостающих добавлено в список покупок.`;
+      }
+      alert(msg);
     },
     onError: (err) => {
       alert(err.message);

@@ -726,6 +726,7 @@ export const recipesRouter = router({
 
         // Трекаем уже списанные ID чтобы не списать дважды
         const usedIds = new Set<number>();
+        const missingIngredients: string[] = [];
 
         for (const ing of ingredients) {
           // Найти первый подходящий продукт по FEFO (массив уже отсортирован по expiryDate)
@@ -736,6 +737,35 @@ export const recipesRouter = router({
             await tx.delete(inventory).where(eq(inventory.id, match.id));
             usedIds.add(match.id);
             consumed++;
+          } else {
+            // Ингредиент не найден в инвентаре — добавляем в покупки
+            missingIngredients.push(ing.name);
+          }
+        }
+
+        // Авто-добавление недостающих ингредиентов в список покупок
+        if (missingIngredients.length > 0) {
+          const { purchaseItems } = await import('../db/schema');
+          for (const name of missingIngredients) {
+            // Не добавляем если уже есть в покупках (нечувствительно к регистру)
+            const existing = await tx
+              .select({ id: purchaseItems.id })
+              .from(purchaseItems)
+              .where(
+                and(
+                  eq(purchaseItems.userId, 1),
+                  ilike(purchaseItems.productName, name),
+                ),
+              )
+              .limit(1);
+
+            if (existing.length === 0) {
+              await tx.insert(purchaseItems).values({
+                userId: 1,
+                productName: name,
+                recipeSource: recipe.title,
+              });
+            }
           }
         }
 
@@ -753,7 +783,7 @@ export const recipesRouter = router({
           totalIngredients: ingredients.length,
         });
 
-        return { consumed, total: ingredients.length };
+        return { consumed, total: ingredients.length, addedToShopping: missingIngredients.length };
       });
     }),
 });
