@@ -1,0 +1,48 @@
+name: Build User Guide PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/USER-GUIDE-FULL.md'
+      - '.github/workflows/build-pdf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pandoc and LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-lang-cyrillic fonts-dejavu
+
+      - name: Generate PDF
+        run: |
+          mkdir -p docs/pdf
+          pandoc docs/USER-GUIDE-FULL.md \
+            -o docs/pdf/USER-GUIDE-FULL.pdf \
+            --pdf-engine=xelatex \
+            -V mainfont="DejaVu Sans" \
+            -V monofont="DejaVu Sans Mono" \
+            -V geometry=margin=2cm \
+            -V documentclass=report \
+            -V toc=true \
+            -V toc-depth=2 \
+            -V colorlinks=true \
+            -V linkcolor=blue \
+            --metadata title="ШефДом! — Полная инструкция" \
+            --metadata lang=ru
+
+      - name: Commit PDF
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/pdf/USER-GUIDE-FULL.pdf
+          git diff --staged --quiet || git commit -m "docs: автогенерация PDF [skip ci]"
+          git push
