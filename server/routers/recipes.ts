@@ -663,22 +663,78 @@ export const recipesRouter = router({
 
         let consumed = 0;
 
-        for (const ing of ingredients) {
-          // Найти в инвентаре по названию (case-insensitive), сортировка по сроку (FEFO)
-          const matches = await tx
-            .select()
-            .from(inventory)
-            .where(
-              and(
-                eq(inventory.userId, 1),
-                ilike(inventory.productName, ing.name),
-              ),
-            )
-            .orderBy(asc(inventory.expiryDate));
+        // Загружаем весь инвентарь для нечёткого матчинга (как в matchWithInventory)
+        const allInv = await tx
+          .select()
+          .from(inventory)
+          .where(eq(inventory.userId, 1))
+          .orderBy(asc(inventory.expiryDate));
 
-          if (matches.length > 0) {
-            // Удаляем первый (самый скоро истекающий)
-            await tx.delete(inventory).where(eq(inventory.id, matches[0].id));
+        // Нечёткий матчинг: извлекаем варианты имени + стемминг
+        const norm = (s: string) => s.toLowerCase().trim();
+        const stem = (word: string): string => {
+          return word
+            .replace(/(ые|ие|ое|ой|ый|ий|ая|яя|ых|их|ого|его|ому|ему|ами|ями|ах|ях|ов|ев|ей|ью|ья|ье|ьи|шки|ки|ка|ко|ку|ek|en|er|es)$/i, '')
+            .replace(/(ь|й)$/i, '');
+        };
+        const STOP_WORDS = new Set(['в', 'на', 'с', 'из', 'для', 'по', 'или', 'и', 'а', 'не', 'кг', 'г', 'мл', 'л', 'шт', 'ст', 'ч', 'можно', 'заменить', 'иные', 'части', 'часть']);
+        const getKeywords = (s: string): string[] => {
+          return norm(s)
+            .replace(/[–—\-,.:;!?()\[\]«»"']/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length >= 3 && !STOP_WORDS.has(w) && !/^\d+$/.test(w))
+            .map(stem)
+            .filter(w => w.length >= 3);
+        };
+        const extractNames = (s: string): string[] => {
+          const full = norm(s);
+          const names = [full];
+          const match = full.match(/^(.+?)\s*\((.+?)\)\s*$/);
+          if (match) {
+            names.push(match[1].trim());
+            names.push(match[2].trim());
+          }
+          return names;
+        };
+
+        // Проверяем совпадение ингредиента с продуктом инвентаря
+        const isMatch = (ingName: string, invProductName: string): boolean => {
+          const n = norm(ingName);
+          const invNames = extractNames(invProductName);
+          // Подстрока в обе стороны
+          for (const invName of invNames) {
+            if (n === invName) return true;
+            if (n.length >= 3 && invName.includes(n)) return true;
+            if (invName.length >= 3 && n.includes(invName)) return true;
+          }
+          // Пословный матч по стеммам
+          const ingKw = getKeywords(ingName);
+          const invKw = getKeywords(invProductName);
+          if (ingKw.length >= 2 && invKw.length >= 2) {
+            let common = 0;
+            for (const kw of ingKw) {
+              if (invKw.some(ik => ik === kw || ik.includes(kw) || kw.includes(ik))) common++;
+            }
+            if (common >= 2) return true;
+          }
+          if (ingKw.length === 1 && invKw.length >= 1) {
+            const kw = ingKw[0];
+            if (invKw.some(ik => ik === kw || ik.includes(kw) || kw.includes(ik))) return true;
+          }
+          return false;
+        };
+
+        // Трекаем уже списанные ID чтобы не списать дважды
+        const usedIds = new Set<number>();
+
+        for (const ing of ingredients) {
+          // Найти первый подходящий продукт по FEFO (массив уже отсортирован по expiryDate)
+          const match = allInv.find(
+            item => !usedIds.has(item.id) && isMatch(ing.name, item.productName)
+          );
+          if (match) {
+            await tx.delete(inventory).where(eq(inventory.id, match.id));
+            usedIds.add(match.id);
             consumed++;
           }
         }
