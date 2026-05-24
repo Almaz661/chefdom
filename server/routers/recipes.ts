@@ -292,6 +292,10 @@ export const recipesRouter = router({
     }),
 
   // Импорт по URL: скрейп с сайта → сохранение в БД одной транзакцией.
+  // Если рецепт на английском (или другом не-русском) — автоматически
+  // переводим на русский через DeepL. Переводятся: название, описание,
+  // имена ингредиентов, инструкции шагов. Тексты которые уже на русском
+  // не трогаются (детектится по наличию кириллицы).
   importFromUrl: protectedProcedure
     .input(z.object({ url: z.string().url('Некорректный URL') }))
     .mutation(async ({ input }) => {
@@ -306,6 +310,48 @@ export const recipesRouter = router({
               ? err.message
               : 'Не удалось импортировать рецепт',
         });
+      }
+
+      // Авто-перевод EN→RU (best-effort, не блокирует импорт)
+      try {
+        const { translatePlainBatch } = await import('../services/translate');
+
+        // Собираем все тексты для перевода в один массив (для batch-запроса)
+        const titlesToTranslate = [
+          scraped.title,
+          scraped.description ?? '',
+          scraped.category ?? '',
+          scraped.cuisine ?? '',
+        ];
+        const ingredientNames = scraped.ingredients.map(i => i.name);
+        const stepInstructions = scraped.steps.map(s => s.instruction);
+
+        const allTexts = [
+          ...titlesToTranslate,
+          ...ingredientNames,
+          ...stepInstructions,
+        ];
+
+        const translated = await translatePlainBatch(allTexts);
+
+        // Применяем переводы обратно
+        scraped.title = translated[0] || scraped.title;
+        scraped.description = translated[1] || scraped.description;
+        scraped.category = translated[2] || scraped.category;
+        scraped.cuisine = translated[3] || scraped.cuisine;
+
+        const ingStart = 4;
+        for (let i = 0; i < scraped.ingredients.length; i++) {
+          scraped.ingredients[i].name = translated[ingStart + i] || scraped.ingredients[i].name;
+        }
+
+        const stepStart = ingStart + ingredientNames.length;
+        for (let i = 0; i < scraped.steps.length; i++) {
+          scraped.steps[i].instruction = translated[stepStart + i] || scraped.steps[i].instruction;
+        }
+      } catch (err) {
+        console.warn('[importFromUrl] перевод не удался:', err);
+        // Не страшно — сохраним как есть
       }
 
       const result = await db.transaction(async (tx) => {
