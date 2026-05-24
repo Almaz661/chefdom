@@ -494,16 +494,39 @@ export const recipesRouter = router({
 
       // Нормализуем имена для матчинга (lowercase, trim)
       const norm = (s: string) => s.toLowerCase().trim();
-      const invSet = new Set(inv.map((i) => norm(i.name)));
-      const expiringSet = new Set(expiringRows.map((e) => norm(e.name)));
+
+      // Извлекаем все варианты имени из формата "Original (Перевод)"
+      // → ["original", "перевод", "original (перевод)"]
+      const extractNames = (s: string): string[] => {
+        const full = norm(s);
+        const names = [full];
+        // Формат "NL text (RU текст)" — извлекаем оба
+        const match = full.match(/^(.+?)\s*\((.+?)\)\s*$/);
+        if (match) {
+          names.push(match[1].trim()); // NL часть
+          names.push(match[2].trim()); // RU часть
+        }
+        return names;
+      };
+
+      // Для каждого инвентарного продукта храним все варианты имени
+      const invNames: string[][] = inv.map((i) => extractNames(i.name));
+      const expiringNames: string[][] = expiringRows.map((e) => extractNames(e.name));
 
       // Проверка: ингредиент есть в инвентаре?
-      // Делаем нечёткий поиск — ingredient name содержит inv name (или наоборот)
-      const ingredientInInventory = (ingName: string, set: Set<string>): boolean => {
+      // Нечёткий поиск — подстрока в обе стороны, минимум 3 символа для совпадения
+      const ingredientInInventory = (ingName: string, namesList: string[][]): boolean => {
         const n = norm(ingName);
-        if (set.has(n)) return true;
-        for (const invName of set) {
-          if (n.includes(invName) || invName.includes(n)) return true;
+        if (n.length < 2) return false;
+
+        for (const variants of namesList) {
+          for (const invName of variants) {
+            // Точное совпадение
+            if (n === invName) return true;
+            // Подстрочное — только если подстрока достаточно длинная (≥3 символа)
+            if (n.length >= 3 && invName.includes(n)) return true;
+            if (invName.length >= 3 && n.includes(invName)) return true;
+          }
         }
         return false;
       };
@@ -523,8 +546,8 @@ export const recipesRouter = router({
         let expiringCount = 0;
 
         for (const ing of ings) {
-          if (ingredientInInventory(ing, invSet)) haveCount++;
-          if (expiringSet.size > 0 && ingredientInInventory(ing, expiringSet)) {
+          if (ingredientInInventory(ing, invNames)) haveCount++;
+          if (expiringNames.length > 0 && ingredientInInventory(ing, expiringNames)) {
             expiringCount++;
           }
         }
