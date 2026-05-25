@@ -9,6 +9,33 @@ const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[]
   { key: "pantry", label: "Кладовая" },
 ];
 
+// Кнопка «Загрузить из чеков» — синхронизирует все товары из чеков в каталог
+function SyncFromReceiptsButton() {
+  const utils = trpc.useUtils();
+  const sync = trpc.receipts.syncAllToProducts.useMutation({
+    onSuccess: (data) => {
+      utils.products.search.invalidate();
+      alert(`Готово! Загружено ${data.synced} товаров из чеков в каталог.`);
+    },
+  });
+
+  return (
+    <button
+      onClick={() => {
+        if (confirm('Загрузить все товары из чеков в каталог «Продукты»?')) {
+          sync.mutate();
+        }
+      }}
+      disabled={sync.isPending}
+      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-xs font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      title="Загрузить все товары из чеков в каталог"
+    >
+      {sync.isPending ? '⏳' : '📥'}
+      <span className="hidden sm:inline">{sync.isPending ? 'Загружаю…' : 'Из чеков'}</span>
+    </button>
+  );
+}
+
 export function ProductsPage() {
   const [query, setQuery] = useState("");
   const [barcode, setBarcode] = useState("");
@@ -54,9 +81,12 @@ export function ProductsPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink mb-6">
-        Продукты
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+          Продукты
+        </h1>
+        <SyncFromReceiptsButton />
+      </div>
 
       {/* Переключатель режимов */}
       <div className="flex gap-1 bg-cream rounded-lg p-1 mb-6">
