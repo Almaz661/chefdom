@@ -331,3 +331,18 @@ export const freezerShelfLife = pgTable('freezer_shelf_life', {
   priority: integer('priority').notNull().default(0),
   description: text('description'),
 });
+
+
+// Справочник сроков хранения для инвентаря (холодильник / кладовая).
+// Аналог freezer_shelf_life но для обычного хранения.
+// storageType: 'fridge' | 'pantry' — морозилка покрывается freezer_shelf_life.
+// keyword — подстрока для LIKE-поиска (нижний регистр).
+// days — рекомендованный срок хранения. priority — разрешение конфликтов.
+export const inventoryShelfLife = pgTable('inventory_shelf_life', {
+  id: serial('id').primaryKey(),
+  keyword: text('keyword').notNull(),
+  storageType: text('storage_type').notNull().default('fridge'), // 'fridge' | 'pantry'
+  days: integer('days').notNull(),
+  priority: integer('priority').notNull().default(0),
+  description: text('description'),
+});

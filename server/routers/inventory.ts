@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, lte, isNotNull } from 'drizzle-orm';
+import { eq, and, lte, isNotNull, sql as rawSql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { inventory } from '../db/schema';
+import { inventory, inventoryShelfLife } from '../db/schema';
 import { translatePlainToRu } from '../services/translate';
 
 const storageTypes = ['fridge', 'freezer', 'pantry'] as const;
@@ -183,6 +183,62 @@ export const inventoryRouter = router({
         created.push(row);
       }
       return { added: created.length, items: created };
+    }),
+
+  // Авто-подсказка срока хранения для инвентаря.
+  // По названию продукта и типу хранилища ищет в справочнике inventory_shelf_life
+  // подходящий ключ и возвращает рекомендованную дату «годен до».
+  // Логика выбора: самый длинный совпавший keyword (специфичнее), при равной
+  // длине — больший priority. Если ничего не найдено — { matched: false }.
+  // storageType 'freezer' → делегируем в freezer_shelf_life (таблица заготовок).
+  suggestExpiry: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(200),
+        storageType: z.enum(['fridge', 'freezer', 'pantry']).default('fridge'),
+      }),
+    )
+    .query(async ({ input }) => {
+      const nameLower = input.name.toLowerCase().trim();
+      if (nameLower.length === 0) return { matched: false as const };
+
+      // Ищем записи где nameLower содержит keyword (name LIKE %keyword%)
+      const rows = await db
+        .select({
+          keyword: inventoryShelfLife.keyword,
+          days: inventoryShelfLife.days,
+          priority: inventoryShelfLife.priority,
+          description: inventoryShelfLife.description,
+        })
+        .from(inventoryShelfLife)
+        .where(
+          and(
+            eq(inventoryShelfLife.storageType, input.storageType),
+            rawSql`${nameLower} LIKE '%' || LOWER(${inventoryShelfLife.keyword}) || '%'`,
+          ),
+        );
+
+      if (rows.length === 0) return { matched: false as const };
+
+      // Лучшее совпадение: длиннее keyword → специфичнее; при равной длине — priority
+      rows.sort((a, b) => {
+        if (b.keyword.length !== a.keyword.length) return b.keyword.length - a.keyword.length;
+        return b.priority - a.priority;
+      });
+      const best = rows[0];
+
+      // Дата «годен до» = сегодня + days
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + best.days);
+      const expiryDate = expiry.toISOString().slice(0, 10);
+
+      return {
+        matched: true as const,
+        keyword: best.keyword,
+        days: best.days,
+        description: best.description,
+        expiryDate,
+      };
     }),
 
   // Удалить
