@@ -395,6 +395,7 @@ function AddInventoryDialog({
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [expiryHint, setExpiryHint] = useState(""); // подсказка "~7 дней"
 
   const utils = trpc.useUtils();
 
@@ -404,6 +405,27 @@ function AddInventoryDialog({
       onClose();
     },
   });
+
+  // Подгружаем срок хранения через 500 мс после остановки ввода (debounce)
+  // и только если поле даты ещё не заполнено вручную.
+  const debounceRef = useState<ReturnType<typeof setTimeout> | null>(null);
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (debounceRef[0]) clearTimeout(debounceRef[0]);
+    if (!value.trim() || expiryDate) return;
+    debounceRef[1](setTimeout(async () => {
+      try {
+        const result = await utils.inventory.suggestExpiry.fetch({
+          name: value.trim(),
+          storageType,
+        });
+        if (result.matched && !expiryDate) {
+          setExpiryDate(result.expiryDate);
+          setExpiryHint(result.description ?? "");
+        }
+      } catch { /* best-effort */ }
+    }, 500));
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -433,7 +455,7 @@ function AddInventoryDialog({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
             placeholder="Название продукта"
             autoFocus
             required
@@ -457,13 +479,19 @@ function AddInventoryDialog({
               className="w-28 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </div>
-          <input
-            type="date"
-            value={expiryDate}
-            onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
-          />
-          <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+          <div>
+            <input
+              type="date"
+              value={expiryDate}
+              onChange={(e) => { setExpiryDate(e.target.value); setExpiryHint(""); }}
+              className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            />
+            <p className="text-xs text-ink-muted mt-1">
+              {expiryHint
+                ? <span className="text-primary">✓ {expiryHint}</span>
+                : "Срок годности (подставится автоматически)"}
+            </p>
+          </div>
 
           <div className="flex gap-3 pt-2">
             <button
@@ -508,6 +536,7 @@ function ScanResultDialog({
 }) {
   const [storageType, setStorageType] = useState<"fridge" | "freezer" | "pantry">(defaultStorage);
   const [expiryDate, setExpiryDate] = useState("");
+  const [expiryHint, setExpiryHint] = useState("");
   const [customName, setCustomName] = useState("");
   const [customQty, setCustomQty] = useState("");
   const [customUnit, setCustomUnit] = useState("");
@@ -530,6 +559,44 @@ function ScanResultDialog({
   const product = lookup.data;
   const notFound = lookup.isError || (lookup.isSuccess && !product);
   const isLoading = lookup.isLoading;
+
+  // Когда товар найден — подгружаем срок хранения по имени
+  const productName = product
+    ? (product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu)
+    : null;
+
+  trpc.inventory.suggestExpiry.useQuery(
+    { name: productName ?? "", storageType },
+    {
+      enabled: !!productName,
+      onSuccess: (result) => {
+        if (result.matched) {
+          setExpiryDate(result.expiryDate);
+          setExpiryHint(result.description ?? "");
+        }
+      },
+    } as Parameters<typeof trpc.inventory.suggestExpiry.useQuery>[1],
+  );
+
+  // При смене хранилища пересчитываем срок (для найденного товара)
+  const handleStorageChange = async (newStorage: "fridge" | "freezer" | "pantry") => {
+    setStorageType(newStorage);
+    const nameForLookup = productName ?? customName.trim();
+    if (!nameForLookup) return;
+    try {
+      const result = await utils.inventory.suggestExpiry.fetch({
+        name: nameForLookup,
+        storageType: newStorage,
+      });
+      if (result.matched) {
+        setExpiryDate(result.expiryDate);
+        setExpiryHint(result.description ?? "");
+      } else {
+        setExpiryDate("");
+        setExpiryHint("");
+      }
+    } catch { /* best-effort */ }
+  };
 
   const handleAdd = () => {
     if (product) {
@@ -598,7 +665,7 @@ function ScanResultDialog({
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setStorageType(key)}
+                    onClick={() => handleStorageChange(key)}
                     className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
                       storageType === key
                         ? "bg-primary text-paper"
@@ -612,12 +679,14 @@ function ScanResultDialog({
             </fieldset>
             <label className="block mb-4">
               <span className="block text-xs text-ink-soft mb-1">
-                Срок годности (необязательно)
+                {expiryHint
+                  ? <span className="text-primary">✓ {expiryHint}</span>
+                  : "Срок годности (подставится автоматически)"}
               </span>
               <input
                 type="date"
                 value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
+                onChange={(e) => { setExpiryDate(e.target.value); setExpiryHint(""); }}
                 className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
               />
             </label>
@@ -657,7 +726,7 @@ function ScanResultDialog({
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setStorageType(key)}
+                      onClick={() => handleStorageChange(key)}
                       className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
                         storageType === key
                           ? "bg-primary text-paper"
@@ -695,13 +764,19 @@ function ScanResultDialog({
                   className="w-24 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
                 />
               </div>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
-              />
-              <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+              <div>
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => { setExpiryDate(e.target.value); setExpiryHint(""); }}
+                  className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                />
+                <p className="text-xs text-ink-muted mt-1">
+                  {expiryHint
+                    ? <span className="text-primary">✓ {expiryHint}</span>
+                    : "Срок годности (необязательно)"}
+                </p>
+              </div>
             </div>
             <div className="flex gap-3 pt-4">
               <button

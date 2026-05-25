@@ -66,6 +66,8 @@ export function ReceiptDetailPage() {
   const [invSelections, setInvSelections] = useState<
     Record<number, { checked: boolean; storage: 'fridge' | 'freezer' | 'pantry'; expiryDate: string }>
   >({});
+  // Флаг что идёт подгрузка сроков — пока грузим, показываем спиннер на кнопке
+  const [expiryLoading, setExpiryLoading] = useState(false);
 
   const utils = trpc.useUtils();
   const query = trpc.receipts.getById.useQuery(
@@ -160,6 +162,45 @@ export function ReceiptDetailPage() {
 
   const { receipt, items } = query.data;
   const currency = receipt.currency;
+
+  // Запрашиваем рекомендованный срок хранения для одного товара.
+  // Возвращает строку YYYY-MM-DD или '' если не найдено.
+  const fetchExpiry = async (name: string, storageType: 'fridge' | 'freezer' | 'pantry'): Promise<string> => {
+    try {
+      const result = await utils.inventory.suggestExpiry.fetch({ name, storageType });
+      return result.matched ? result.expiryDate : '';
+    } catch {
+      return '';
+    }
+  };
+
+  // Открыть диалог «В инвентарь» — инициализируем выбор и подгружаем сроки
+  const openToInventory = async () => {
+    // Сразу показываем диалог с пустыми датами
+    const sel: typeof invSelections = {};
+    items.forEach(it => {
+      sel[it.id] = { checked: true, storage: 'fridge', expiryDate: '' };
+    });
+    setInvSelections(sel);
+    setShowToInventory(true);
+    setExpiryLoading(true);
+
+    // Параллельно подгружаем сроки для всех товаров
+    const expiries = await Promise.all(
+      items.map(it => fetchExpiry(it.productName, 'fridge'))
+    );
+
+    setInvSelections(prev => {
+      const updated = { ...prev };
+      items.forEach((it, idx) => {
+        if (updated[it.id] && expiries[idx]) {
+          updated[it.id] = { ...updated[it.id], expiryDate: expiries[idx] };
+        }
+      });
+      return updated;
+    });
+    setExpiryLoading(false);
+  };
 
   // Сумма по строкам (если у каждой есть price) — для сравнения с total_amount
   const itemsSum = items.reduce(
@@ -285,15 +326,7 @@ export function ReceiptDetailPage() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => {
-            // Инициализируем чекбоксы для всех позиций
-            const sel: typeof invSelections = {};
-            items.forEach(it => {
-              sel[it.id] = { checked: true, storage: 'fridge', expiryDate: '' };
-            });
-            setInvSelections(sel);
-            setShowToInventory(true);
-          }}
+          onClick={openToInventory}
           disabled={items.length === 0}
           className="inline-flex items-center gap-2 h-12 px-4 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -705,10 +738,18 @@ export function ReceiptDetailPage() {
                           <span className="block text-xs text-ink-muted mb-1">Где хранить</span>
                           <select
                             value={sel.storage}
-                            onChange={(e) => {
+                            onChange={async (e) => {
+                              const newStorage = e.target.value as 'fridge' | 'freezer' | 'pantry';
+                              // Сразу обновляем storage, сбрасываем дату
                               setInvSelections(prev => ({
                                 ...prev,
-                                [it.id]: { ...prev[it.id], storage: e.target.value as 'fridge' | 'freezer' | 'pantry' },
+                                [it.id]: { ...prev[it.id], storage: newStorage, expiryDate: '' },
+                              }));
+                              // Подгружаем новый срок для нового места хранения
+                              const expiry = await fetchExpiry(it.productName, newStorage);
+                              setInvSelections(prev => ({
+                                ...prev,
+                                [it.id]: { ...prev[it.id], expiryDate: expiry },
                               }));
                             }}
                             className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
@@ -720,7 +761,9 @@ export function ReceiptDetailPage() {
                         </div>
                         {/* Годен до */}
                         <div>
-                          <span className="block text-xs text-ink-muted mb-1">Годен до</span>
+                          <span className="block text-xs text-ink-muted mb-1">
+                            Годен до{expiryLoading ? ' ⏳' : ''}
+                          </span>
                           <input
                             type="date"
                             value={sel.expiryDate}
