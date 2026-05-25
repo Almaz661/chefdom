@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -31,6 +31,107 @@ function formatPrice(price: string | null, currency: string): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+// Компонент элемента в списке «В инвентарь» с автозаполнением срока
+type InventoryItemSelection = {
+  checked: boolean;
+  storage: 'fridge' | 'freezer' | 'pantry';
+  expiryDate: string;
+};
+
+function InventoryItemRow({
+  item,
+  selection,
+  purchaseDate,
+  onChange,
+}: {
+  item: { id: number; productName: string };
+  selection: InventoryItemSelection;
+  purchaseDate: string | null;
+  onChange: (sel: InventoryItemSelection) => void;
+}) {
+  const utils = trpc.useUtils();
+
+  // Запрашиваем срок годности при изменении storage или при первом рендере
+  useEffect(() => {
+    if (!selection.checked) return;
+
+    // Запросим срок только если expiryDate ещё не заполнен пользователем вручную
+    // или при смене типа хранения
+    const fetchExpiry = async () => {
+      try {
+        const result = await utils.inventory.suggestExpiry.fetch({
+          productName: item.productName,
+          storageType: selection.storage,
+          purchaseDate: purchaseDate || undefined,
+        });
+        if (result.matched && result.expiryDate) {
+          onChange({ ...selection, expiryDate: result.expiryDate });
+        }
+      } catch {
+        // Если ошибка — ничего не делаем, пользователь введёт вручную
+      }
+    };
+
+    fetchExpiry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection.storage, selection.checked]);
+
+  return (
+    <li className={`rounded-xl border p-3 transition-colors ${selection.checked ? 'border-primary bg-primary/5' : 'border-line bg-paper opacity-60'}`}>
+      {/* Чекбокс + название */}
+      <label className="flex items-center gap-3 cursor-pointer mb-2">
+        <input
+          type="checkbox"
+          checked={selection.checked}
+          onChange={(e) => {
+            onChange({ ...selection, checked: e.target.checked });
+          }}
+          className="w-5 h-5 rounded border-line text-primary focus:ring-primary"
+        />
+        <span className="font-medium text-ink flex-1 min-w-0 truncate">{item.productName}</span>
+      </label>
+
+      {/* Настройки хранения (видны если отмечен) */}
+      {selection.checked && (
+        <div className="grid grid-cols-2 gap-2 pl-8">
+          {/* Где хранить */}
+          <div>
+            <span className="block text-xs text-ink-muted mb-1">Где хранить</span>
+            <select
+              value={selection.storage}
+              onChange={(e) => {
+                // При смене хранения сбрасываем срок — useEffect подтянет новый
+                onChange({
+                  ...selection,
+                  storage: e.target.value as 'fridge' | 'freezer' | 'pantry',
+                  expiryDate: '',
+                });
+              }}
+              className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
+            >
+              <option value="fridge">🧊 Холодильник</option>
+              <option value="freezer">❄️ Морозилка</option>
+              <option value="pantry">🏠 Кладовая</option>
+            </select>
+          </div>
+          {/* Годен до */}
+          <div>
+            <span className="block text-xs text-ink-muted mb-1">Годен до</span>
+            <input
+              type="date"
+              value={selection.expiryDate}
+              onChange={(e) => {
+                onChange({ ...selection, expiryDate: e.target.value });
+              }}
+              className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+    </li>
+  );
 }
 
 export function ReceiptDetailPage() {
@@ -680,62 +781,18 @@ export function ReceiptDetailPage() {
                 const sel = invSelections[it.id];
                 if (!sel) return null;
                 return (
-                  <li key={it.id} className={`rounded-xl border p-3 transition-colors ${sel.checked ? 'border-primary bg-primary/5' : 'border-line bg-paper opacity-60'}`}>
-                    {/* Чекбокс + название */}
-                    <label className="flex items-center gap-3 cursor-pointer mb-2">
-                      <input
-                        type="checkbox"
-                        checked={sel.checked}
-                        onChange={(e) => {
-                          setInvSelections(prev => ({
-                            ...prev,
-                            [it.id]: { ...prev[it.id], checked: e.target.checked },
-                          }));
-                        }}
-                        className="w-5 h-5 rounded border-line text-primary focus:ring-primary"
-                      />
-                      <span className="font-medium text-ink flex-1 min-w-0 truncate">{it.productName}</span>
-                    </label>
-
-                    {/* Настройки хранения (видны если отмечен) */}
-                    {sel.checked && (
-                      <div className="grid grid-cols-2 gap-2 pl-8">
-                        {/* Где хранить */}
-                        <div>
-                          <span className="block text-xs text-ink-muted mb-1">Где хранить</span>
-                          <select
-                            value={sel.storage}
-                            onChange={(e) => {
-                              setInvSelections(prev => ({
-                                ...prev,
-                                [it.id]: { ...prev[it.id], storage: e.target.value as 'fridge' | 'freezer' | 'pantry' },
-                              }));
-                            }}
-                            className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
-                          >
-                            <option value="fridge">🧊 Холодильник</option>
-                            <option value="freezer">❄️ Морозилка</option>
-                            <option value="pantry">🏠 Кладовая</option>
-                          </select>
-                        </div>
-                        {/* Годен до */}
-                        <div>
-                          <span className="block text-xs text-ink-muted mb-1">Годен до</span>
-                          <input
-                            type="date"
-                            value={sel.expiryDate}
-                            onChange={(e) => {
-                              setInvSelections(prev => ({
-                                ...prev,
-                                [it.id]: { ...prev[it.id], expiryDate: e.target.value },
-                              }));
-                            }}
-                            className="w-full h-10 px-2 rounded-lg border border-line bg-paper text-sm focus:border-primary focus:outline-none"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </li>
+                  <InventoryItemRow
+                    key={it.id}
+                    item={{ id: it.id, productName: it.productName }}
+                    selection={sel}
+                    purchaseDate={receipt.purchaseDate}
+                    onChange={(newSel) => {
+                      setInvSelections(prev => ({
+                        ...prev,
+                        [it.id]: newSel,
+                      }));
+                    }}
+                  />
                 );
               })}
             </ul>

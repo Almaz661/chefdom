@@ -331,3 +331,18 @@ export const freezerShelfLife = pgTable('freezer_shelf_life', {
   priority: integer('priority').notNull().default(0),
   description: text('description'),
 });
+
+// Этап D+ — универсальный справочник сроков годности для всех типов
+// хранения (миграция 021). Расширяет freezer_shelf_life на холодильник
+// (fridge) и кладовку (pantry).
+// storage_type: 'fridge' | 'freezer' | 'pantry'
+// Используется inventory.suggestExpiry для автоподстановки срока
+// при добавлении товаров из чека в инвентарь.
+export const shelfLife = pgTable('shelf_life', {
+  id: serial('id').primaryKey(),
+  storageType: text('storage_type').notNull(),
+  keyword: text('keyword').notNull(),
+  days: integer('days').notNull(),
+  priority: integer('priority').notNull().default(0),
+  description: text('description'),
+});

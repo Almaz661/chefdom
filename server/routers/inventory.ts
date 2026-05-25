@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, lte, isNotNull } from 'drizzle-orm';
+import { eq, and, lte, isNotNull, sql as rawSql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { inventory } from '../db/schema';
+import { inventory, shelfLife } from '../db/schema';
 import { translatePlainToRu } from '../services/translate';
 
 const storageTypes = ['fridge', 'freezer', 'pantry'] as const;
@@ -198,5 +198,75 @@ export const inventoryRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Продукт не найден' });
       }
       return { id: input.id };
+    }),
+
+  // Авто-подсказка срока годности для любого типа хранения.
+  // По названию продукта и типу хранения (fridge/freezer/pantry)
+  // ищет в справочнике shelf_life подходящий ключ и возвращает
+  // рекомендованную дату «годен до».
+  //
+  // Логика выбора лучшего ключа:
+  //  1. Берём все ключи где LOWER(name) LIKE '%LOWER(keyword)%'
+  //  2. Сортируем: сначала длиннее keyword (специфичнее),
+  //     потом больше priority (явное предпочтение).
+  //  3. Возвращаем первый.
+  // Если ни один ключ не совпал — вернём { matched: false }.
+  suggestExpiry: protectedProcedure
+    .input(
+      z.object({
+        productName: z.string().min(1).max(200),
+        storageType: z.enum(storageTypes),
+        purchaseDate: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const nameLower = input.productName.toLowerCase().trim();
+      if (nameLower.length === 0) return { matched: false as const };
+
+      // Ищем все записи для данного типа хранения, где название содержит keyword
+      const all = await db
+        .select({
+          keyword: shelfLife.keyword,
+          days: shelfLife.days,
+          priority: shelfLife.priority,
+          description: shelfLife.description,
+        })
+        .from(shelfLife)
+        .where(
+          and(
+            eq(shelfLife.storageType, input.storageType),
+            rawSql`${nameLower} LIKE '%' || LOWER(${shelfLife.keyword}) || '%'`
+          )
+        );
+
+      if (all.length === 0) return { matched: false as const };
+
+      // Лучшее совпадение: длиннее keyword > больше priority
+      all.sort((a, b) => {
+        if (b.keyword.length !== a.keyword.length) {
+          return b.keyword.length - a.keyword.length;
+        }
+        return b.priority - a.priority;
+      });
+      const best = all[0];
+
+      // Считаем дату «годен до»: purchaseDate + days, либо от сегодня
+      const baseDate = input.purchaseDate
+        ? new Date(input.purchaseDate + 'T00:00:00')
+        : new Date();
+      const expiry = new Date(baseDate);
+      expiry.setDate(expiry.getDate() + best.days);
+      const expiryDate = expiry.toISOString().slice(0, 10);
+
+      return {
+        matched: true as const,
+        keyword: best.keyword,
+        days: best.days,
+        description: best.description,
+        expiryDate,
+      };
     }),
 });
