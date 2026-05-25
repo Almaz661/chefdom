@@ -200,6 +200,67 @@ export const inventoryRouter = router({
       return { id: input.id };
     }),
 
+  // Пересчитать сроки — проставить expiryDate всем продуктам где сейчас пусто.
+  // Ищет по справочнику shelf_life для каждого продукта по storageType+name.
+  recalcExpiry: protectedProcedure
+    .mutation(async () => {
+      // Берём все продукты без срока годности
+      const itemsWithoutExpiry = await db
+        .select()
+        .from(inventory)
+        .where(
+          and(
+            eq(inventory.userId, 1),
+          )
+        );
+
+      const noExpiry = itemsWithoutExpiry.filter(i => !i.expiryDate);
+      if (noExpiry.length === 0) return { updated: 0 };
+
+      let updated = 0;
+      for (const item of noExpiry) {
+        const nameLower = item.productName.toLowerCase().trim();
+        if (!nameLower) continue;
+
+        const matches = await db
+          .select({
+            keyword: shelfLife.keyword,
+            days: shelfLife.days,
+            priority: shelfLife.priority,
+          })
+          .from(shelfLife)
+          .where(
+            and(
+              eq(shelfLife.storageType, item.storageType),
+              rawSql`${nameLower} LIKE '%' || LOWER(${shelfLife.keyword}) || '%'`
+            )
+          );
+
+        if (matches.length === 0) continue;
+
+        // Лучшее совпадение
+        matches.sort((a, b) => {
+          if (b.keyword.length !== a.keyword.length) return b.keyword.length - a.keyword.length;
+          return b.priority - a.priority;
+        });
+        const best = matches[0];
+
+        // Считаем дату от addedAt
+        const baseDate = new Date(item.addedAt);
+        baseDate.setDate(baseDate.getDate() + best.days);
+        const expiryDate = baseDate.toISOString().slice(0, 10);
+
+        await db
+          .update(inventory)
+          .set({ expiryDate })
+          .where(eq(inventory.id, item.id));
+
+        updated++;
+      }
+
+      return { updated, total: noExpiry.length };
+    }),
+
   // Авто-подсказка срока годности для любого типа хранения.
   // По названию продукта и типу хранения (fridge/freezer/pantry)
   // ищет в справочнике shelf_life подходящий ключ и возвращает
