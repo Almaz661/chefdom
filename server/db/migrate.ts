@@ -972,6 +972,29 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '022_products_name_ru_unique',
+    up: async (sql) => {
+      // Критический фикс: добавляем UNIQUE-индекс на products.name_ru.
+      // Без него onConflictDoUpdate (используется в updateProductMasterPrices
+      // и addBulk/syncAllToProducts) не может работать — PostgreSQL требует
+      // UNIQUE constraint для ON CONFLICT.
+      //
+      // Сначала удаляем дубли (оставляем запись с наибольшим id = самую свежую).
+      await sql`
+        DELETE FROM products a
+        USING products b
+        WHERE a.name_ru = b.name_ru
+          AND a.id < b.id
+          AND a.barcode IS NULL
+      `;
+      // Создаём уникальный индекс
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_products_name_ru_unique
+        ON products(name_ru)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
