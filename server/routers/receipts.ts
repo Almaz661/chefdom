@@ -33,9 +33,13 @@ async function loadProductMaster(): Promise<ProductMasterEntry[]> {
 }
 
 // Product Master — обновляет/добавляет цены товаров после успешного парсинга чека.
-// Записывает lastPrice и priceUpdatedAt для каждого товара с известной ценой.
+// Записывает lastPrice, priceUpdatedAt, storeName и purchaseDate для каждого товара.
+// Это позволяет пользователю видеть в каталоге «Продукты» где и когда
+// он покупал товар и по какой цене.
 async function updateProductMasterPrices(
   parsedItems: Array<{ productName: string; price: number | null }>,
+  storeName: string | null,
+  purchaseDate: string | null,
 ): Promise<void> {
   for (const item of parsedItems) {
     if (item.price === null) continue;
@@ -45,12 +49,16 @@ async function updateProductMasterPrices(
         nameRu: item.productName,
         lastPrice: String(item.price),
         priceUpdatedAt: new Date(),
+        storeName: storeName ?? null,
+        purchaseDate: purchaseDate ?? null,
       })
       .onConflictDoUpdate({
         target: products.nameRu,
         set: {
           lastPrice: String(item.price),
           priceUpdatedAt: new Date(),
+          storeName: storeName ?? undefined,
+          purchaseDate: purchaseDate ?? undefined,
         },
       })
       .catch(() => {/* игнорируем если нет уникального ключа на nameRu */});
@@ -219,7 +227,7 @@ export const receiptsRouter = router({
       });
 
       // 5. Обновляем Product Master — сохраняем цены для будущих чеков
-      await updateProductMasterPrices(parsed.items);
+      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate);
 
       return {
         id: created.id,
@@ -300,7 +308,7 @@ export const receiptsRouter = router({
       });
 
       // Обновляем Product Master — сохраняем цены для будущих чеков
-      await updateProductMasterPrices(parsed.items);
+      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate);
 
       return {
         id: input.id,
@@ -424,15 +432,19 @@ export const receiptsRouter = router({
     }),
 
   // Синхронизировать все товары из всех чеков в каталог «Продукты».
-  // Проходит по всем позициям всех чеков, добавляет/обновляет в products.
+  // Проходит по всем позициям всех чеков, добавляет/обновляет в products
+  // с ценой, магазином и датой покупки.
   syncAllToProducts: protectedProcedure
     .mutation(async () => {
       const allItems = await db
         .select({
           productName: receiptItems.productName,
           price: receiptItems.price,
+          storeName: receipts.storeName,
+          purchaseDate: receipts.purchaseDate,
         })
-        .from(receiptItems);
+        .from(receiptItems)
+        .innerJoin(receipts, eq(receiptItems.receiptId, receipts.id));
 
       let synced = 0;
       for (const item of allItems) {
@@ -443,6 +455,8 @@ export const receiptsRouter = router({
             nameRu: item.productName,
             lastPrice: price !== null ? String(price) : null,
             priceUpdatedAt: price !== null ? new Date() : null,
+            storeName: item.storeName ?? null,
+            purchaseDate: item.purchaseDate ?? null,
           })
           .onConflictDoUpdate({
             target: products.nameRu,
@@ -451,6 +465,8 @@ export const receiptsRouter = router({
                 lastPrice: String(price),
                 priceUpdatedAt: new Date(),
               } : {}),
+              storeName: item.storeName ?? undefined,
+              purchaseDate: item.purchaseDate ?? undefined,
             },
           })
           .catch(() => {/* игнорируем конфликты */});
