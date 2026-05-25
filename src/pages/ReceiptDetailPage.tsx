@@ -824,6 +824,7 @@ export function ReceiptDetailPage() {
                         unit: it.unit ?? null,
                         storageType: sel.storage,
                         expiryDate: sel.expiryDate || null,
+                        price: it.price ? parseFloat(String(it.price)) : null,
                       };
                     });
                   addBulkToInventory.mutate({ items: toAdd });
