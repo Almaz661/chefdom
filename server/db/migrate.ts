@@ -995,6 +995,20 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '023_remove_off_products',
+    up: async (sql) => {
+      // Удаляем товары из международной базы Open Food Facts.
+      // Оставляем только товары из чеков (у которых есть last_price)
+      // и товары добавленные вручную (barcode IS NULL AND off_id IS NULL).
+      // Пользователь хочет видеть в каталоге только СВОИ покупки.
+      await sql`
+        DELETE FROM products
+        WHERE off_id IS NOT NULL
+          AND last_price IS NULL
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
