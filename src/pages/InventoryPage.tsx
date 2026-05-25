@@ -35,15 +35,25 @@ function expiryText(expiryDate: string | null): string {
   if (days < 0) return "просрочен";
   if (days === 0) return "истекает сегодня";
   if (days === 1) return "истекает завтра";
-  if (days <= 3) return `истекает через ${days} дн.`;
+  if (days <= 7) return `через ${days} дн.`;
+  if (days <= 30) return `через ${days} дн.`;
   return `ещё ${days} дн.`;
 }
+
+const EXPIRY_PERIODS = [
+  { key: 3, label: "3 дня" },
+  { key: 7, label: "7 дней" },
+  { key: 14, label: "14 дней" },
+  { key: 30, label: "30 дней" },
+] as const;
 
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [expiryPeriod, setExpiryPeriod] = useState<number>(3);
+  const [showAllExpiry, setShowAllExpiry] = useState(false);
   const [scanResult, setScanResult] = useState<{
     found: boolean;
     name?: string;
@@ -119,17 +129,26 @@ export function InventoryPage() {
     }
   };
 
-  // Скоро истекает (<=2 дней) для текущего таба
+  // Скоро истекает (<=expiryPeriod дней) для текущего таба
   const expiring = items.filter((i) => {
     const days = daysUntilExpiry(i.expiryDate);
-    return days !== null && days <= 2;
+    return days !== null && days <= expiryPeriod;
   });
 
   // Остальные (не истекающие)
   const normal = items.filter((i) => {
     const days = daysUntilExpiry(i.expiryDate);
-    return days === null || days > 2;
+    return days === null || days > expiryPeriod;
   });
+
+  // Все продукты со сроками — для вкладки «Все сроки»
+  const allWithExpiry = items
+    .filter((i) => i.expiryDate !== null)
+    .sort((a, b) => {
+      const dA = daysUntilExpiry(a.expiryDate) ?? 9999;
+      const dB = daysUntilExpiry(b.expiryDate) ?? 9999;
+      return dA - dB;
+    });
 
   // Группировка по категории
   const grouped = normal.reduce<Record<string, typeof normal>>((acc, item) => {
@@ -209,13 +228,30 @@ export function InventoryPage() {
         </div>
       ) : (
         <>
-          {/* Скоро истекает */}
+          {/* Скоро истекает — с переключателем периода */}
           {expiring.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-xs font-medium text-warning uppercase tracking-wider mb-2 flex items-center gap-1">
-                <AlertTriangle size={14} />
-                Скоро истекает
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-medium text-warning uppercase tracking-wider flex items-center gap-1">
+                  <AlertTriangle size={14} />
+                  Истекает в ближайшие
+                </h3>
+                <div className="flex gap-1">
+                  {EXPIRY_PERIODS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setExpiryPeriod(key)}
+                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        expiryPeriod === key
+                          ? "bg-warning text-paper"
+                          : "bg-cream text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <ul className="space-y-1">
                 {expiring.map((item) => {
                   const days = daysUntilExpiry(item.expiryDate);
@@ -255,6 +291,11 @@ export function InventoryPage() {
                           }`}
                         >
                           {expiryText(item.expiryDate)}
+                          {item.expiryDate && (
+                            <span className="text-ink-muted ml-1">
+                              ({new Date(item.expiryDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })})
+                            </span>
+                          )}
                           {item.source === "preserve" && (
                             <span className="text-ink-muted"> · из заготовок</span>
                           )}
@@ -272,6 +313,84 @@ export function InventoryPage() {
                 })}
               </ul>
             </section>
+          )}
+
+          {/* Кнопка «Все сроки» */}
+          {allWithExpiry.length > 0 && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowAllExpiry(!showAllExpiry)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
+                  showAllExpiry
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-line bg-paper text-ink-soft hover:border-primary hover:text-primary"
+                }`}
+              >
+                <span className="text-sm font-medium">
+                  📋 Все сроки годности ({allWithExpiry.length})
+                </span>
+                <span className="text-xs">
+                  {showAllExpiry ? "свернуть" : "показать"}
+                </span>
+              </button>
+
+              {showAllExpiry && (
+                <ul className="space-y-1 mt-2">
+                  {allWithExpiry.map((item) => {
+                    const days = daysUntilExpiry(item.expiryDate);
+                    const isExpired = days !== null && days < 0;
+                    const isSoon = days !== null && days <= expiryPeriod;
+                    return (
+                      <li
+                        key={`exp-${item.source}-${item.id}`}
+                        className={`flex items-center gap-3 rounded-lg px-4 py-2.5 border ${
+                          isExpired
+                            ? "bg-alert/5 border-alert/30"
+                            : isSoon
+                            ? "bg-warning/5 border-warning/30"
+                            : "bg-paper border-line"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            isExpired
+                              ? "bg-alert"
+                              : isSoon
+                              ? "bg-warning"
+                              : "bg-primary/40"
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-ink truncate">
+                            {item.productName}
+                            {item.quantity && (
+                              <span className="text-ink-muted ml-1 text-xs">
+                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-xs font-medium ${
+                            isExpired ? "text-alert" : isSoon ? "text-warning" : "text-ink-muted"
+                          }`}>
+                            {item.expiryDate && new Date(item.expiryDate).toLocaleDateString("ru-RU", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                          <p className={`text-xs ${
+                            isExpired ? "text-alert" : isSoon ? "text-warning" : "text-ink-muted"
+                          }`}>
+                            {expiryText(item.expiryDate)}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           )}
 
           {/* Основной список */}
