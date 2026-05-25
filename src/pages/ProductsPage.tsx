@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Package, Barcode, Plus, Check, Store, Calendar } from "lucide-react";
+import { Search, Package, Barcode, Plus, Check, Store, Calendar, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
@@ -8,6 +8,33 @@ const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[]
   { key: "freezer", label: "Морозилка" },
   { key: "pantry", label: "Кладовая" },
 ];
+
+// Кнопка «Удалить все» — очищает весь каталог продуктов
+function DeleteAllButton() {
+  const utils = trpc.useUtils();
+  const deleteAll = trpc.products.deleteAll.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      utils.products.search.invalidate();
+    },
+  });
+
+  return (
+    <button
+      onClick={() => {
+        if (confirm('Удалить ВСЕ товары из каталога? Это действие нельзя отменить.')) {
+          deleteAll.mutate();
+        }
+      }}
+      disabled={deleteAll.isPending}
+      className="h-10 px-3 rounded-lg border border-red-200 bg-paper text-red-500 text-xs font-medium hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      title="Удалить все товары"
+    >
+      <Trash2 size={14} />
+      <span className="hidden sm:inline">{deleteAll.isPending ? 'Удаляю…' : 'Очистить'}</span>
+    </button>
+  );
+}
 
 // Кнопка «Загрузить из чеков» — синхронизирует все товары из чеков в каталог
 function SyncFromReceiptsButton() {
@@ -37,14 +64,26 @@ function SyncFromReceiptsButton() {
   );
 }
 
-// Карточка товара с ценой, магазином и датой
+// Карточка товара с ценой, магазином, датой, удалением и историей цен
 function ProductCard({ product }: { product: { id: number; nameRu: string; brand?: string | null; lastPrice?: string | null; storeName?: string | null; purchaseDate?: string | null } }) {
+  const [showHistory, setShowHistory] = useState(false);
   const price = product.lastPrice ? parseFloat(product.lastPrice as unknown as string) : null;
+  const utils = trpc.useUtils();
+  const deleteMut = trpc.products.delete.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      utils.products.search.invalidate();
+    },
+  });
+  const historyQuery = trpc.products.getPriceHistory.useQuery(
+    { productName: product.nameRu },
+    { enabled: showHistory }
+  );
 
   return (
     <li className="bg-paper border border-line rounded-xl px-4 py-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
           <p className="text-sm font-medium text-ink truncate">{product.nameRu}</p>
           {product.brand && <p className="text-xs text-ink-muted">{product.brand}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
@@ -62,12 +101,56 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
             )}
           </div>
         </div>
-        {price !== null && (
-          <span className="text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
-            €{price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {price !== null && (
+            <span className="text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
+              €{price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          )}
+          <button
+            onClick={() => deleteMut.mutate({ id: product.id })}
+            disabled={deleteMut.isPending}
+            className="p-1.5 rounded-md text-ink-muted hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            title="Удалить"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
+      {/* История цен */}
+      {showHistory && historyQuery.data && historyQuery.data.length > 1 && (
+        <div className="mt-2 pt-2 border-t border-line">
+          <p className="text-xs font-medium text-ink-soft mb-1">История цен:</p>
+          <div className="space-y-0.5">
+            {historyQuery.data.slice(0, 10).map((h, i) => {
+              const prev = historyQuery.data![i + 1];
+              const curr = parseFloat(h.price as unknown as string);
+              const prevPrice = prev ? parseFloat(prev.price as unknown as string) : null;
+              const diff = prevPrice !== null ? curr - prevPrice : 0;
+              return (
+                <div key={h.id} className="flex items-center justify-between text-xs">
+                  <span className="text-ink-muted">
+                    {h.purchaseDate || '—'} {h.storeName ? `· ${h.storeName}` : ''}
+                  </span>
+                  <span className={`font-medium tabular-nums ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-600' : 'text-ink'}`}>
+                    €{curr.toFixed(2)}
+                    {diff !== 0 && (
+                      <span className="ml-1 text-[10px]">
+                        {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(2)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {showHistory && historyQuery.data && historyQuery.data.length <= 1 && (
+        <div className="mt-2 pt-2 border-t border-line">
+          <p className="text-xs text-ink-muted">Пока только одна покупка. История появится после следующей.</p>
+        </div>
+      )}
     </li>
   );
 }
@@ -124,7 +207,10 @@ export function ProductsPage() {
         <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
           Продукты
         </h1>
-        <SyncFromReceiptsButton />
+        <div className="flex items-center gap-2">
+          <DeleteAllButton />
+          <SyncFromReceiptsButton />
+        </div>
       </div>
 
       {/* Переключатель режимов */}

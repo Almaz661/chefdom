@@ -352,3 +352,18 @@ export const shelfLife = pgTable('shelf_life', {
   priority: integer('priority').notNull().default(0),
   description: text('description'),
 });
+
+
+
+// История цен — каждая покупка товара фиксируется отдельной записью.
+// Позволяет отслеживать динамику цен: когда, где и за сколько покупала.
+// product_name связан с products.name_ru (не FK, чтобы не блокировать удаление).
+export const priceHistory = pgTable('price_history', {
+  id: serial('id').primaryKey(),
+  productName: text('product_name').notNull(),
+  price: numeric('price').notNull(),
+  storeName: text('store_name'),
+  purchaseDate: text('purchase_date'),
+  currency: text('currency').notNull().default('EUR'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});

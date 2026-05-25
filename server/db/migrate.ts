@@ -1021,6 +1021,30 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS purchase_date TEXT`;
     },
   },
+  {
+    version: '025_price_history',
+    up: async (sql) => {
+      // История цен — хранит КАЖДУЮ покупку товара отдельной записью.
+      // Позволяет видеть динамику: «Куриные крылья: €5 (25.05) → €4.68 (18.05) → €6 (11.05)».
+      // products хранит только ПОСЛЕДНЮЮ цену (для быстрого отображения в каталоге),
+      // а price_history — полную историю для аналитики.
+      await sql`
+        CREATE TABLE IF NOT EXISTS price_history (
+          id SERIAL PRIMARY KEY,
+          product_name TEXT NOT NULL,
+          price NUMERIC NOT NULL,
+          store_name TEXT,
+          purchase_date TEXT,
+          currency TEXT NOT NULL DEFAULT 'EUR',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_price_history_product
+        ON price_history(product_name, created_at DESC)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

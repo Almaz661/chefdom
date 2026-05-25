@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { eq, ilike, or, sql, desc } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
+import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions, priceHistory } from '../db/schema';
 import { translatePlainToRu } from '../services/translate';
 import { calcRecipeNutrition } from '../services/nutritionCalc';
 
@@ -150,6 +150,34 @@ export const productsRouter = router({
       .limit(200);
     return rows;
   }),
+
+  // Удалить один товар по id
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      await db.delete(products).where(eq(products.id, input.id));
+      return { id: input.id };
+    }),
+
+  // Удалить ВСЕ товары из каталога
+  deleteAll: protectedProcedure
+    .mutation(async () => {
+      await db.delete(products);
+      return { ok: true };
+    }),
+
+  // История цен товара — все покупки по дате (новые сверху)
+  getPriceHistory: protectedProcedure
+    .input(z.object({ productName: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const rows = await db
+        .select()
+        .from(priceHistory)
+        .where(eq(priceHistory.productName, input.productName))
+        .orderBy(desc(priceHistory.createdAt))
+        .limit(50);
+      return rows;
+    }),
 
   // B.3 — получить замены для ингредиента.
   // Поиск нечувствителен к регистру и работает по подстроке:
