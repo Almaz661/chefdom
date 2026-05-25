@@ -78,6 +78,9 @@ export const recipes = pgTable('recipes', {
   cuisine: text('cuisine'),
   difficulty: text('difficulty'),
   calories: integer('calories'),
+  proteinG: numeric('protein_g'),
+  fatsG: numeric('fats_g'),
+  carbsG: numeric('carbs_g'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

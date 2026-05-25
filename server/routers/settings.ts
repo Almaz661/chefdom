@@ -11,6 +11,11 @@ import {
   inventory,
   purchaseItems,
   users,
+  cookingHistory,
+  receipts,
+  receiptItems,
+  preserves,
+  products,
 } from "../db/schema";
 
 const currencySchema = z.enum(["EUR", "RUB"]);
@@ -55,6 +60,11 @@ export const settingsRouter = router({
       allMenuItems,
       allInventory,
       allPurchases,
+      allCookingHistory,
+      allReceipts,
+      allReceiptItems,
+      allPreserves,
+      allProducts,
     ] = await Promise.all([
       db.select().from(recipes),
       db.select().from(recipeIngredients),
@@ -63,6 +73,11 @@ export const settingsRouter = router({
       db.select().from(menuItems),
       db.select().from(inventory),
       db.select().from(purchaseItems),
+      db.select().from(cookingHistory),
+      db.select().from(receipts),
+      db.select().from(receiptItems),
+      db.select().from(preserves),
+      db.select().from(products),
     ]);
 
     const recipesWithDetails = allRecipes.map((recipe) => ({
@@ -76,13 +91,22 @@ export const settingsRouter = router({
       items: allMenuItems.filter((i) => i.menuId === menu.id),
     }));
 
+    const receiptsWithItems = allReceipts.map((receipt) => ({
+      ...receipt,
+      items: allReceiptItems.filter((i) => i.receiptId === receipt.id),
+    }));
+
     return {
       exported_at: new Date().toISOString(),
-      version: 1,
+      version: 2,
       recipes: recipesWithDetails,
       inventory: allInventory,
       purchase_items: allPurchases,
       menus: menusWithItems,
+      cooking_history: allCookingHistory,
+      receipts: receiptsWithItems,
+      preserves: allPreserves,
+      products: allProducts,
     };
   }),
 
@@ -155,6 +179,63 @@ export const settingsRouter = router({
           recipe_source: z.string().nullable().optional(),
         }).passthrough()),
         menus: z.array(z.object({}).passthrough()),
+        // Version 2 fields (optional for backward compat with v1 backups)
+        cooking_history: z.array(z.object({
+          recipeTitle: z.string().optional(),
+          recipe_title: z.string().optional(),
+          servings: z.number().optional(),
+          caloriesPerServing: z.number().nullable().optional(),
+          calories_per_serving: z.number().nullable().optional(),
+          category: z.string().nullable().optional(),
+          cuisine: z.string().nullable().optional(),
+          notes: z.string().nullable().optional(),
+          rating: z.number().nullable().optional(),
+          cookedAt: z.string().nullable().optional(),
+          cooked_at: z.string().nullable().optional(),
+        }).passthrough()).optional().default([]),
+        receipts: z.array(z.object({
+          storeName: z.string().nullable().optional(),
+          store_name: z.string().nullable().optional(),
+          purchaseDate: z.string().nullable().optional(),
+          purchase_date: z.string().nullable().optional(),
+          totalAmount: z.union([z.string(), z.number()]).nullable().optional(),
+          total_amount: z.union([z.string(), z.number()]).nullable().optional(),
+          currency: z.string().optional(),
+          status: z.string().optional(),
+          notes: z.string().nullable().optional(),
+          ocrRaw: z.string().nullable().optional(),
+          ocr_raw: z.string().nullable().optional(),
+          items: z.array(z.object({
+            productName: z.string().optional(),
+            product_name: z.string().optional(),
+            quantity: z.union([z.string(), z.number()]).nullable().optional(),
+            unit: z.string().nullable().optional(),
+            price: z.union([z.string(), z.number()]).nullable().optional(),
+          }).passthrough()).optional().default([]),
+        }).passthrough()).optional().default([]),
+        preserves: z.array(z.object({
+          preserveType: z.string().optional(),
+          preserve_type: z.string().optional(),
+          name: z.string(),
+          quantity: z.union([z.string(), z.number()]).nullable().optional(),
+          unit: z.string().nullable().optional(),
+          servings: z.number().nullable().optional(),
+          preparedAt: z.string().nullable().optional(),
+          prepared_at: z.string().nullable().optional(),
+          expiryDate: z.string().nullable().optional(),
+          expiry_date: z.string().nullable().optional(),
+          notes: z.string().nullable().optional(),
+        }).passthrough()).optional().default([]),
+        products: z.array(z.object({
+          nameRu: z.string().optional(),
+          name_ru: z.string().optional(),
+          lastPrice: z.union([z.string(), z.number()]).nullable().optional(),
+          last_price: z.union([z.string(), z.number()]).nullable().optional(),
+          storeName: z.string().nullable().optional(),
+          store_name: z.string().nullable().optional(),
+          purchaseDate: z.string().nullable().optional(),
+          purchase_date: z.string().nullable().optional(),
+        }).passthrough()).optional().default([]),
       })
     )
     .mutation(async ({ input }) => {
@@ -163,6 +244,12 @@ export const settingsRouter = router({
         if (!user) throw new Error("Пользователь не найден");
         const userId = user.id;
 
+        // Удаляем все данные (порядок важен из-за FK)
+        await tx.delete(receiptItems);
+        await tx.delete(receipts);
+        await tx.delete(cookingHistory);
+        await tx.delete(preserves);
+        await tx.delete(products);
         await tx.delete(purchaseItems);
         await tx.delete(menuItems);
         await tx.delete(menus);
@@ -171,6 +258,7 @@ export const settingsRouter = router({
         await tx.delete(recipeSteps);
         await tx.delete(recipes);
 
+        // --- Рецепты ---
         for (const r of input.recipes) {
           const { ingredients, steps, id: _oldId, ...recipeData } = r;
 
@@ -219,6 +307,7 @@ export const settingsRouter = router({
           }
         }
 
+        // --- Инвентарь ---
         if (input.inventory.length > 0) {
           await tx.insert(inventory).values(
             input.inventory.map((item: any) => ({
@@ -234,6 +323,7 @@ export const settingsRouter = router({
           );
         }
 
+        // --- Список покупок ---
         if (input.purchase_items.length > 0) {
           await tx.insert(purchaseItems).values(
             input.purchase_items.map((item: any) => ({
@@ -246,6 +336,95 @@ export const settingsRouter = router({
               recipeSource: item.recipeSource ?? item.recipe_source ?? null,
             }))
           );
+        }
+
+        // --- История готовки (v2) ---
+        if (input.cooking_history.length > 0) {
+          await tx.insert(cookingHistory).values(
+            input.cooking_history.map((item: any) => ({
+              userId,
+              recipeTitle: item.recipeTitle ?? item.recipe_title ?? "Без названия",
+              servings: item.servings ?? 1,
+              caloriesPerServing: item.caloriesPerServing ?? item.calories_per_serving ?? null,
+              category: item.category ?? null,
+              cuisine: item.cuisine ?? null,
+              notes: item.notes ?? null,
+              rating: item.rating ?? null,
+              cookedAt: item.cookedAt ?? item.cooked_at ?? new Date(),
+            }))
+          );
+        }
+
+        // --- Чеки (v2) ---
+        for (const r of input.receipts) {
+          const { items, id: _oldId, ...receiptData } = r as any;
+
+          const [insertedReceipt] = await tx
+            .insert(receipts)
+            .values({
+              userId,
+              storeName: receiptData.storeName ?? receiptData.store_name ?? null,
+              purchaseDate: receiptData.purchaseDate ?? receiptData.purchase_date ?? null,
+              totalAmount: receiptData.totalAmount ?? receiptData.total_amount
+                ? String(receiptData.totalAmount ?? receiptData.total_amount)
+                : null,
+              currency: receiptData.currency ?? "EUR",
+              status: receiptData.status ?? "final",
+              notes: receiptData.notes ?? null,
+              ocrRaw: receiptData.ocrRaw ?? receiptData.ocr_raw ?? null,
+            })
+            .returning({ id: receipts.id });
+
+          if (items?.length > 0) {
+            await tx.insert(receiptItems).values(
+              items.map((item: any, idx: number) => ({
+                receiptId: insertedReceipt.id,
+                productName: item.productName ?? item.product_name ?? "?",
+                quantity: item.quantity != null ? String(item.quantity) : null,
+                unit: item.unit ?? null,
+                price: item.price != null ? String(item.price) : null,
+                sortOrder: idx,
+              }))
+            );
+          }
+        }
+
+        // --- Заготовки (v2) ---
+        if (input.preserves.length > 0) {
+          await tx.insert(preserves).values(
+            input.preserves.map((item: any) => ({
+              userId,
+              preserveType: item.preserveType ?? item.preserve_type ?? "frozen",
+              name: item.name,
+              quantity: item.quantity != null ? String(item.quantity) : null,
+              unit: item.unit ?? null,
+              servings: item.servings ?? null,
+              preparedAt: item.preparedAt ?? item.prepared_at ?? null,
+              expiryDate: item.expiryDate ?? item.expiry_date ?? null,
+              notes: item.notes ?? null,
+            }))
+          );
+        }
+
+        // --- Продукты (v2) ---
+        if (input.products.length > 0) {
+          for (const item of input.products as any[]) {
+            const nameRu = item.nameRu ?? item.name_ru;
+            if (!nameRu) continue;
+            await tx
+              .insert(products)
+              .values({
+                nameRu,
+                lastPrice: item.lastPrice ?? item.last_price
+                  ? String(item.lastPrice ?? item.last_price)
+                  : null,
+                storeName: item.storeName ?? item.store_name ?? null,
+                purchaseDate: item.purchaseDate ?? item.purchase_date ?? null,
+                priceUpdatedAt: item.lastPrice || item.last_price ? new Date() : null,
+              })
+              .onConflictDoNothing()
+              .catch(() => {});
+          }
         }
       });
 

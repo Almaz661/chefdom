@@ -201,7 +201,7 @@ export const authRouter = router({
       // следующей миграции, которая дропнет pin, эту строчку можно убрать.
       await client`
         UPDATE users
-        SET pin_hash = ${newHash}, pin = ${input.newPin}
+        SET pin_hash = ${newHash}
         WHERE id = ${user.id}
       `;
       // Удаляем все старые сессии этого пользователя — после смены PIN
