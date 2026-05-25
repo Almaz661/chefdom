@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { eq, and, lte, isNotNull, sql as rawSql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { inventory, shelfLife } from '../db/schema';
+import { inventory, shelfLife, products } from '../db/schema';
 import { translatePlainToRu } from '../services/translate';
 
 const storageTypes = ['fridge', 'freezer', 'pantry'] as const;
@@ -142,7 +142,7 @@ export const inventoryRouter = router({
       return { id };
     }),
 
-  // Массовое добавление из чека (Чек → Инвентарь)
+  // Массовое добавление из чека (Чек → Инвентарь + Каталог продуктов)
   addBulk: protectedProcedure
     .input(
       z.object({
@@ -154,6 +154,7 @@ export const inventoryRouter = router({
             storageType: z.enum(storageTypes).default('fridge'),
             expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
             category: z.string().max(100).nullable().optional(),
+            price: z.number().nullable().optional(),
           }),
         ).min(1).max(100),
       }),
@@ -168,11 +169,14 @@ export const inventoryRouter = router({
       const created: { id: number; productName: string }[] = [];
       for (let i = 0; i < input.items.length; i++) {
         const item = input.items[i];
+        const productName = translatedNames[i];
+
+        // 1. Добавляем в инвентарь
         const [row] = await db
           .insert(inventory)
           .values({
             userId: 1,
-            productName: translatedNames[i],
+            productName,
             quantity: item.quantity != null ? String(item.quantity) : null,
             unit: item.unit ?? null,
             storageType: item.storageType,
@@ -181,6 +185,25 @@ export const inventoryRouter = router({
           })
           .returning({ id: inventory.id, productName: inventory.productName });
         created.push(row);
+
+        // 2. Сохраняем/обновляем в каталоге products (с ценой)
+        await db
+          .insert(products)
+          .values({
+            nameRu: productName,
+            lastPrice: item.price != null ? String(item.price) : null,
+            priceUpdatedAt: item.price != null ? new Date() : null,
+          })
+          .onConflictDoUpdate({
+            target: products.nameRu,
+            set: {
+              ...(item.price != null ? {
+                lastPrice: String(item.price),
+                priceUpdatedAt: new Date(),
+              } : {}),
+            },
+          })
+          .catch(() => {/* игнорируем если нет уникального ключа */});
       }
       return { added: created.length, items: created };
     }),
