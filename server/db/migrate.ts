@@ -702,6 +702,276 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: '021_shelf_life_all_storage',
+    up: async (sql) => {
+      // Универсальный справочник сроков годности для всех типов хранения.
+      // Расширяет freezer_shelf_life на холодильник (fridge) и кладовку (pantry).
+      // storage_type: 'fridge' | 'freezer' | 'pantry'
+      // Данные freezer остаются в freezer_shelf_life (обратная совместимость),
+      // сюда добавляем fridge и pantry.
+      await sql`
+        CREATE TABLE IF NOT EXISTS shelf_life (
+          id SERIAL PRIMARY KEY,
+          storage_type TEXT NOT NULL,
+          keyword TEXT NOT NULL,
+          days INTEGER NOT NULL,
+          priority INTEGER NOT NULL DEFAULT 0,
+          description TEXT,
+          UNIQUE(storage_type, keyword)
+        )
+      `;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_shelf_life_storage_keyword
+        ON shelf_life(storage_type, LOWER(keyword))
+      `;
+
+      // Сроки для ХОЛОДИЛЬНИКА (fridge) — температура 0-4°C
+      // Источники: FDA FoodKeeper, USDA Food Safety
+      const fridgeEntries: { keyword: string; days: number; priority: number; description: string }[] = [
+        // --- Молочные продукты ---
+        { keyword: 'молоко', days: 7, priority: 7, description: 'Молоко свежее, ~1 неделя' },
+        { keyword: 'кефир', days: 14, priority: 7, description: 'Кефир, ~2 недели' },
+        { keyword: 'ряженк', days: 14, priority: 7, description: 'Ряженка, ~2 недели' },
+        { keyword: 'йогурт', days: 14, priority: 7, description: 'Йогурт, ~2 недели' },
+        { keyword: 'сметан', days: 14, priority: 7, description: 'Сметана, ~2 недели' },
+        { keyword: 'творог', days: 7, priority: 7, description: 'Творог, ~1 неделя' },
+        { keyword: 'сливк', days: 7, priority: 6, description: 'Сливки, ~1 неделя' },
+        { keyword: 'сыр твёрд', days: 28, priority: 8, description: 'Сыр твёрдый, ~4 недели' },
+        { keyword: 'сыр мягк', days: 7, priority: 8, description: 'Сыр мягкий, ~1 неделя' },
+        { keyword: 'сыр', days: 21, priority: 5, description: 'Сыр (общее), ~3 недели' },
+        { keyword: 'масло сливочн', days: 30, priority: 8, description: 'Масло сливочное, ~1 месяц' },
+        { keyword: 'маргарин', days: 60, priority: 7, description: 'Маргарин, ~2 месяца' },
+
+        // --- Яйца ---
+        { keyword: 'яйц', days: 28, priority: 7, description: 'Яйца, ~4 недели' },
+        { keyword: 'яйцо', days: 28, priority: 7, description: 'Яйца, ~4 недели' },
+
+        // --- Мясо сырое (охлаждённое) ---
+        { keyword: 'говядин', days: 5, priority: 6, description: 'Говядина сырая, ~5 дней' },
+        { keyword: 'свинин', days: 5, priority: 6, description: 'Свинина сырая, ~5 дней' },
+        { keyword: 'баранин', days: 5, priority: 6, description: 'Баранина сырая, ~5 дней' },
+        { keyword: 'фарш', days: 2, priority: 7, description: 'Фарш сырой, ~2 дня' },
+        { keyword: 'стейк', days: 5, priority: 7, description: 'Стейк сырой, ~5 дней' },
+        { keyword: 'котлет', days: 2, priority: 7, description: 'Котлеты сырые, ~2 дня' },
+
+        // --- Птица сырая ---
+        { keyword: 'куриц', days: 2, priority: 6, description: 'Курица сырая, ~2 дня' },
+        { keyword: 'курин', days: 2, priority: 6, description: 'Курятина, ~2 дня' },
+        { keyword: 'индейк', days: 2, priority: 6, description: 'Индейка сырая, ~2 дня' },
+        { keyword: 'утк', days: 2, priority: 6, description: 'Утка сырая, ~2 дня' },
+        { keyword: 'филе кур', days: 2, priority: 8, description: 'Куриное филе, ~2 дня' },
+
+        // --- Рыба и морепродукты ---
+        { keyword: 'рыб', days: 2, priority: 5, description: 'Рыба свежая, ~2 дня' },
+        { keyword: 'лосос', days: 2, priority: 7, description: 'Лосось свежий, ~2 дня' },
+        { keyword: 'сёмг', days: 2, priority: 7, description: 'Сёмга свежая, ~2 дня' },
+        { keyword: 'форел', days: 2, priority: 7, description: 'Форель свежая, ~2 дня' },
+        { keyword: 'креветк', days: 2, priority: 7, description: 'Креветки свежие, ~2 дня' },
+        { keyword: 'кальмар', days: 2, priority: 7, description: 'Кальмары свежие, ~2 дня' },
+
+        // --- Колбасные изделия ---
+        { keyword: 'колбас', days: 14, priority: 6, description: 'Колбаса, ~2 недели' },
+        { keyword: 'сосиск', days: 7, priority: 7, description: 'Сосиски, ~1 неделя' },
+        { keyword: 'ветчин', days: 7, priority: 7, description: 'Ветчина, ~1 неделя' },
+        { keyword: 'бекон', days: 7, priority: 7, description: 'Бекон, ~1 неделя' },
+        { keyword: 'сардельк', days: 7, priority: 7, description: 'Сардельки, ~1 неделя' },
+
+        // --- Овощи свежие ---
+        { keyword: 'салат', days: 5, priority: 6, description: 'Салат листовой, ~5 дней' },
+        { keyword: 'огурц', days: 7, priority: 6, description: 'Огурцы, ~1 неделя' },
+        { keyword: 'помидор', days: 7, priority: 6, description: 'Помидоры, ~1 неделя' },
+        { keyword: 'перец', days: 10, priority: 6, description: 'Перец сладкий, ~10 дней' },
+        { keyword: 'морков', days: 21, priority: 6, description: 'Морковь, ~3 недели' },
+        { keyword: 'капуст', days: 14, priority: 5, description: 'Капуста, ~2 недели' },
+        { keyword: 'брокколи', days: 5, priority: 7, description: 'Брокколи, ~5 дней' },
+        { keyword: 'цветн', days: 7, priority: 6, description: 'Цветная капуста, ~1 неделя' },
+        { keyword: 'кабачк', days: 7, priority: 6, description: 'Кабачки, ~1 неделя' },
+        { keyword: 'баклажан', days: 7, priority: 6, description: 'Баклажаны, ~1 неделя' },
+        { keyword: 'редис', days: 14, priority: 6, description: 'Редис, ~2 недели' },
+        { keyword: 'свёкл', days: 21, priority: 6, description: 'Свёкла, ~3 недели' },
+        { keyword: 'свекл', days: 21, priority: 6, description: 'Свёкла, ~3 недели' },
+        { keyword: 'сельдер', days: 14, priority: 6, description: 'Сельдерей, ~2 недели' },
+        { keyword: 'шпинат', days: 5, priority: 7, description: 'Шпинат, ~5 дней' },
+        { keyword: 'грибы', days: 5, priority: 6, description: 'Грибы свежие, ~5 дней' },
+
+        // --- Зелень ---
+        { keyword: 'укроп', days: 7, priority: 7, description: 'Укроп, ~1 неделя' },
+        { keyword: 'петрушк', days: 7, priority: 7, description: 'Петрушка, ~1 неделя' },
+        { keyword: 'базилик', days: 5, priority: 7, description: 'Базилик, ~5 дней' },
+        { keyword: 'кинз', days: 7, priority: 7, description: 'Кинза, ~1 неделя' },
+        { keyword: 'зелен', days: 7, priority: 5, description: 'Зелень, ~1 неделя' },
+        { keyword: 'лук зелён', days: 7, priority: 8, description: 'Лук зелёный, ~1 неделя' },
+
+        // --- Фрукты и ягоды ---
+        { keyword: 'яблок', days: 30, priority: 6, description: 'Яблоки, ~1 месяц' },
+        { keyword: 'груш', days: 7, priority: 6, description: 'Груши, ~1 неделя' },
+        { keyword: 'виноград', days: 7, priority: 7, description: 'Виноград, ~1 неделя' },
+        { keyword: 'клубник', days: 3, priority: 7, description: 'Клубника, ~3 дня' },
+        { keyword: 'малин', days: 3, priority: 7, description: 'Малина, ~3 дня' },
+        { keyword: 'черник', days: 7, priority: 7, description: 'Черника, ~1 неделя' },
+        { keyword: 'апельсин', days: 21, priority: 6, description: 'Апельсины, ~3 недели' },
+        { keyword: 'лимон', days: 30, priority: 6, description: 'Лимоны, ~1 месяц' },
+        { keyword: 'мандарин', days: 14, priority: 6, description: 'Мандарины, ~2 недели' },
+        { keyword: 'киви', days: 14, priority: 6, description: 'Киви, ~2 недели' },
+
+        // --- Готовые блюда ---
+        { keyword: 'суп', days: 4, priority: 6, description: 'Суп готовый, ~4 дня' },
+        { keyword: 'борщ', days: 4, priority: 6, description: 'Борщ готовый, ~4 дня' },
+        { keyword: 'каш', days: 3, priority: 6, description: 'Каша готовая, ~3 дня' },
+        { keyword: 'плов', days: 4, priority: 6, description: 'Плов готовый, ~4 дня' },
+        { keyword: 'салат готов', days: 2, priority: 8, description: 'Салат готовый, ~2 дня' },
+
+        // --- Соусы и заправки ---
+        { keyword: 'майонез', days: 60, priority: 7, description: 'Майонез открытый, ~2 месяца' },
+        { keyword: 'кетчуп', days: 180, priority: 7, description: 'Кетчуп открытый, ~6 месяцев' },
+        { keyword: 'горчиц', days: 180, priority: 7, description: 'Горчица открытая, ~6 месяцев' },
+        { keyword: 'соус', days: 30, priority: 5, description: 'Соус открытый, ~1 месяц' },
+
+        // --- Напитки ---
+        { keyword: 'сок', days: 7, priority: 5, description: 'Сок открытый, ~1 неделя' },
+      ];
+
+      // Сроки для КЛАДОВКИ (pantry) — комнатная температура, сухое место
+      const pantryEntries: { keyword: string; days: number; priority: number; description: string }[] = [
+        // --- Крупы и злаки ---
+        { keyword: 'рис', days: 365, priority: 6, description: 'Рис, ~12 месяцев' },
+        { keyword: 'гречк', days: 365, priority: 6, description: 'Гречка, ~12 месяцев' },
+        { keyword: 'овсянк', days: 365, priority: 6, description: 'Овсянка, ~12 месяцев' },
+        { keyword: 'геркулес', days: 365, priority: 6, description: 'Геркулес, ~12 месяцев' },
+        { keyword: 'пшен', days: 270, priority: 6, description: 'Пшено, ~9 месяцев' },
+        { keyword: 'перловк', days: 365, priority: 6, description: 'Перловка, ~12 месяцев' },
+        { keyword: 'манк', days: 365, priority: 6, description: 'Манка, ~12 месяцев' },
+        { keyword: 'булгур', days: 365, priority: 6, description: 'Булгур, ~12 месяцев' },
+        { keyword: 'кускус', days: 365, priority: 6, description: 'Кускус, ~12 месяцев' },
+        { keyword: 'киноа', days: 365, priority: 6, description: 'Киноа, ~12 месяцев' },
+        { keyword: 'крупа', days: 365, priority: 4, description: 'Крупа (общее), ~12 месяцев' },
+
+        // --- Макаронные изделия ---
+        { keyword: 'макарон', days: 730, priority: 6, description: 'Макароны, ~24 месяца' },
+        { keyword: 'спагетти', days: 730, priority: 7, description: 'Спагетти, ~24 месяца' },
+        { keyword: 'паста', days: 730, priority: 6, description: 'Паста, ~24 месяца' },
+        { keyword: 'лапш', days: 730, priority: 6, description: 'Лапша, ~24 месяца' },
+        { keyword: 'вермишел', days: 730, priority: 6, description: 'Вермишель, ~24 месяца' },
+
+        // --- Мука и выпечка ---
+        { keyword: 'мук', days: 365, priority: 5, description: 'Мука, ~12 месяцев' },
+        { keyword: 'сахар', days: 730, priority: 6, description: 'Сахар, ~24 месяца' },
+        { keyword: 'соль', days: 1825, priority: 6, description: 'Соль, ~5 лет' },
+        { keyword: 'крахмал', days: 730, priority: 6, description: 'Крахмал, ~24 месяца' },
+        { keyword: 'дрожж', days: 120, priority: 7, description: 'Дрожжи сухие, ~4 месяца' },
+        { keyword: 'разрыхлител', days: 365, priority: 6, description: 'Разрыхлитель, ~12 месяцев' },
+        { keyword: 'сода', days: 1095, priority: 6, description: 'Сода, ~3 года' },
+
+        // --- Масла растительные ---
+        { keyword: 'масло подсолнечн', days: 365, priority: 8, description: 'Масло подсолнечное, ~12 месяцев' },
+        { keyword: 'масло оливков', days: 540, priority: 8, description: 'Масло оливковое, ~18 месяцев' },
+        { keyword: 'масло растительн', days: 365, priority: 7, description: 'Масло растительное, ~12 месяцев' },
+
+        // --- Консервы ---
+        { keyword: 'консерв', days: 730, priority: 5, description: 'Консервы, ~24 месяца' },
+        { keyword: 'тушёнк', days: 730, priority: 7, description: 'Тушёнка, ~24 месяца' },
+        { keyword: 'тушенк', days: 730, priority: 7, description: 'Тушёнка, ~24 месяца' },
+        { keyword: 'шпроты', days: 730, priority: 7, description: 'Шпроты, ~24 месяца' },
+        { keyword: 'горошек консерв', days: 730, priority: 8, description: 'Горошек консервированный, ~24 месяца' },
+        { keyword: 'кукуруз консерв', days: 730, priority: 8, description: 'Кукуруза консервированная, ~24 месяца' },
+        { keyword: 'фасол консерв', days: 730, priority: 8, description: 'Фасоль консервированная, ~24 месяца' },
+        { keyword: 'томат', days: 365, priority: 5, description: 'Томаты консервированные, ~12 месяцев' },
+        { keyword: 'томатн паст', days: 365, priority: 8, description: 'Томатная паста, ~12 месяцев' },
+
+        // --- Бобовые сухие ---
+        { keyword: 'фасол', days: 365, priority: 5, description: 'Фасоль сухая, ~12 месяцев' },
+        { keyword: 'горох', days: 365, priority: 5, description: 'Горох сухой, ~12 месяцев' },
+        { keyword: 'чечевиц', days: 365, priority: 6, description: 'Чечевица, ~12 месяцев' },
+        { keyword: 'нут', days: 365, priority: 6, description: 'Нут, ~12 месяцев' },
+
+        // --- Орехи и сухофрукты ---
+        { keyword: 'орех', days: 180, priority: 5, description: 'Орехи, ~6 месяцев' },
+        { keyword: 'миндал', days: 180, priority: 6, description: 'Миндаль, ~6 месяцев' },
+        { keyword: 'фундук', days: 180, priority: 6, description: 'Фундук, ~6 месяцев' },
+        { keyword: 'грецк', days: 180, priority: 6, description: 'Грецкие орехи, ~6 месяцев' },
+        { keyword: 'кешью', days: 180, priority: 6, description: 'Кешью, ~6 месяцев' },
+        { keyword: 'изюм', days: 180, priority: 6, description: 'Изюм, ~6 месяцев' },
+        { keyword: 'курага', days: 180, priority: 6, description: 'Курага, ~6 месяцев' },
+        { keyword: 'чернослив', days: 180, priority: 6, description: 'Чернослив, ~6 месяцев' },
+        { keyword: 'финик', days: 180, priority: 6, description: 'Финики, ~6 месяцев' },
+
+        // --- Специи и приправы ---
+        { keyword: 'специ', days: 730, priority: 5, description: 'Специи молотые, ~24 месяца' },
+        { keyword: 'перец чёрн', days: 730, priority: 7, description: 'Перец чёрный, ~24 месяца' },
+        { keyword: 'перец красн', days: 730, priority: 7, description: 'Перец красный, ~24 месяца' },
+        { keyword: 'корица', days: 730, priority: 6, description: 'Корица, ~24 месяца' },
+        { keyword: 'куркум', days: 730, priority: 6, description: 'Куркума, ~24 месяца' },
+        { keyword: 'паприк', days: 730, priority: 6, description: 'Паприка, ~24 месяца' },
+        { keyword: 'лавр', days: 730, priority: 6, description: 'Лавровый лист, ~24 месяца' },
+        { keyword: 'ваниль', days: 365, priority: 6, description: 'Ваниль/ванилин, ~12 месяцев' },
+
+        // --- Чай и кофе ---
+        { keyword: 'чай', days: 365, priority: 5, description: 'Чай, ~12 месяцев' },
+        { keyword: 'кофе', days: 365, priority: 5, description: 'Кофе, ~12 месяцев' },
+        { keyword: 'какао', days: 730, priority: 6, description: 'Какао, ~24 месяца' },
+
+        // --- Сладости ---
+        { keyword: 'мёд', days: 730, priority: 6, description: 'Мёд, ~24 месяца' },
+        { keyword: 'мед', days: 730, priority: 6, description: 'Мёд, ~24 месяца' },
+        { keyword: 'варень', days: 365, priority: 6, description: 'Варенье, ~12 месяцев' },
+        { keyword: 'джем', days: 365, priority: 6, description: 'Джем, ~12 месяцев' },
+        { keyword: 'шоколад', days: 365, priority: 6, description: 'Шоколад, ~12 месяцев' },
+        { keyword: 'печень', days: 180, priority: 5, description: 'Печенье, ~6 месяцев' },
+        { keyword: 'конфет', days: 180, priority: 5, description: 'Конфеты, ~6 месяцев' },
+
+        // --- Уксус и соусы ---
+        { keyword: 'уксус', days: 730, priority: 6, description: 'Уксус, ~24 месяца' },
+        { keyword: 'соевый соус', days: 730, priority: 8, description: 'Соевый соус, ~24 месяца' },
+
+        // --- Овощи длительного хранения ---
+        { keyword: 'лук', days: 60, priority: 4, description: 'Лук репчатый, ~2 месяца' },
+        { keyword: 'чеснок', days: 90, priority: 6, description: 'Чеснок, ~3 месяца' },
+        { keyword: 'картофел', days: 90, priority: 6, description: 'Картофель, ~3 месяца' },
+        { keyword: 'картошк', days: 90, priority: 6, description: 'Картошка, ~3 месяца' },
+        { keyword: 'тыкв', days: 90, priority: 6, description: 'Тыква целая, ~3 месяца' },
+
+        // --- Хлеб ---
+        { keyword: 'хлеб', days: 5, priority: 6, description: 'Хлеб, ~5 дней' },
+        { keyword: 'батон', days: 3, priority: 6, description: 'Батон, ~3 дня' },
+        { keyword: 'булочк', days: 3, priority: 6, description: 'Булочки, ~3 дня' },
+        { keyword: 'сухар', days: 180, priority: 7, description: 'Сухари, ~6 месяцев' },
+        { keyword: 'хлебц', days: 365, priority: 7, description: 'Хлебцы, ~12 месяцев' },
+      ];
+
+      // Вставляем данные для холодильника
+      for (const e of fridgeEntries) {
+        await sql`
+          INSERT INTO shelf_life (storage_type, keyword, days, priority, description)
+          VALUES ('fridge', ${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT (storage_type, keyword) DO UPDATE SET
+            days = EXCLUDED.days,
+            priority = EXCLUDED.priority,
+            description = EXCLUDED.description
+        `;
+      }
+
+      // Вставляем данные для кладовки
+      for (const e of pantryEntries) {
+        await sql`
+          INSERT INTO shelf_life (storage_type, keyword, days, priority, description)
+          VALUES ('pantry', ${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT (storage_type, keyword) DO UPDATE SET
+            days = EXCLUDED.days,
+            priority = EXCLUDED.priority,
+            description = EXCLUDED.description
+        `;
+      }
+
+      // Копируем данные из freezer_shelf_life в новую таблицу (для единообразия)
+      await sql`
+        INSERT INTO shelf_life (storage_type, keyword, days, priority, description)
+        SELECT 'freezer', keyword, days, priority, description
+        FROM freezer_shelf_life
+        ON CONFLICT (storage_type, keyword) DO NOTHING
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
