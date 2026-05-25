@@ -422,4 +422,41 @@ export const receiptsRouter = router({
       await db.delete(receiptItems).where(eq(receiptItems.id, input.id));
       return { id: input.id };
     }),
+
+  // Синхронизировать все товары из всех чеков в каталог «Продукты».
+  // Проходит по всем позициям всех чеков, добавляет/обновляет в products.
+  syncAllToProducts: protectedProcedure
+    .mutation(async () => {
+      const allItems = await db
+        .select({
+          productName: receiptItems.productName,
+          price: receiptItems.price,
+        })
+        .from(receiptItems);
+
+      let synced = 0;
+      for (const item of allItems) {
+        const price = item.price ? parseFloat(item.price as unknown as string) : null;
+        await db
+          .insert(products)
+          .values({
+            nameRu: item.productName,
+            lastPrice: price !== null ? String(price) : null,
+            priceUpdatedAt: price !== null ? new Date() : null,
+          })
+          .onConflictDoUpdate({
+            target: products.nameRu,
+            set: {
+              ...(price !== null ? {
+                lastPrice: String(price),
+                priceUpdatedAt: new Date(),
+              } : {}),
+            },
+          })
+          .catch(() => {/* игнорируем конфликты */});
+        synced++;
+      }
+
+      return { synced };
+    }),
 });
