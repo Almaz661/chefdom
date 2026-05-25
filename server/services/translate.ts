@@ -72,6 +72,62 @@ export async function translateToRu(
 }
 
 /**
+ * Переводит ОДИН текст на русский БЕЗ формата "Оригинал (Перевод)".
+ * Возвращает только чистый перевод. Используется там, где нужно сохранять
+ * именно русское название (инвентарь, каталог товаров по штрих-коду).
+ *
+ * Если ключа нет / DeepL вернул ошибку / уже на русском — возвращает
+ * исходный текст. Это best-effort: при отсутствии перевода UX остаётся
+ * рабочим, просто без локализации.
+ */
+export async function translatePlainToRu(
+  text: string,
+  sourceLang?: 'NL' | 'EN' | null,
+): Promise<string> {
+  const apiKey = getApiKey();
+  if (!apiKey) return text;
+  if (!text || text.trim().length < 2) return text;
+
+  // Уже на русском (нет латиницы) — не переводим
+  if (/[а-яА-ЯёЁ]/.test(text) && !/[a-zA-Z]/.test(text)) return text;
+  // Нет ни латиницы ни кириллицы (только цифры/символы) — нечего переводить
+  if (!/[a-zA-Z]/.test(text)) return text;
+
+  try {
+    const params = new URLSearchParams({
+      text,
+      target_lang: 'RU',
+    });
+    if (sourceLang) params.set('source_lang', sourceLang);
+
+    const res = await fetch(DEEPL_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `DeepL-Auth-Key ${apiKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    if (!res.ok) {
+      console.warn(`[translate] translatePlainToRu вернул ${res.status} для "${text.slice(0, 50)}"`);
+      return text;
+    }
+
+    const data = await res.json() as {
+      translations?: Array<{ text: string }>;
+    };
+
+    const translated = data.translations?.[0]?.text;
+    if (translated && translated.trim().length > 0) return translated;
+    return text;
+  } catch (err) {
+    console.warn('[translate] Ошибка translatePlainToRu:', err instanceof Error ? err.message : err);
+    return text;
+  }
+}
+
+/**
  * Переводит массив строк одним запросом (экономит лимит).
  * DeepL поддерживает до 50 текстов в одном запросе.
  */

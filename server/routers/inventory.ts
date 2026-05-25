@@ -4,8 +4,24 @@ import { eq, and, lte, isNotNull } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { inventory } from '../db/schema';
+import { translatePlainToRu } from '../services/translate';
 
 const storageTypes = ['fridge', 'freezer', 'pantry'] as const;
+
+/**
+ * Если в названии есть латиница и нет кириллицы — переводим на русский.
+ * Используется при добавлении в инвентарь (после штрих-кода / чека / руками),
+ * чтобы во всех списках было единообразное русское название.
+ *
+ * translatePlainToRu сам обрабатывает: отсутствие DEEPL_API_KEY, ошибки сети,
+ * слишком короткие строки. В худшем случае вернёт исходный текст.
+ */
+async function ensureRussianName(name: string): Promise<string> {
+  const hasLatin = /[a-zA-Z]/.test(name);
+  const hasCyrillic = /[а-яА-ЯёЁ]/.test(name);
+  if (!hasLatin || hasCyrillic) return name;
+  return translatePlainToRu(name);
+}
 
 export const inventoryRouter = router({
   // Весь инвентарь (userId=1)
@@ -72,11 +88,12 @@ export const inventoryRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
+      const productName = await ensureRussianName(input.productName);
       const [created] = await db
         .insert(inventory)
         .values({
           userId: 1,
-          productName: input.productName,
+          productName,
           quantity: input.quantity != null ? String(input.quantity) : null,
           unit: input.unit ?? null,
           storageType: input.storageType,
@@ -142,13 +159,20 @@ export const inventoryRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
+      // Параллельно переводим все названия с латиницей (одна сетевая поездка
+      // на каждое имя, но мутации идут редко — оптимизировать не нужно).
+      const translatedNames = await Promise.all(
+        input.items.map((item) => ensureRussianName(item.productName)),
+      );
+
       const created: { id: number; productName: string }[] = [];
-      for (const item of input.items) {
+      for (let i = 0; i < input.items.length; i++) {
+        const item = input.items[i];
         const [row] = await db
           .insert(inventory)
           .values({
             userId: 1,
-            productName: item.productName,
+            productName: translatedNames[i],
             quantity: item.quantity != null ? String(item.quantity) : null,
             unit: item.unit ?? null,
             storageType: item.storageType,
