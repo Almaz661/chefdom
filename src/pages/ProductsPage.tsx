@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Package, Barcode, Plus, Check, Store, Calendar } from "lucide-react";
+import { Search, Package, Barcode, Plus, Check, Store, Calendar, Trash2 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
@@ -8,6 +8,33 @@ const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[]
   { key: "freezer", label: "Морозилка" },
   { key: "pantry", label: "Кладовая" },
 ];
+
+// Кнопка «Удалить все» — очищает весь каталог продуктов
+function DeleteAllButton() {
+  const utils = trpc.useUtils();
+  const deleteAll = trpc.products.deleteAll.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      utils.products.search.invalidate();
+    },
+  });
+
+  return (
+    <button
+      onClick={() => {
+        if (confirm('Удалить ВСЕ товары из каталога? Это действие нельзя отменить.')) {
+          deleteAll.mutate();
+        }
+      }}
+      disabled={deleteAll.isPending}
+      className="h-10 px-3 rounded-lg border border-red-200 bg-paper text-red-500 text-xs font-medium hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      title="Удалить все товары"
+    >
+      <Trash2 size={14} />
+      <span className="hidden sm:inline">{deleteAll.isPending ? 'Удаляю…' : 'Очистить'}</span>
+    </button>
+  );
+}
 
 // Кнопка «Загрузить из чеков» — синхронизирует все товары из чеков в каталог
 function SyncFromReceiptsButton() {
@@ -40,6 +67,13 @@ function SyncFromReceiptsButton() {
 // Карточка товара с ценой, магазином и датой
 function ProductCard({ product }: { product: { id: number; nameRu: string; brand?: string | null; lastPrice?: string | null; storeName?: string | null; purchaseDate?: string | null } }) {
   const price = product.lastPrice ? parseFloat(product.lastPrice as unknown as string) : null;
+  const utils = trpc.useUtils();
+  const deleteMut = trpc.products.delete.useMutation({
+    onSuccess: () => {
+      utils.products.list.invalidate();
+      utils.products.search.invalidate();
+    },
+  });
 
   return (
     <li className="bg-paper border border-line rounded-xl px-4 py-3">
@@ -62,11 +96,21 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
             )}
           </div>
         </div>
-        {price !== null && (
-          <span className="text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
-            €{price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {price !== null && (
+            <span className="text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
+              €{price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          )}
+          <button
+            onClick={() => deleteMut.mutate({ id: product.id })}
+            disabled={deleteMut.isPending}
+            className="p-1.5 rounded-md text-ink-muted hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            title="Удалить"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
     </li>
   );
@@ -124,7 +168,10 @@ export function ProductsPage() {
         <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
           Продукты
         </h1>
-        <SyncFromReceiptsButton />
+        <div className="flex items-center gap-2">
+          <DeleteAllButton />
+          <SyncFromReceiptsButton />
+        </div>
       </div>
 
       {/* Переключатель режимов */}

@@ -151,6 +151,21 @@ export const productsRouter = router({
     return rows;
   }),
 
+  // Удалить один товар по id
+  delete: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      await db.delete(products).where(eq(products.id, input.id));
+      return { id: input.id };
+    }),
+
+  // Удалить ВСЕ товары из каталога
+  deleteAll: protectedProcedure
+    .mutation(async () => {
+      const result = await db.delete(products);
+      return { ok: true };
+    }),
+
   // B.3 — получить замены для ингредиента.
   // Поиск нечувствителен к регистру и работает по подстроке:
   // "Сметана 20%" найдёт замены для "Сметана"
