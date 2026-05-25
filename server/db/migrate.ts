@@ -980,13 +980,12 @@ const migrations: Migration[] = [
       // и addBulk/syncAllToProducts) не может работать — PostgreSQL требует
       // UNIQUE constraint для ON CONFLICT.
       //
-      // Сначала удаляем дубли (оставляем запись с наибольшим id = самую свежую).
+      // Удаляем ВСЕ дубли по name_ru (оставляем только запись с наибольшим id).
       await sql`
-        DELETE FROM products a
-        USING products b
-        WHERE a.name_ru = b.name_ru
-          AND a.id < b.id
-          AND a.barcode IS NULL
+        DELETE FROM products
+        WHERE id NOT IN (
+          SELECT MAX(id) FROM products GROUP BY name_ru
+        )
       `;
       // Создаём уникальный индекс
       await sql`
