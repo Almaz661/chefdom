@@ -47,6 +47,41 @@ const EXPIRY_PERIODS = [
   { key: 30, label: "30 дней" },
 ] as const;
 
+// Кнопка «Пересчитать сроки» — проставляет сроки всем продуктам без даты
+function RecalcExpiryButton() {
+  const utils = trpc.useUtils();
+  const recalc = trpc.inventory.recalcExpiry.useMutation({
+    onSuccess: (data) => {
+      utils.inventory.list.invalidate();
+      if (data.updated > 0) {
+        alert(`Готово! Проставлено сроков: ${data.updated} из ${data.total} продуктов без даты.`);
+      } else {
+        alert('У всех продуктов уже есть сроки, или не нашлось совпадений в справочнике.');
+      }
+    },
+  });
+
+  return (
+    <button
+      onClick={() => {
+        if (confirm('Проставить сроки годности всем продуктам без даты?')) {
+          recalc.mutate();
+        }
+      }}
+      disabled={recalc.isPending}
+      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-xs font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      title="Пересчитать сроки годности из справочника"
+    >
+      {recalc.isPending ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <span>📅</span>
+      )}
+      <span className="hidden sm:inline">{recalc.isPending ? 'Считаю…' : 'Сроки'}</span>
+    </button>
+  );
+}
+
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
@@ -174,6 +209,7 @@ export function InventoryPage() {
           Инвентарь
         </h1>
         <div className="flex gap-2">
+          <RecalcExpiryButton />
           <button
             onClick={() => setShowScanner(!showScanner)}
             className={`w-10 h-10 rounded-lg border bg-paper flex items-center justify-center transition-colors ${
