@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, ilike, or, sql } from 'drizzle-orm';
+import { eq, ilike, or, sql, desc } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
@@ -141,11 +141,12 @@ export const productsRouter = router({
     }),
 
   // Полный список всех товаров (для отображения каталога)
+  // Сортировка по дате обновления цены (свежие покупки сверху)
   list: protectedProcedure.query(async () => {
     const rows = await db
       .select()
       .from(products)
-      .orderBy(products.nameRu)
+      .orderBy(desc(products.priceUpdatedAt), products.nameRu)
       .limit(200);
     return rows;
   }),

@@ -196,6 +196,7 @@ export const ingredients = pgTable('ingredients', {
 // Этап G — каталог товаров (Open Food Facts)
 // lastPrice, avgPrice, priceUpdatedAt — Product Master для точной привязки
 // цен в ALDI чеках с двухблочным форматом (миграция 010).
+// storeName, purchaseDate — магазин и дата последней покупки (миграция 024).
 export const products = pgTable('products', {
   id: serial('id').primaryKey(),
   ingredientId: integer('ingredient_id')
@@ -211,6 +212,8 @@ export const products = pgTable('products', {
   lastPrice: numeric('last_price'),
   avgPrice: numeric('avg_price'),
   priceUpdatedAt: timestamp('price_updated_at', { withTimezone: true }),
+  storeName: text('store_name'),
+  purchaseDate: text('purchase_date'),
 });
 
 // Этап G — замены ингредиентов

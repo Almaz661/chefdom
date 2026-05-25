@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Package, Barcode, Plus, Check } from "lucide-react";
+import { Search, Package, Barcode, Plus, Check, Store, Calendar } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
@@ -14,6 +14,7 @@ function SyncFromReceiptsButton() {
   const utils = trpc.useUtils();
   const sync = trpc.receipts.syncAllToProducts.useMutation({
     onSuccess: (data) => {
+      utils.products.list.invalidate();
       utils.products.search.invalidate();
       alert(`Готово! Загружено ${data.synced} товаров из чеков в каталог.`);
     },
@@ -33,6 +34,41 @@ function SyncFromReceiptsButton() {
       {sync.isPending ? '⏳' : '📥'}
       <span className="hidden sm:inline">{sync.isPending ? 'Загружаю…' : 'Из чеков'}</span>
     </button>
+  );
+}
+
+// Карточка товара с ценой, магазином и датой
+function ProductCard({ product }: { product: { id: number; nameRu: string; brand?: string | null; lastPrice?: string | null; storeName?: string | null; purchaseDate?: string | null } }) {
+  const price = product.lastPrice ? parseFloat(product.lastPrice as unknown as string) : null;
+
+  return (
+    <li className="bg-paper border border-line rounded-xl px-4 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink truncate">{product.nameRu}</p>
+          {product.brand && <p className="text-xs text-ink-muted">{product.brand}</p>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+            {product.storeName && (
+              <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+                <Store size={12} className="shrink-0" />
+                {product.storeName}
+              </span>
+            )}
+            {product.purchaseDate && (
+              <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+                <Calendar size={12} className="shrink-0" />
+                {product.purchaseDate}
+              </span>
+            )}
+          </div>
+        </div>
+        {price !== null && (
+          <span className="text-sm font-semibold text-ink tabular-nums whitespace-nowrap">
+            €{price.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -125,19 +161,7 @@ export function ProductsPage() {
           {searchResults.data && searchResults.data.length > 0 ? (
             <ul className="space-y-2">
               {searchResults.data.map((p) => (
-                <li key={p.id} className="bg-paper border border-line rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-ink">{p.nameRu}</p>
-                      {p.brand && <p className="text-xs text-ink-muted">{p.brand}</p>}
-                    </div>
-                    {p.lastPrice && (
-                      <span className="text-sm font-medium text-ink tabular-nums">
-                        {parseFloat(p.lastPrice as unknown as string).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </li>
+                <ProductCard key={p.id} product={p} />
               ))}
             </ul>
           ) : query.length >= 2 && !searchResults.isLoading ? (
@@ -147,25 +171,13 @@ export function ProductsPage() {
           ) : query.length < 2 && allProducts.data && allProducts.data.length > 0 ? (
             <ul className="space-y-2">
               {allProducts.data.map((p) => (
-                <li key={p.id} className="bg-paper border border-line rounded-xl px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-ink">{p.nameRu}</p>
-                      {p.brand && <p className="text-xs text-ink-muted">{p.brand}</p>}
-                    </div>
-                    {p.lastPrice && (
-                      <span className="text-sm font-medium text-ink tabular-nums">
-                        {parseFloat(p.lastPrice as unknown as string).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                  </div>
-                </li>
+                <ProductCard key={p.id} product={p} />
               ))}
             </ul>
           ) : !allProducts.isLoading ? (
             <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
               <Package size={32} className="text-line-strong mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-ink-soft text-sm">Каталог пуст. Товары появятся после добавления из чеков в инвентарь.</p>
+              <p className="text-ink-soft text-sm">Каталог пуст. Товары появятся автоматически после сканирования чеков.</p>
             </div>
           ) : null}
         </>

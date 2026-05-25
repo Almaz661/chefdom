@@ -1009,6 +1009,17 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '024_products_store_and_date',
+    up: async (sql) => {
+      // Добавляем в products поля store_name и purchase_date.
+      // Теперь после сканирования чека товар сохраняется с информацией
+      // о магазине и дате покупки — чтобы пользователь мог отслеживать
+      // динамику цен и видеть где что покупал.
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS store_name TEXT`;
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS purchase_date TEXT`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

@@ -135,18 +135,7 @@ app.get("/api/seed-ingredients", requireSession, async (_req, res) => {
   });
 });
 
-// Одноразовый запуск импорта товаров из Open Food Facts (G.2)
-app.get("/api/seed-products", requireSession, async (_req, res) => {
-  res.json({ ok: true, message: "Импорт товаров запущен в фоне. Смотри логи Render." });
-  setImmediate(async () => {
-    try {
-      const { runSeedProducts } = await import("./db/seed-products-fn");
-      await runSeedProducts();
-    } catch (err) {
-      console.error("[seed-products] Ошибка:", err);
-    }
-  });
-});
+
 
 // Авто-расчёт КБЖУ для всех рецептов (G.4).
 // Использует общий helper calcRecipeNutrition. Best-effort:
