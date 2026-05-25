@@ -50,6 +50,9 @@ export function ProductsPage() {
     { enabled: query.length >= 2 }
   );
 
+  // Полный список всех товаров — показываем сразу
+  const allProducts = trpc.products.list.useQuery();
+
   const barcodeResult = trpc.products.getByBarcode.useQuery(
     { barcode },
     { enabled: barcode.length >= 4, retry: false }
@@ -123,22 +126,48 @@ export function ProductsPage() {
             <ul className="space-y-2">
               {searchResults.data.map((p) => (
                 <li key={p.id} className="bg-paper border border-line rounded-xl px-4 py-3">
-                  <p className="text-sm font-medium text-ink">{p.nameRu}</p>
-                  {p.brand && <p className="text-xs text-ink-muted">{p.brand}</p>}
-                  {p.barcode && <p className="text-xs text-ink-muted font-mono">{p.barcode}</p>}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-ink">{p.nameRu}</p>
+                      {p.brand && <p className="text-xs text-ink-muted">{p.brand}</p>}
+                    </div>
+                    {p.lastPrice && (
+                      <span className="text-sm font-medium text-ink tabular-nums">
+                        {parseFloat(p.lastPrice as unknown as string).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
           ) : query.length >= 2 && !searchResults.isLoading ? (
-            <div className="text-center py-12 text-ink-muted text-sm">
+            <div className="text-center py-8 text-ink-muted text-sm">
               Ничего не найдено
             </div>
-          ) : (
+          ) : query.length < 2 && allProducts.data && allProducts.data.length > 0 ? (
+            <ul className="space-y-2">
+              {allProducts.data.map((p) => (
+                <li key={p.id} className="bg-paper border border-line rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-ink">{p.nameRu}</p>
+                      {p.brand && <p className="text-xs text-ink-muted">{p.brand}</p>}
+                    </div>
+                    {p.lastPrice && (
+                      <span className="text-sm font-medium text-ink tabular-nums">
+                        {parseFloat(p.lastPrice as unknown as string).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : !allProducts.isLoading ? (
             <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
               <Package size={32} className="text-line-strong mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-ink-soft text-sm">Введите название продукта для поиска</p>
+              <p className="text-ink-soft text-sm">Каталог пуст. Товары появятся после добавления из чеков в инвентарь.</p>
             </div>
-          )}
+          ) : null}
         </>
       )}
 

@@ -140,6 +140,16 @@ export const productsRouter = router({
       return rows;
     }),
 
+  // Полный список всех товаров (для отображения каталога)
+  list: protectedProcedure.query(async () => {
+    const rows = await db
+      .select()
+      .from(products)
+      .orderBy(products.nameRu)
+      .limit(200);
+    return rows;
+  }),
+
   // B.3 — получить замены для ингредиента.
   // Поиск нечувствителен к регистру и работает по подстроке:
   // "Сметана 20%" найдёт замены для "Сметана"

@@ -201,7 +201,7 @@ export const products = pgTable('products', {
   ingredientId: integer('ingredient_id')
     .references(() => ingredients.id),
   barcode: text('barcode').unique(),
-  nameRu: text('name_ru').notNull(),
+  nameRu: text('name_ru').notNull().unique(),
   nameNl: text('name_nl'),
   brand: text('brand'),
   packageQuantity: numeric('package_quantity'),
