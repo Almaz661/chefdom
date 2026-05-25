@@ -4,7 +4,7 @@ import { eq, ilike, or, sql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { products, ingredients, recipes, recipeIngredients, ingredientSubstitutions } from '../db/schema';
-import { translateToRu } from '../services/translate';
+import { translatePlainToRu } from '../services/translate';
 import { calcRecipeNutrition } from '../services/nutritionCalc';
 
 
@@ -26,7 +26,7 @@ export const productsRouter = router({
       // 2. Fallback — Open Food Facts API
       try {
         const offRes = await fetch(
-          `https://world.openfoodfacts.org/api/v2/product/${input.barcode}.json?fields=product_name,brands,quantity`
+          `https://world.openfoodfacts.org/api/v2/product/${input.barcode}.json?fields=product_name,product_name_ru,product_name_nl,product_name_en,brands,quantity`
         );
 
         if (!offRes.ok) {
@@ -35,17 +35,54 @@ export const productsRouter = router({
 
         const offData = await offRes.json() as {
           status: number;
-          product?: { product_name?: string; brands?: string; quantity?: string };
+          product?: {
+            product_name?: string;
+            product_name_ru?: string;
+            product_name_nl?: string;
+            product_name_en?: string;
+            brands?: string;
+            quantity?: string;
+          };
         };
 
-        if (offData.status !== 1 || !offData.product?.product_name) {
+        const offProduct = offData.product;
+        if (offData.status !== 1 || !offProduct) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Товар не найден по штрих-коду' });
         }
 
-        const offProduct = offData.product;
+        // Выбираем лучшее доступное название и его язык-источник.
+        // Приоритет: ru (готовое) → nl → en → product_name (auto-detect).
+        const ru = offProduct.product_name_ru?.trim();
+        const nl = offProduct.product_name_nl?.trim();
+        const en = offProduct.product_name_en?.trim();
+        const generic = offProduct.product_name?.trim();
 
-        // 3. Переводим название NL/EN→RU (DeepL, best-effort)
-        const translatedName = await translateToRu(offProduct.product_name!);
+        let sourceName = '';
+        let sourceLang: 'NL' | 'EN' | null = null;
+        if (ru) {
+          sourceName = ru; // уже на русском — переводить не нужно
+        } else if (nl) {
+          sourceName = nl;
+          sourceLang = 'NL';
+        } else if (en) {
+          sourceName = en;
+          sourceLang = 'EN';
+        } else if (generic) {
+          sourceName = generic;
+          // язык auto-detect — для "Bonduelle" / "Heinz" это часто работает
+        }
+
+        if (!sourceName) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Товар не найден по штрих-коду' });
+        }
+
+        // 3. Переводим название → чистый русский (без формата "Оригинал (Перевод)").
+        // Если уже на русском — translatePlainToRu вернёт исходный текст без вызова DeepL.
+        const translatedName = ru ? sourceName : await translatePlainToRu(sourceName, sourceLang);
+
+        // nameNl сохраняем как «оригинал на исходном языке» — для отладки
+        // и чтобы можно было повторно перевести если перевод неудачный.
+        const originalForNl = nl || generic || en || sourceName;
 
         // 4. Сохраняем в локальную БД для будущих запросов
         const [saved] = await db
@@ -53,7 +90,7 @@ export const productsRouter = router({
           .values({
             barcode: input.barcode,
             nameRu: translatedName,
-            nameNl: offProduct.product_name!,
+            nameNl: originalForNl,
             brand: offProduct.brands || null,
             packageQuantity: offProduct.quantity || null,
             offId: input.barcode, // маркер что пришло из OFF
@@ -82,7 +119,7 @@ export const productsRouter = router({
           packageUnit: null,
           offId: input.barcode,
           ingredientId: null,
-          nameNl: offProduct.product_name!,
+          nameNl: originalForNl,
           imageUrl: null,
         };
       } catch (err) {
