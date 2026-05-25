@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Package, Barcode, Plus, Check, Store, Calendar, Trash2 } from "lucide-react";
+import { Search, Package, Barcode, Plus, Check, Store, Calendar, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
@@ -64,8 +64,9 @@ function SyncFromReceiptsButton() {
   );
 }
 
-// Карточка товара с ценой, магазином и датой
+// Карточка товара с ценой, магазином, датой, удалением и историей цен
 function ProductCard({ product }: { product: { id: number; nameRu: string; brand?: string | null; lastPrice?: string | null; storeName?: string | null; purchaseDate?: string | null } }) {
+  const [showHistory, setShowHistory] = useState(false);
   const price = product.lastPrice ? parseFloat(product.lastPrice as unknown as string) : null;
   const utils = trpc.useUtils();
   const deleteMut = trpc.products.delete.useMutation({
@@ -74,11 +75,15 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
       utils.products.search.invalidate();
     },
   });
+  const historyQuery = trpc.products.getPriceHistory.useQuery(
+    { productName: product.nameRu },
+    { enabled: showHistory }
+  );
 
   return (
     <li className="bg-paper border border-line rounded-xl px-4 py-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
           <p className="text-sm font-medium text-ink truncate">{product.nameRu}</p>
           {product.brand && <p className="text-xs text-ink-muted">{product.brand}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
@@ -112,6 +117,40 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
           </button>
         </div>
       </div>
+      {/* История цен */}
+      {showHistory && historyQuery.data && historyQuery.data.length > 1 && (
+        <div className="mt-2 pt-2 border-t border-line">
+          <p className="text-xs font-medium text-ink-soft mb-1">История цен:</p>
+          <div className="space-y-0.5">
+            {historyQuery.data.slice(0, 10).map((h, i) => {
+              const prev = historyQuery.data![i + 1];
+              const curr = parseFloat(h.price as unknown as string);
+              const prevPrice = prev ? parseFloat(prev.price as unknown as string) : null;
+              const diff = prevPrice !== null ? curr - prevPrice : 0;
+              return (
+                <div key={h.id} className="flex items-center justify-between text-xs">
+                  <span className="text-ink-muted">
+                    {h.purchaseDate || '—'} {h.storeName ? `· ${h.storeName}` : ''}
+                  </span>
+                  <span className={`font-medium tabular-nums ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-600' : 'text-ink'}`}>
+                    €{curr.toFixed(2)}
+                    {diff !== 0 && (
+                      <span className="ml-1 text-[10px]">
+                        {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(2)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {showHistory && historyQuery.data && historyQuery.data.length <= 1 && (
+        <div className="mt-2 pt-2 border-t border-line">
+          <p className="text-xs text-ink-muted">Пока только одна покупка. История появится после следующей.</p>
+        </div>
+      )}
     </li>
   );
 }

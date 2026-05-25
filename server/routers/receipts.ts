@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { and, asc, desc, eq, isNotNull } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { receipts, receiptItems, users, products } from '../db/schema';
+import { receipts, receiptItems, users, products, priceHistory } from '../db/schema';
 import { recognizeImage } from '../services/ocr';
 import { parseReceiptText, ProductMasterEntry } from '../services/receiptParser';
 import { translateBatchToRu } from '../services/translate';
@@ -34,8 +34,7 @@ async function loadProductMaster(): Promise<ProductMasterEntry[]> {
 
 // Product Master — обновляет/добавляет цены товаров после успешного парсинга чека.
 // Записывает lastPrice, priceUpdatedAt, storeName и purchaseDate для каждого товара.
-// Это позволяет пользователю видеть в каталоге «Продукты» где и когда
-// он покупал товар и по какой цене.
+// Также сохраняет КАЖДУЮ цену в price_history для отслеживания динамики.
 async function updateProductMasterPrices(
   parsedItems: Array<{ productName: string; price: number | null }>,
   storeName: string | null,
@@ -43,6 +42,8 @@ async function updateProductMasterPrices(
 ): Promise<void> {
   for (const item of parsedItems) {
     if (item.price === null) continue;
+
+    // 1. Обновляем/создаём запись в products (последняя цена)
     await db
       .insert(products)
       .values({
@@ -62,6 +63,18 @@ async function updateProductMasterPrices(
         },
       })
       .catch(() => {/* игнорируем если нет уникального ключа на nameRu */});
+
+    // 2. Записываем в историю цен (каждая покупка — отдельная строка)
+    await db
+      .insert(priceHistory)
+      .values({
+        productName: item.productName,
+        price: String(item.price),
+        storeName: storeName ?? null,
+        purchaseDate: purchaseDate ?? null,
+        currency: 'EUR',
+      })
+      .catch(() => {});
   }
 }
 
