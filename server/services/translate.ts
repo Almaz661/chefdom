@@ -133,7 +133,7 @@ export async function translatePlainToRu(
  */
 export async function translateBatchToRu(
   texts: string[],
-  sourceLang?: 'NL' | 'EN' | null,
+  sourceLang?: 'NL' | 'EN' | 'DE' | 'PL' | null,
 ): Promise<string[]> {
   const apiKey = getApiKey();
   if (!apiKey) return texts;

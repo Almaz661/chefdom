@@ -23,6 +23,7 @@ export interface ParsedReceipt {
   currency: 'EUR' | 'RUB';
   totalAmount: number | null;
   items: ParsedItem[];
+  sourceLang: 'NL' | 'DE' | 'PL' | 'EN' | null;
 }
 
 export interface ParsedItem {
@@ -97,44 +98,60 @@ export function matchItemsWithProductMaster(
 
 // Известные сети. `\s*` между буквами — на случай если OCR разорвал
 // название пробелами (на сканах ALDI часто получается «A L D I»).
-const KNOWN_STORES: Array<[RegExp, string, 'EUR' | 'RUB']> = [
+// 4-й элемент — исходный язык товаров для перевода (NL/DE/PL/EN/null).
+type SourceLang = 'NL' | 'DE' | 'PL' | 'EN' | null;
+const KNOWN_STORES: Array<[RegExp, string, 'EUR' | 'RUB', SourceLang]> = [
   // Нидерланды
-  [/a\s*l\s*b\s*e\s*r\s*t\s*\s*h\s*e\s*i\s*j\s*n|\bA\.?H\b/i, 'Albert Heijn', 'EUR'],
-  [/j\s*u\s*m\s*b\s*o/i, 'Jumbo', 'EUR'],
-  [/l\s*i\s*d\s*l/i, 'Lidl', 'EUR'],
-  [/a\s*l\s*d\s*i/i, 'Aldi', 'EUR'],
-  [/d\s*i\s*r\s*k/i, 'Dirk', 'EUR'],
-  [/plus\s+supermarkt|^plus$/im, 'Plus', 'EUR'],
-  [/\bspar\b/i, 'Spar', 'EUR'],
-  [/hoogvliet/i, 'Hoogvliet', 'EUR'],
-  [/\bcoop\b/i, 'Coop', 'EUR'],
+  [/a\s*l\s*b\s*e\s*r\s*t\s*\s*h\s*e\s*i\s*j\s*n|\bA\.?H\b/i, 'Albert Heijn', 'EUR', 'NL'],
+  [/j\s*u\s*m\s*b\s*o/i, 'Jumbo', 'EUR', 'NL'],
+  [/d\s*i\s*r\s*k/i, 'Dirk', 'EUR', 'NL'],
+  [/plus\s+supermarkt|^plus$/im, 'Plus', 'EUR', 'NL'],
+  [/\bspar\b/i, 'Spar', 'EUR', 'NL'],
+  [/hoogvliet/i, 'Hoogvliet', 'EUR', 'NL'],
+  [/\bcoop\b/i, 'Coop', 'EUR', 'NL'],
+  // Германия
+  [/a\s*l\s*d\s*i/i, 'Aldi', 'EUR', 'DE'],
+  [/l\s*i\s*d\s*l/i, 'Lidl', 'EUR', 'DE'],
+  [/\brewe\b/i, 'REWE', 'EUR', 'DE'],
+  [/\bedeka\b/i, 'Edeka', 'EUR', 'DE'],
+  [/\bnetto\b/i, 'Netto', 'EUR', 'DE'],
+  [/\bpenny\b/i, 'Penny', 'EUR', 'DE'],
+  [/kaufland/i, 'Kaufland', 'EUR', 'DE'],
+  // Польша
+  [/[zż]\s*a\s*b\s*k\s*a|żabka/i, 'Żabka', 'EUR', 'PL'],
+  [/b\s*i\s*e\s*d\s*r\s*o\s*n\s*k\s*a/i, 'Biedronka', 'EUR', 'PL'],
+  [/\bstokrotka\b/i, 'Stokrotka', 'EUR', 'PL'],
+  [/\bdino\b/i, 'Dino', 'EUR', 'PL'],
+  [/\blewiatan\b/i, 'Lewiatan', 'EUR', 'PL'],
+  [/\bpolomarket\b/i, 'Polomarket', 'EUR', 'PL'],
   // Россия
-  [/пятёрочка|пятерочка/i, 'Пятёрочка', 'RUB'],
-  [/перекрёсток|перекресток/i, 'Перекрёсток', 'RUB'],
-  [/магнит/i, 'Магнит', 'RUB'],
-  [/ашан/i, 'Ашан', 'RUB'],
-  [/лента/i, 'Лента', 'RUB'],
-  [/окей|о'?кей/i, 'О\'кей', 'RUB'],
-  [/вкусвилл/i, 'ВкусВилл', 'RUB'],
-  [/дикси/i, 'Дикси', 'RUB'],
-  [/billa/i, 'Billa', 'RUB'],
-  [/metro/i, 'Metro', 'RUB'],
+  [/пятёрочка|пятерочка/i, 'Пятёрочка', 'RUB', null],
+  [/перекрёсток|перекресток/i, 'Перекрёсток', 'RUB', null],
+  [/магнит/i, 'Магнит', 'RUB', null],
+  [/ашан/i, 'Ашан', 'RUB', null],
+  [/лента/i, 'Лента', 'RUB', null],
+  [/окей|о'?кей/i, 'О\'кей', 'RUB', null],
+  [/вкусвилл/i, 'ВкусВилл', 'RUB', null],
+  [/дикси/i, 'Дикси', 'RUB', null],
+  [/billa/i, 'Billa', 'RUB', null],
+  [/metro/i, 'Metro', 'EUR', 'DE'],
 ];
 
-function detectStoreAndCurrency(
+export function detectStoreAndCurrency(
   text: string,
   defaultCurrency: 'EUR' | 'RUB' = 'EUR',
 ): {
   storeName: string | null;
   currency: 'EUR' | 'RUB';
+  sourceLang: SourceLang;
 } {
-  for (const [re, name, currency] of KNOWN_STORES) {
-    if (re.test(text)) return { storeName: name, currency };
+  for (const [re, name, currency, lang] of KNOWN_STORES) {
+    if (re.test(text)) return { storeName: name, currency, sourceLang: lang };
   }
   if (/₽|\bруб(?:\.|лей|ля)?\b/i.test(text)) {
-    return { storeName: null, currency: 'RUB' };
+    return { storeName: null, currency: 'RUB', sourceLang: null };
   }
-  return { storeName: null, currency: defaultCurrency };
+  return { storeName: null, currency: defaultCurrency, sourceLang: null };
 }
 
 // Дата: 31.05.2026 / 31-05-2026 / 31/05/2026 или ISO YYYY-MM-DD
@@ -599,7 +616,7 @@ export function parseReceiptText(
   // Убираем метаданные из текста перед парсингом позиций
   const textWithoutMeta = text.replace(/^(STORE|DATE):.*$/gm, '').trim();
 
-  const { storeName: detectedStore, currency } = detectStoreAndCurrency(textWithoutMeta, defaultCurrency);
+  const { storeName: detectedStore, currency, sourceLang } = detectStoreAndCurrency(textWithoutMeta, defaultCurrency);
   const purchaseDate = geminiDate ?? detectDate(textWithoutMeta);
   const storeName = geminiStore ?? detectedStore;
   const totalAmount = detectTotal(textWithoutMeta);
@@ -628,5 +645,6 @@ export function parseReceiptText(
     currency,
     totalAmount,
     items: items.map((i) => ({ productName: i.name, price: i.price })),
+    sourceLang,
   };
 }
