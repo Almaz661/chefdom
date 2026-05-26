@@ -151,7 +151,32 @@ export function detectStoreAndCurrency(
   if (/₽|\bруб(?:\.|лей|ля)?\b/i.test(text)) {
     return { storeName: null, currency: 'RUB', sourceLang: null };
   }
-  return { storeName: null, currency: defaultCurrency, sourceLang: null };
+  // Автодетект языка по ключевым словам в тексте чека
+  const detectedLang = detectLanguageByContent(text);
+  return { storeName: null, currency: defaultCurrency, sourceLang: detectedLang };
+}
+
+// Автодетект языка по содержимому чека — если магазин не распознан,
+// но в тексте есть характерные слова на польском/немецком/голландском.
+function detectLanguageByContent(text: string): 'NL' | 'DE' | 'PL' | 'EN' | null {
+  const lower = text.toLowerCase();
+  // Польские слова (продукты, единицы)
+  const plMatches = lower.match(/\b(ogorki|kiszone|pieprz|czarny|herbata|owocowa|woda|mineralna|kapusta|kiszona|maslo|chleb|mleko|ser|jajka|ziarnisty|mrozon|swiezy|szynka|kielbasa|sloneczn)\b/gi);
+  // Немецкие слова
+  const deMatches = lower.match(/\b(speisesalz|weizengruetze|sonnenblumen[oö]l|milch|brot|k[aä]se|butter|mehl|zucker|eier|wurst|schinken|sahne|joghurt|nudeln|reis|grob)\b/gi);
+  // Голландские слова
+  const nlMatches = lower.match(/\b(slagroom|volle\s*melk|kaas|brood|boter|eieren|worst|ham|yoghurt|rijst|suiker|meel|kwark|kip|varkensvlees)\b/gi);
+
+  const plCount = plMatches?.length ?? 0;
+  const deCount = deMatches?.length ?? 0;
+  const nlCount = nlMatches?.length ?? 0;
+
+  const max = Math.max(plCount, deCount, nlCount);
+  if (max === 0) return null;
+  if (plCount === max) return 'PL';
+  if (deCount === max) return 'DE';
+  if (nlCount === max) return 'NL';
+  return null;
 }
 
 // Дата: 31.05.2026 / 31-05-2026 / 31/05/2026 или ISO YYYY-MM-DD
