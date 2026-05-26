@@ -58,20 +58,11 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   const sourceUrl = url;
   const source = parsedUrl.hostname.replace(/^www\./, "");
 
-  // --- DEBUG LOG ---
+  // --- DEBUG (removed in production) ---
   const h1All = $("h1").map((_, el) => $(el).text().trim()).get();
-  const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "(нет)";
-  const titleTag = $("title").text().trim() || "(нет)";
-  console.log(`[scraper] URL: ${url}`);
-  console.log(`[scraper] source: ${source}`);
-  console.log(`[scraper] <title>: ${titleTag}`);
-  console.log(`[scraper] og:title: ${ogTitle}`);
-  console.log(`[scraper] h1 (${h1All.length}): ${JSON.stringify(h1All.slice(0, 3))}`);
-  console.log(`[scraper] HTML length: ${html.length}`);
 
   // Стратегия 1: JSON-LD
   const jsonLd = parseJsonLd($, url);
-  console.log(`[scraper] JSON-LD found: ${!!jsonLd}, title: "${jsonLd?.title || ""}", ingredients: ${jsonLd?.ingredients?.length ?? 0}, steps: ${jsonLd?.steps?.length ?? 0}`);
   if (jsonLd && isValidRecipe(jsonLd)) {
     // Если title из JSON-LD мусорный — подменить
     if (jsonLd.title && isJunkTitle(jsonLd.title)) {

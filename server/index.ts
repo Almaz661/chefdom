@@ -204,6 +204,24 @@ async function start(): Promise<void> {
   console.log("[boot] запуск seed...");
   await runSeed();
 
+  // Чистка просроченных сессий при старте (и каждые 6 часов).
+  // На Render Free сервер перезапускается каждые ~15 мин, поэтому
+  // интервал сработает только на платном плане. Startup-чистка — всегда.
+  async function cleanExpiredSessions() {
+    try {
+      const result = await client`
+        DELETE FROM sessions WHERE expires_at < NOW()
+      `;
+      const count = (result as any).count ?? 0;
+      if (count > 0) console.log(`[sessions] удалено ${count} просроченных сессий`);
+    } catch (err) {
+      // Не фатально — просто логируем
+      console.warn('[sessions] ошибка чистки:', err instanceof Error ? err.message : err);
+    }
+  }
+  await cleanExpiredSessions();
+  setInterval(cleanExpiredSessions, 6 * 60 * 60 * 1000); // каждые 6 часов
+
   // Явный bind на 0.0.0.0 — Render port-scanner иногда не видит дефолтный bind Node
   // (который может уйти на IPv6 ::1). Принуждаем все IPv4 интерфейсы.
   app.listen(PORT, "0.0.0.0", () => {

@@ -27,56 +27,6 @@ function periodStart(period: Period): Date | null {
 }
 
 export const cookingRouter = router({
-  // --- Запись факта готовки.
-  // Снимает снапшот рецепта (title/calories/category/cuisine), чтобы история
-  // оставалась читаемой даже если рецепт потом удалят.
-  record: protectedProcedure
-    .input(
-      z.object({
-        recipeId: z.number().int().positive(),
-        servings: z.number().int().min(1).max(50).optional(),
-        consumedCount: z.number().int().min(0).default(0),
-        totalIngredients: z.number().int().min(0).default(0),
-        notes: z.string().max(1000).nullable().optional(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const [recipe] = await db
-        .select({
-          id: recipes.id,
-          title: recipes.title,
-          servings: recipes.servings,
-          calories: recipes.calories,
-          category: recipes.category,
-          cuisine: recipes.cuisine,
-        })
-        .from(recipes)
-        .where(eq(recipes.id, input.recipeId))
-        .limit(1);
-
-      if (!recipe) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
-      }
-
-      const [created] = await db
-        .insert(cookingHistory)
-        .values({
-          userId: ctx.userId,
-          recipeId: recipe.id,
-          recipeTitle: recipe.title,
-          servings: input.servings ?? recipe.servings ?? 1,
-          caloriesPerServing: recipe.calories ?? null,
-          category: recipe.category ?? null,
-          cuisine: recipe.cuisine ?? null,
-          consumedCount: input.consumedCount,
-          totalIngredients: input.totalIngredients,
-          notes: input.notes ?? null,
-        })
-        .returning({ id: cookingHistory.id });
-
-      return { id: created.id };
-    }),
-
   // --- Список с пагинацией для HistoryPage (раздел 19.3 макета).
   // По плану 17.1: 30 записей за раз, кнопка «Показать ещё».
   // period — фильтр для переключателей «Этот месяц | 3 месяца | Всё время».
