@@ -238,25 +238,40 @@ export const settingsRouter = router({
         }).passthrough()).optional().default([]),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       await db.transaction(async (tx) => {
-        const [user] = await tx.select({ id: users.id }).from(users).limit(1);
-        if (!user) throw new Error("Пользователь не найден");
-        const userId = user.id;
+        const userId = ctx.userId;
 
-        // Удаляем все данные (порядок важен из-за FK)
-        await tx.delete(receiptItems);
-        await tx.delete(receipts);
-        await tx.delete(cookingHistory);
-        await tx.delete(preserves);
-        await tx.delete(products);
-        await tx.delete(purchaseItems);
-        await tx.delete(menuItems);
-        await tx.delete(menus);
-        await tx.delete(inventory);
+        // Удаляем данные ТОЛЬКО текущего пользователя (порядок важен из-за FK).
+        // receiptItems и menuItems удаляются каскадно через FK ON DELETE CASCADE,
+        // но recipeIngredients/recipeSteps — нет (рецепты общие для всех),
+        // поэтому удаляем их явно.
+        // Чеки — только текущего пользователя
+        const userReceipts = await tx.select({ id: receipts.id }).from(receipts).where(eq(receipts.userId, userId));
+        if (userReceipts.length > 0) {
+          const receiptIds = userReceipts.map(r => r.id);
+          for (const rid of receiptIds) {
+            await tx.delete(receiptItems).where(eq(receiptItems.receiptId, rid));
+          }
+          await tx.delete(receipts).where(eq(receipts.userId, userId));
+        }
+        await tx.delete(cookingHistory).where(eq(cookingHistory.userId, userId));
+        await tx.delete(preserves).where(eq(preserves.userId, userId));
+        await tx.delete(purchaseItems).where(eq(purchaseItems.userId, userId));
+        // Меню — удаляем items каскадно
+        const userMenus = await tx.select({ id: menus.id }).from(menus).where(eq(menus.userId, userId));
+        if (userMenus.length > 0) {
+          for (const m of userMenus) {
+            await tx.delete(menuItems).where(eq(menuItems.menuId, m.id));
+          }
+          await tx.delete(menus).where(eq(menus.userId, userId));
+        }
+        await tx.delete(inventory).where(eq(inventory.userId, userId));
+        // Рецепты и products — общие (не привязаны к userId), удаляем все
         await tx.delete(recipeIngredients);
         await tx.delete(recipeSteps);
         await tx.delete(recipes);
+        await tx.delete(products);
 
         // --- Рецепты ---
         for (const r of input.recipes) {
