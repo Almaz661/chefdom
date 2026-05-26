@@ -21,11 +21,11 @@ const dateField = z
 
 export const preservesRouter = router({
   // Все заготовки пользователя (UI потом фильтрует по табу)
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     return db
       .select()
       .from(preserves)
-      .where(eq(preserves.userId, 1))
+      .where(eq(preserves.userId, ctx.userId))
       .orderBy(preserves.preserveType, preserves.name);
   }),
 
@@ -44,11 +44,11 @@ export const preservesRouter = router({
         notes: z.string().max(2000).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [created] = await db
         .insert(preserves)
         .values({
-          userId: 1,
+          userId: ctx.userId,
           preserveType: input.preserveType,
           name: input.name,
           quantity: input.quantity != null ? String(input.quantity) : null,
@@ -77,7 +77,7 @@ export const preservesRouter = router({
         notes: z.string().max(2000).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...fields } = input;
 
       const updates: Record<string, unknown> = { updatedAt: new Date() };
@@ -94,7 +94,7 @@ export const preservesRouter = router({
       const result = await db
         .update(preserves)
         .set(updates)
-        .where(and(eq(preserves.id, id), eq(preserves.userId, 1)))
+        .where(and(eq(preserves.id, id), eq(preserves.userId, ctx.userId)))
         .returning({ id: preserves.id });
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });
@@ -105,10 +105,10 @@ export const preservesRouter = router({
   // Удалить
   remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(preserves)
-        .where(and(eq(preserves.id, input.id), eq(preserves.userId, 1)))
+        .where(and(eq(preserves.id, input.id), eq(preserves.userId, ctx.userId)))
         .returning({ id: preserves.id });
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });

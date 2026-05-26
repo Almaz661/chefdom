@@ -93,7 +93,7 @@ const ItemInput = z.object({
 
 export const receiptsRouter = router({
   // Список чеков (для ReceiptsPage)
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const rows = await db
       .select({
         id: receipts.id,
@@ -105,7 +105,7 @@ export const receiptsRouter = router({
         createdAt: receipts.createdAt,
       })
       .from(receipts)
-      .where(eq(receipts.userId, 1))
+      .where(eq(receipts.userId, ctx.userId))
       .orderBy(desc(receipts.createdAt))
       .limit(100);
     return rows;
@@ -114,11 +114,11 @@ export const receiptsRouter = router({
   // Один чек со всеми позициями (для ReceiptDetailPage)
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const [receipt] = await db
         .select()
         .from(receipts)
-        .where(and(eq(receipts.id, input.id), eq(receipts.userId, 1)))
+        .where(and(eq(receipts.id, input.id), eq(receipts.userId, ctx.userId)))
         .limit(1);
       if (!receipt) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
@@ -141,12 +141,12 @@ export const receiptsRouter = router({
         currency: z.enum(['EUR', 'RUB']).optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const currency = input.currency ?? (await getUserDefaultCurrency());
       const [created] = await db
         .insert(receipts)
         .values({
-          userId: 1,
+          userId: ctx.userId,
           storeName: input.storeName ?? null,
           purchaseDate: input.purchaseDate ?? null,
           currency,
@@ -170,7 +170,7 @@ export const receiptsRouter = router({
         language: z.string().max(10).optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // 1. OCR
       let recognized: { text: string };
       try {
@@ -214,7 +214,7 @@ export const receiptsRouter = router({
         const [receipt] = await tx
           .insert(receipts)
           .values({
-            userId: 1,
+            userId: ctx.userId,
             storeName: parsed.storeName,
             purchaseDate: parsed.purchaseDate,
             totalAmount:
@@ -259,11 +259,11 @@ export const receiptsRouter = router({
   // Шапка чека (магазин/дата/итог/валюта) тоже обновляется.
   reparse: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [receipt] = await db
         .select()
         .from(receipts)
-        .where(and(eq(receipts.id, input.id), eq(receipts.userId, 1)))
+        .where(and(eq(receipts.id, input.id), eq(receipts.userId, ctx.userId)))
         .limit(1);
       if (!receipt) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
@@ -342,7 +342,7 @@ export const receiptsRouter = router({
         notes: z.string().max(2000).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
       const updateData: Record<string, unknown> = {};
       if (rest.storeName !== undefined) updateData.storeName = rest.storeName;
@@ -357,7 +357,7 @@ export const receiptsRouter = router({
       const result = await db
         .update(receipts)
         .set(updateData)
-        .where(and(eq(receipts.id, id), eq(receipts.userId, 1)))
+        .where(and(eq(receipts.id, id), eq(receipts.userId, ctx.userId)))
         .returning({ id: receipts.id });
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
@@ -368,10 +368,10 @@ export const receiptsRouter = router({
   // Удалить чек (cascade удалит позиции — FK ON DELETE CASCADE)
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(receipts)
-        .where(and(eq(receipts.id, input.id), eq(receipts.userId, 1)))
+        .where(and(eq(receipts.id, input.id), eq(receipts.userId, ctx.userId)))
         .returning({ id: receipts.id });
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
