@@ -137,6 +137,30 @@ const KNOWN_STORES: Array<[RegExp, string, 'EUR' | 'RUB', SourceLang]> = [
   [/metro/i, 'Metro', 'EUR', 'DE'],
 ];
 
+// Автодетект языка по ключевым словам в тексте чека.
+// Срабатывает когда магазин не распознан, но текст явно на определённом языке.
+function detectLanguageByContent(text: string): 'NL' | 'DE' | 'PL' | 'EN' | null {
+  const lower = text.toLowerCase();
+  // Польские слова (продукты, единицы, общие слова на чеках)
+  const plWords = /\b(ogorki|kiszone|pieprz|czarny|herbata|owocowa|woda|mineralna|kapusta|maslo|chleb|mleko|ser|jajka|ziarnisty|mrozon|swiezy|szynka|kielbasa)\b/i;
+  // Немецкие слова
+  const deWords = /\b(speisesalz|weizengruetze|sonnenblumen[oö]l|milch|brot|k[aä]se|butter|mehl|zucker|eier|wurst|schinken|sahne|joghurt|nudeln|reis)\b/i;
+  // Голландские слова
+  const nlWords = /\b(slagroom|volle\s*melk|kaas|brood|boter|eieren|worst|ham|yoghurt|rijst|suiker|meel|kwark|kip|varkensvlees)\b/i;
+
+  const plCount = (lower.match(plWords) || []).length;
+  const deCount = (lower.match(deWords) || []).length;
+  const nlCount = (lower.match(nlWords) || []).length;
+
+  // Берём язык с наибольшим количеством совпадений (минимум 1)
+  const max = Math.max(plCount, deCount, nlCount);
+  if (max === 0) return null;
+  if (plCount === max) return 'PL';
+  if (deCount === max) return 'DE';
+  if (nlCount === max) return 'NL';
+  return null;
+}
+
 export function detectStoreAndCurrency(
   text: string,
   defaultCurrency: 'EUR' | 'RUB' = 'EUR',
@@ -151,7 +175,10 @@ export function detectStoreAndCurrency(
   if (/₽|\bруб(?:\.|лей|ля)?\b/i.test(text)) {
     return { storeName: null, currency: 'RUB', sourceLang: null };
   }
-  return { storeName: null, currency: defaultCurrency, sourceLang: null };
+  // Автодетект языка по ключевым словам в тексте чека
+  // (на случай если магазин не распознан, но язык понятен по товарам)
+  const detectedLang = detectLanguageByContent(text);
+  return { storeName: null, currency: defaultCurrency, sourceLang: detectedLang };
 }
 
 // Дата: 31.05.2026 / 31-05-2026 / 31/05/2026 или ISO YYYY-MM-DD
