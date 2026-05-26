@@ -201,7 +201,7 @@ export const receiptsRouter = router({
       // 3. Переводим названия товаров NL→RU (DeepL, best-effort)
       if (parsed.items.length > 0) {
         const names = parsed.items.map(it => it.productName);
-        const translated = await translateBatchToRu(names, 'NL');
+        const translated = await translateBatchToRu(names, parsed.sourceLang ?? 'NL');
         for (let i = 0; i < parsed.items.length; i++) {
           parsed.items[i].productName = translated[i];
         }
@@ -283,7 +283,7 @@ export const receiptsRouter = router({
       // Переводим названия товаров NL→RU
       if (parsed.items.length > 0) {
         const names = parsed.items.map(it => it.productName);
-        const translated = await translateBatchToRu(names, 'NL');
+        const translated = await translateBatchToRu(names, parsed.sourceLang ?? 'NL');
         for (let i = 0; i < parsed.items.length; i++) {
           parsed.items[i].productName = translated[i];
         }
