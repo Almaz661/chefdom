@@ -353,4 +353,50 @@ export const inventoryRouter = router({
         expiryDate,
       };
     }),
+
+  // Проверить все продукты с minQuantity и добавить в покупки те,
+  // которые ниже минимума. Вызывается вручную (кнопка) или автоматически.
+  checkMinQuantity: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const { purchaseItems } = await import('../db/schema');
+      const { ilike } = await import('drizzle-orm');
+
+      const allItems = await db
+        .select()
+        .from(inventory)
+        .where(eq(inventory.userId, ctx.userId));
+
+      let added = 0;
+      for (const item of allItems) {
+        if (!item.minQuantity) continue;
+        const qty = item.quantity ? parseFloat(item.quantity) : 0;
+        const minQty = parseFloat(item.minQuantity);
+        if (isNaN(minQty) || minQty <= 0) continue;
+        if (qty >= minQty) continue;
+
+        // Проверяем нет ли уже в покупках
+        const exists = await db
+          .select({ id: purchaseItems.id })
+          .from(purchaseItems)
+          .where(
+            and(
+              eq(purchaseItems.userId, ctx.userId),
+              ilike(purchaseItems.productName, item.productName),
+            ),
+          )
+          .limit(1);
+
+        if (exists.length === 0) {
+          await db.insert(purchaseItems).values({
+            userId: ctx.userId,
+            productName: item.productName,
+            quantity: String(minQty),
+            unit: item.unit,
+          });
+          added++;
+        }
+      }
+
+      return { added };
+    }),
 });
