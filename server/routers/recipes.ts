@@ -672,21 +672,88 @@ export const recipesRouter = router({
       return result;
     }),
 
-  // --- ГОТОВИТЬ (п.8 Этап 0) ---
-  // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие)
-  // и пишет факт готовки в cooking_history (для HistoryPage / Dashboard).
+  // --- ГОТОВИТЬ (п.8 Этап 0) — ЧАСТИЧНОЕ СПИСАНИЕ ---
+  // Списывает ингредиенты рецепта из инвентаря по FEFO (сначала истекающие).
+  // НОВАЯ ЛОГИКА: списывает ТОЛЬКО нужное количество, а не весь продукт.
   //
-  // Всё действие обёрнуто в одну транзакцию: либо мы целиком списываем
-  // ингредиенты И пишем запись в историю готовки, либо откатываем всё.
-  // До этого без транзакции мог получиться частичный сбой — например,
-  // половина ингредиентов уже удалена из инвентаря, а insert в
-  // cooking_history упал → пользователь видит «исчезли продукты, а в
-  // истории ничего нет».
+  // Алгоритм для каждого ингредиента рецепта:
+  //   1. Нечёткий матчинг по названию (как раньше)
+  //   2. Если amount в рецепте и quantity в инвентаре оба указаны:
+  //      a) Приводим к общей единице (конвертация кг↔г, л↔мл и т.д.)
+  //      b) Если в инвентаре >= нужного → уменьшаем quantity на нужное
+  //      c) Если в инвентаре < нужного → обнуляем (удаляем) + недостаток в shopping
+  //   3. Если amount или quantity не указаны → fallback: удаляем целиком
+  //   4. Если продукт стал 0 → удаляем запись из инвентаря
+  //
+  // Всё в одной транзакции.
   cook: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const { inventory, cookingHistory } = await import('../db/schema');
       const { asc } = await import('drizzle-orm');
+
+      // --- Таблица конвертации единиц ---
+      // Приводим все к базовой единице (г для массы, мл для объёма, шт для штук)
+      const UNIT_TO_BASE: Record<string, { base: string; factor: number }> = {
+        // Масса → граммы
+        'г': { base: 'г', factor: 1 },
+        'гр': { base: 'г', factor: 1 },
+        'грамм': { base: 'г', factor: 1 },
+        'кг': { base: 'г', factor: 1000 },
+        'килограмм': { base: 'г', factor: 1000 },
+        // Объём → миллилитры
+        'мл': { base: 'мл', factor: 1 },
+        'л': { base: 'мл', factor: 1000 },
+        'литр': { base: 'мл', factor: 1000 },
+        'ст.л.': { base: 'мл', factor: 15 },
+        'ст. л.': { base: 'мл', factor: 15 },
+        'ст.л': { base: 'мл', factor: 15 },
+        'столовая ложка': { base: 'мл', factor: 15 },
+        'ч.л.': { base: 'мл', factor: 5 },
+        'ч. л.': { base: 'мл', factor: 5 },
+        'ч.л': { base: 'мл', factor: 5 },
+        'чайная ложка': { base: 'мл', factor: 5 },
+        'стакан': { base: 'мл', factor: 250 },
+        'стак.': { base: 'мл', factor: 250 },
+        // Штуки
+        'шт': { base: 'шт', factor: 1 },
+        'шт.': { base: 'шт', factor: 1 },
+        'штука': { base: 'шт', factor: 1 },
+        'штук': { base: 'шт', factor: 1 },
+      };
+
+      /** Нормализация единицы измерения */
+      const normalizeUnit = (u: string | null | undefined): string | null => {
+        if (!u) return null;
+        const lower = u.toLowerCase().trim().replace(/\.$/, '');
+        // Попробуем найти как есть и без точки
+        if (UNIT_TO_BASE[lower]) return lower;
+        if (UNIT_TO_BASE[lower + '.']) return lower + '.';
+        // Попробуем с точкой на конце
+        const withDot = lower + '.';
+        if (UNIT_TO_BASE[withDot]) return withDot;
+        return lower;
+      };
+
+      /** Конвертировать количество в базовые единицы. Возвращает null если единица неизвестна */
+      const toBase = (amount: number, unit: string | null | undefined): { value: number; base: string } | null => {
+        if (!unit) return null;
+        const norm = normalizeUnit(unit);
+        if (!norm) return null;
+        const conv = UNIT_TO_BASE[norm] || UNIT_TO_BASE[norm + '.'] || UNIT_TO_BASE[norm.replace(/\.$/, '')];
+        if (!conv) return null;
+        return { value: amount * conv.factor, base: conv.base };
+      };
+
+      /** Конвертировать из базовых единиц обратно в указанную единицу */
+      const fromBase = (baseValue: number, unit: string | null | undefined): number => {
+        if (!unit) return baseValue;
+        const norm = normalizeUnit(unit);
+        if (!norm) return baseValue;
+        const conv = UNIT_TO_BASE[norm] || UNIT_TO_BASE[norm + '.'] || UNIT_TO_BASE[norm.replace(/\.$/, '')];
+        if (!conv) return baseValue;
+        return baseValue / conv.factor;
+      };
 
       return await db.transaction(async (tx) => {
         // Получить рецепт (метаданные нужны для снапшота в cooking_history)
@@ -780,29 +847,145 @@ export const recipesRouter = router({
           return false;
         };
 
-        // Трекаем уже списанные ID чтобы не списать дважды
-        const usedIds = new Set<number>();
-        const missingIngredients: string[] = [];
+        // Трекаем уже полностью списанные ID чтобы не матчить дважды
+        const deletedIds = new Set<number>();
+        // Трекаем уменьшенные количества (id → оставшееся в базовых единицах)
+        const adjustedQuantities = new Map<number, number>();
+
+        interface MissingItem {
+          name: string;
+          quantity: string | null;
+          unit: string | null;
+        }
+        const missingItems: MissingItem[] = [];
 
         for (const ing of ingredients) {
-          // Найти первый подходящий продукт по FEFO (массив уже отсортирован по expiryDate)
-          const match = allInv.find(
-            item => !usedIds.has(item.id) && isMatch(ing.name, item.productName)
+          const neededAmount = ing.amount ? parseFloat(ing.amount) : null;
+          const neededUnit = ing.unit;
+
+          // Найти все подходящие продукты по FEFO (массив уже отсортирован по expiryDate)
+          const matches = allInv.filter(
+            item => !deletedIds.has(item.id) && isMatch(ing.name, item.productName)
           );
-          if (match) {
-            await tx.delete(inventory).where(eq(inventory.id, match.id));
-            usedIds.add(match.id);
+
+          if (matches.length === 0) {
+            // Ингредиент не найден в инвентаре — целиком в shopping
+            missingItems.push({
+              name: ing.name,
+              quantity: ing.amount,
+              unit: neededUnit,
+            });
+            continue;
+          }
+
+          // Если amount не указан в рецепте — fallback: удаляем первый найденный целиком
+          if (neededAmount == null || isNaN(neededAmount) || neededAmount <= 0) {
+            const first = matches[0];
+            await tx.delete(inventory).where(eq(inventory.id, first.id));
+            deletedIds.add(first.id);
             consumed++;
-          } else {
-            // Ингредиент не найден в инвентаре — добавляем в покупки
-            missingIngredients.push(ing.name);
+            continue;
+          }
+
+          // Пытаемся списать нужное количество из одного или нескольких продуктов
+          const neededBase = toBase(neededAmount, neededUnit);
+          let remainingToConsume = neededBase ? neededBase.value : neededAmount;
+          let usedBaseUnit = neededBase?.base || null;
+          let partiallyConsumed = false;
+
+          for (const invItem of matches) {
+            if (deletedIds.has(invItem.id)) continue;
+            if (remainingToConsume <= 0) break;
+
+            const invQty = invItem.quantity ? parseFloat(invItem.quantity) : null;
+
+            // Если quantity не указан в инвентаре — удаляем целиком (старое поведение)
+            if (invQty == null || isNaN(invQty) || invQty <= 0) {
+              await tx.delete(inventory).where(eq(inventory.id, invItem.id));
+              deletedIds.add(invItem.id);
+              remainingToConsume = 0; // считаем что хватило
+              partiallyConsumed = true;
+              break;
+            }
+
+            // Приводим к базовым единицам для сравнения
+            const invBase = toBase(invQty, invItem.unit);
+            // Берём текущее скорректированное значение если уже уменьшали
+            let availableBase: number;
+            if (invBase && usedBaseUnit && invBase.base === usedBaseUnit) {
+              availableBase = adjustedQuantities.has(invItem.id)
+                ? adjustedQuantities.get(invItem.id)!
+                : invBase.value;
+            } else if (!usedBaseUnit || !invBase) {
+              // Единицы несовместимы или не распознаны — сравниваем напрямую
+              availableBase = adjustedQuantities.has(invItem.id)
+                ? adjustedQuantities.get(invItem.id)!
+                : invQty;
+              usedBaseUnit = null;
+            } else {
+              // Единицы разных типов (масса vs объём) — удаляем целиком
+              await tx.delete(inventory).where(eq(inventory.id, invItem.id));
+              deletedIds.add(invItem.id);
+              remainingToConsume = 0;
+              partiallyConsumed = true;
+              break;
+            }
+
+            if (availableBase <= 0) continue;
+
+            if (availableBase >= remainingToConsume) {
+              // В инвентаре >= нужного → уменьшаем
+              const leftoverBase = availableBase - remainingToConsume;
+
+              if (leftoverBase < 0.01) {
+                // Практически ноль — удаляем запись
+                await tx.delete(inventory).where(eq(inventory.id, invItem.id));
+                deletedIds.add(invItem.id);
+              } else {
+                // Конвертируем остаток обратно в единицу инвентаря
+                const leftoverInOriginal = usedBaseUnit
+                  ? fromBase(leftoverBase, invItem.unit)
+                  : leftoverBase;
+                const rounded = Math.round(leftoverInOriginal * 100) / 100;
+                await tx.update(inventory)
+                  .set({ quantity: String(rounded), updatedAt: new Date() })
+                  .where(eq(inventory.id, invItem.id));
+                adjustedQuantities.set(invItem.id, leftoverBase);
+              }
+
+              remainingToConsume = 0;
+              partiallyConsumed = true;
+            } else {
+              // В инвентаре < нужного → забираем всё, идём к следующему
+              remainingToConsume -= availableBase;
+              await tx.delete(inventory).where(eq(inventory.id, invItem.id));
+              deletedIds.add(invItem.id);
+              partiallyConsumed = true;
+            }
+          }
+
+          if (partiallyConsumed) {
+            consumed++;
+          }
+
+          // Если после всех продуктов ещё осталось — добавляем недостаток в shopping
+          if (remainingToConsume > 0.01) {
+            const shortageInOriginal = usedBaseUnit
+              ? fromBase(remainingToConsume, neededUnit)
+              : remainingToConsume;
+            const rounded = Math.round(shortageInOriginal * 100) / 100;
+            missingItems.push({
+              name: ing.name,
+              quantity: String(rounded),
+              unit: neededUnit,
+            });
           }
         }
 
         // Авто-добавление недостающих ингредиентов в список покупок
-        if (missingIngredients.length > 0) {
+        if (missingItems.length > 0) {
           const { purchaseItems } = await import('../db/schema');
-          for (const name of missingIngredients) {
+          for (const item of missingItems) {
             // Не добавляем если уже есть в покупках (нечувствительно к регистру)
             const existing = await tx
               .select({ id: purchaseItems.id })
@@ -810,7 +993,7 @@ export const recipesRouter = router({
               .where(
                 and(
                   eq(purchaseItems.userId, 1),
-                  ilike(purchaseItems.productName, name),
+                  ilike(purchaseItems.productName, item.name),
                 ),
               )
               .limit(1);
@@ -818,7 +1001,9 @@ export const recipesRouter = router({
             if (existing.length === 0) {
               await tx.insert(purchaseItems).values({
                 userId: 1,
-                productName: name,
+                productName: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
                 recipeSource: recipe.title,
               });
             }
@@ -839,7 +1024,7 @@ export const recipesRouter = router({
           totalIngredients: ingredients.length,
         });
 
-        return { consumed, total: ingredients.length, addedToShopping: missingIngredients.length };
+        return { consumed, total: ingredients.length, addedToShopping: missingItems.length };
       });
     }),
 });
