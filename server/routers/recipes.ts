@@ -1024,7 +1024,47 @@ export const recipesRouter = router({
           totalIngredients: ingredients.length,
         });
 
-        return { consumed, total: ingredients.length, addedToShopping: missingItems.length };
+        // Проверяем minQuantity — если после списания какой-то продукт
+        // упал ниже минимума, авто-добавляем в покупки.
+        // Берём свежий снапшот инвентаря (после всех update/delete выше).
+        const { purchaseItems: purchaseItemsTable } = await import('../db/schema');
+        const updatedInv = await tx
+          .select()
+          .from(inventory)
+          .where(eq(inventory.userId, ctx.userId));
+
+        let autoAdded = 0;
+        for (const item of updatedInv) {
+          if (!item.minQuantity) continue;
+          const qty = item.quantity ? parseFloat(item.quantity) : 0;
+          const minQty = parseFloat(item.minQuantity);
+          if (isNaN(minQty) || minQty <= 0) continue;
+          if (qty >= minQty) continue;
+
+          // Проверяем что этого продукта ещё нет в покупках
+          const alreadyInShopping = await tx
+            .select({ id: purchaseItemsTable.id })
+            .from(purchaseItemsTable)
+            .where(
+              and(
+                eq(purchaseItemsTable.userId, ctx.userId),
+                ilike(purchaseItemsTable.productName, item.productName),
+              ),
+            )
+            .limit(1);
+
+          if (alreadyInShopping.length === 0) {
+            await tx.insert(purchaseItemsTable).values({
+              userId: ctx.userId,
+              productName: item.productName,
+              quantity: String(minQty),
+              unit: item.unit,
+            });
+            autoAdded++;
+          }
+        }
+
+        return { consumed, total: ingredients.length, addedToShopping: missingItems.length + autoAdded };
       });
     }),
 });
