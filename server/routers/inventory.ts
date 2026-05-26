@@ -399,4 +399,140 @@ export const inventoryRouter = router({
 
       return { added };
     }),
+
+  // Умный массовый перенос товаров в инвентарь (из чека или покупок).
+  // Для каждого товара авто-определяет:
+  //   - storageType по ключевым словам в названии (замороженное → freezer, крупа → pantry, и т.д.)
+  //   - expiryDate через справочник shelf_life
+  // Пользователь может переопределить любое значение на фронте перед отправкой.
+  addBulkSmart: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            productName: z.string().min(1).max(200),
+            quantity: z.number().positive().nullable().optional(),
+            unit: z.string().max(50).nullable().optional(),
+            // Если передан — используем как есть. Если null/undefined — авто-определяем.
+            storageType: z.enum(['fridge', 'freezer', 'pantry']).nullable().optional(),
+            expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+            category: z.string().max(100).nullable().optional(),
+            price: z.number().nullable().optional(),
+          }),
+        ).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Ключевые слова для авто-определения storageType
+      const FREEZER_KEYWORDS = [
+        'замороженн', 'заморож', 'мороженое', 'пельмен', 'вареник',
+        'наггетс', 'фри', 'ice cream', 'frozen', 'bevroren',
+      ];
+      const PANTRY_KEYWORDS = [
+        'крупа', 'рис', 'гречк', 'макарон', 'спагетти', 'лапша', 'мука',
+        'сахар', 'соль', 'масло подсолн', 'масло растит', 'оливков',
+        'консерв', 'горох', 'фасоль', 'чечевиц', 'нут',
+        'чай', 'кофе', 'какао', 'специ', 'перец молот', 'корица',
+        'уксус', 'соус', 'кетчуп', 'майонез', 'горчиц',
+        'печенье', 'крекер', 'сухар', 'хлебц', 'вафл',
+        'варенье', 'джем', 'мёд', 'мед', 'сироп',
+        'pasta', 'rijst', 'suiker', 'zout', 'olie', 'azijn',
+        'thee', 'koffie', 'saus', 'mosterd', 'peper',
+      ];
+
+      function guessStorageType(name: string): 'fridge' | 'freezer' | 'pantry' {
+        const lower = name.toLowerCase();
+        for (const kw of FREEZER_KEYWORDS) {
+          if (lower.includes(kw)) return 'freezer';
+        }
+        for (const kw of PANTRY_KEYWORDS) {
+          if (lower.includes(kw)) return 'pantry';
+        }
+        return 'fridge'; // по умолчанию — холодильник
+      }
+
+      const translatedNames = await Promise.all(
+        input.items.map((item) => ensureRussianName(item.productName)),
+      );
+
+      const created: { id: number; productName: string; storageType: string; expiryDate: string | null }[] = [];
+
+      for (let i = 0; i < input.items.length; i++) {
+        const item = input.items[i];
+        const productName = translatedNames[i];
+
+        // Определяем storageType
+        const storageType = item.storageType ?? guessStorageType(productName);
+
+        // Определяем expiryDate
+        let expiryDate = item.expiryDate ?? null;
+        if (!expiryDate) {
+          // Ищем в справочнике shelf_life
+          const nameLower = productName.toLowerCase().trim();
+          if (nameLower.length > 0) {
+            const shelfMatches = await db
+              .select({
+                keyword: shelfLife.keyword,
+                days: shelfLife.days,
+                priority: shelfLife.priority,
+              })
+              .from(shelfLife)
+              .where(
+                and(
+                  eq(shelfLife.storageType, storageType),
+                  rawSql`${nameLower} LIKE '%' || LOWER(${shelfLife.keyword}) || '%'`
+                )
+              );
+
+            if (shelfMatches.length > 0) {
+              shelfMatches.sort((a, b) => {
+                if (b.keyword.length !== a.keyword.length) return b.keyword.length - a.keyword.length;
+                return b.priority - a.priority;
+              });
+              const best = shelfMatches[0];
+              const expiry = new Date();
+              expiry.setDate(expiry.getDate() + best.days);
+              expiryDate = expiry.toISOString().slice(0, 10);
+            }
+          }
+        }
+
+        // Добавляем в инвентарь
+        const [row] = await db
+          .insert(inventory)
+          .values({
+            userId: ctx.userId,
+            productName,
+            quantity: item.quantity != null ? String(item.quantity) : null,
+            unit: item.unit ?? null,
+            storageType,
+            expiryDate,
+            category: item.category ?? null,
+          })
+          .returning({ id: inventory.id, productName: inventory.productName });
+
+        created.push({ ...row, storageType, expiryDate });
+
+        // Обновляем каталог products (с ценой)
+        if (item.price != null) {
+          await db
+            .insert(products)
+            .values({
+              nameRu: productName,
+              lastPrice: String(item.price),
+              priceUpdatedAt: new Date(),
+            })
+            .onConflictDoUpdate({
+              target: products.nameRu,
+              set: {
+                lastPrice: String(item.price),
+                priceUpdatedAt: new Date(),
+              },
+            })
+            .catch(() => {});
+        }
+      }
+
+      return { added: created.length, items: created };
+    }),
 });
