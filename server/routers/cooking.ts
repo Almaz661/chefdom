@@ -40,7 +40,7 @@ export const cookingRouter = router({
         notes: z.string().max(1000).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [recipe] = await db
         .select({
           id: recipes.id,
@@ -61,7 +61,7 @@ export const cookingRouter = router({
       const [created] = await db
         .insert(cookingHistory)
         .values({
-          userId: 1,
+          userId: ctx.userId,
           recipeId: recipe.id,
           recipeTitle: recipe.title,
           servings: input.servings ?? recipe.servings ?? 1,
@@ -89,18 +89,18 @@ export const cookingRouter = router({
         period: PeriodSchema.optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const limit = input.limit ?? PAGE_SIZE;
       const period = input.period ?? 'all';
       const fromDate = periodStart(period);
 
       // Условия для основного запроса (с курсором)
-      const conds = [eq(cookingHistory.userId, 1)];
+      const conds = [eq(cookingHistory.userId, ctx.userId)];
       if (fromDate) conds.push(gte(cookingHistory.cookedAt, fromDate));
       if (input.cursor) conds.push(lt(cookingHistory.id, input.cursor));
 
       // Условия для total (без курсора — чтобы счётчик показывал всего за период)
-      const totalConds = [eq(cookingHistory.userId, 1)];
+      const totalConds = [eq(cookingHistory.userId, ctx.userId)];
       if (fromDate) totalConds.push(gte(cookingHistory.cookedAt, fromDate));
 
       const [rows, totalRows] = await Promise.all([
@@ -145,7 +145,7 @@ export const cookingRouter = router({
   // --- Последние N (для блока «Недавно готовила» на Dashboard, раздел 6.4 плана).
   recent: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const rows = await db
         .select({
           id: cookingHistory.id,
@@ -156,14 +156,14 @@ export const cookingRouter = router({
         })
         .from(cookingHistory)
         .leftJoin(recipes, eq(cookingHistory.recipeId, recipes.id))
-        .where(eq(cookingHistory.userId, 1))
+        .where(eq(cookingHistory.userId, ctx.userId))
         .orderBy(desc(cookingHistory.cookedAt))
         .limit(input.limit);
       return rows;
     }),
 
   // C.2 — «Любимое в этом месяце» (самый часто готовимый рецепт за текущий месяц).
-  topThisMonth: protectedProcedure.query(async () => {
+  topThisMonth: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const rows = await db
@@ -175,7 +175,7 @@ export const cookingRouter = router({
       .from(cookingHistory)
       .where(
         and(
-          eq(cookingHistory.userId, 1),
+          eq(cookingHistory.userId, ctx.userId),
           gte(cookingHistory.cookedAt, new Date(monthStart)),
         ),
       )

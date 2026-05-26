@@ -45,22 +45,22 @@ function normalizeName(name: string): string {
 }
 
 export const shoppingRouter = router({
-  // Весь список покупок (userId=1). Чистый GET без побочных эффектов.
-  list: protectedProcedure.query(async () => {
+  // Весь список покупок. Чистый GET без побочных эффектов.
+  list: protectedProcedure.query(async ({ ctx }) => {
     const items = await db
       .select()
       .from(purchaseItems)
-      .where(eq(purchaseItems.userId, 1))
+      .where(eq(purchaseItems.userId, ctx.userId))
       .orderBy(purchaseItems.addedAt);
     return items;
   }),
 
   // Удаление дублей — вызывается явно (кнопка в Настройках или при необходимости)
-  deduplicate: protectedProcedure.mutation(async () => {
+  deduplicate: protectedProcedure.mutation(async ({ ctx }) => {
     const items = await db
       .select()
       .from(purchaseItems)
-      .where(eq(purchaseItems.userId, 1))
+      .where(eq(purchaseItems.userId, ctx.userId))
       .orderBy(purchaseItems.addedAt);
 
     const seen = new Map<string, number>();
@@ -91,11 +91,11 @@ export const shoppingRouter = router({
         category: z.string().max(100).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [created] = await db
         .insert(purchaseItems)
         .values({
-          userId: 1,
+          userId: ctx.userId,
           productName: input.productName,
           quantity: input.quantity != null ? String(input.quantity) : null,
           unit: input.unit ?? null,
@@ -151,7 +151,7 @@ export const shoppingRouter = router({
         storageType: z.enum(['fridge', 'freezer', 'pantry']).default('fridge'),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       return await db.transaction(async (tx) => {
         const [item] = await tx
           .select()
@@ -169,7 +169,7 @@ export const shoppingRouter = router({
           .where(eq(purchaseItems.id, input.id));
 
         await tx.insert(inventory).values({
-          userId: 1,
+          userId: ctx.userId,
           productName: item.productName,
           quantity: item.quantity,
           unit: item.unit,
@@ -182,10 +182,10 @@ export const shoppingRouter = router({
     }),
 
   // Очистить отмеченные (купленные)
-  clearChecked: protectedProcedure.mutation(async () => {
+  clearChecked: protectedProcedure.mutation(async ({ ctx }) => {
     const deleted = await db
       .delete(purchaseItems)
-      .where(and(eq(purchaseItems.userId, 1), eq(purchaseItems.isChecked, 1)))
+      .where(and(eq(purchaseItems.userId, ctx.userId), eq(purchaseItems.isChecked, 1)))
       .returning({ id: purchaseItems.id });
     return { count: deleted.length };
   }),

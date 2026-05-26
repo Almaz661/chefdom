@@ -34,7 +34,7 @@ export const analyticsRouter = router({
       // Формат: "2026-01" (год-месяц) или "2026" (весь год)
       period: z.string().regex(/^\d{4}(-\d{2})?$/),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
 
       // Определяем границы периода
       let dateFrom: string;
@@ -68,7 +68,7 @@ export const analyticsRouter = router({
         .from(receipts)
         .where(
           and(
-            eq(receipts.userId, 1),
+            eq(receipts.userId, ctx.userId),
             gte(receipts.purchaseDate, dateFrom),
             lte(receipts.purchaseDate, dateTo),
           ),
@@ -180,7 +180,7 @@ export const analyticsRouter = router({
   // Топ-5 рецептов за период
   topRecipes: protectedProcedure
     .input(z.object({ period: PeriodSchema.optional() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const from = periodStart(input.period ?? 'month');
       const rows = await db
         .select({
@@ -191,7 +191,7 @@ export const analyticsRouter = router({
         .from(cookingHistory)
         .where(
           and(
-            eq(cookingHistory.userId, 1),
+            eq(cookingHistory.userId, ctx.userId),
             gte(cookingHistory.cookedAt, from),
           ),
         )
@@ -205,7 +205,7 @@ export const analyticsRouter = router({
   // Группировка по имени ингредиента + единице измерения.
   productConsumption: protectedProcedure
     .input(z.object({ period: PeriodSchema.optional() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const from = periodStart(input.period ?? 'month');
 
       // Получаем все записи готовки за период
@@ -217,7 +217,7 @@ export const analyticsRouter = router({
         .from(cookingHistory)
         .where(
           and(
-            eq(cookingHistory.userId, 1),
+            eq(cookingHistory.userId, ctx.userId),
             gte(cookingHistory.cookedAt, from),
           ),
         );

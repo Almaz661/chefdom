@@ -11,18 +11,18 @@ export const menuRouter = router({
   // Получить меню недели. Если нет — создать пустое.
   getWeek: protectedProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
-    .query(async ({ input }) => {
-      // Найти или создать меню на эту неделю (userId=1 — одна семья)
+    .query(async ({ input, ctx }) => {
+      // Найти или создать меню на эту неделю
       let [menu] = await db
         .select()
         .from(menus)
-        .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, input.weekStart)))
+        .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
         .limit(1);
 
       if (!menu) {
         [menu] = await db
           .insert(menus)
-          .values({ userId: 1, weekStartDate: input.weekStart })
+          .values({ userId: ctx.userId, weekStartDate: input.weekStart })
           .returning();
       }
 
@@ -54,18 +54,18 @@ export const menuRouter = router({
         recipeId: z.number().int().positive(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // Найти или создать меню
       let [menu] = await db
         .select()
         .from(menus)
-        .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, input.weekStart)))
+        .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
         .limit(1);
 
       if (!menu) {
         [menu] = await db
           .insert(menus)
-          .values({ userId: 1, weekStartDate: input.weekStart })
+          .values({ userId: ctx.userId, weekStartDate: input.weekStart })
           .returning();
       }
 
@@ -110,7 +110,7 @@ export const menuRouter = router({
     }),
 
   // Блюдо дня: рецепт из меню на сегодня по времени суток
-  getTodayMeal: protectedProcedure.query(async () => {
+  getTodayMeal: protectedProcedure.query(async ({ ctx }) => {
     // Определяем день недели (0=Пн...6=Вс)
     const todayIdx = (new Date().getDay() + 6) % 7;
     // Определяем приём пищи по времени
@@ -130,7 +130,7 @@ export const menuRouter = router({
     const [menu] = await db
       .select()
       .from(menus)
-      .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, weekStartDate)))
+      .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, weekStartDate)))
       .limit(1);
     if (!menu) return null;
 
@@ -162,12 +162,12 @@ export const menuRouter = router({
   // Собрать ингредиенты из меню недели → добавить в список покупок (без дублей)
   toShopping: protectedProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // Найти меню
       const [menu] = await db
         .select()
         .from(menus)
-        .where(and(eq(menus.userId, 1), eq(menus.weekStartDate, input.weekStart)))
+        .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
         .limit(1);
 
       if (!menu) {
@@ -307,7 +307,7 @@ export const menuRouter = router({
       const existing = await db
         .select({ id: purchaseItems.id, productName: purchaseItems.productName, unit: purchaseItems.unit })
         .from(purchaseItems)
-        .where(eq(purchaseItems.userId, 1));
+        .where(eq(purchaseItems.userId, ctx.userId));
 
       // Группируем по нормализованному ключу, запоминаем ID дублей
       const existingByKey = new Map<string, number[]>();
@@ -340,7 +340,7 @@ export const menuRouter = router({
           if (existingKeys.has(key)) continue;
 
           await tx.insert(purchaseItems).values({
-            userId: 1,
+            userId: ctx.userId,
             productName: extractProductName(agg.name),
             quantity: agg.amount !== null ? String(agg.amount) : null,
             unit: agg.unit,

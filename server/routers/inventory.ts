@@ -24,12 +24,12 @@ async function ensureRussianName(name: string): Promise<string> {
 }
 
 export const inventoryRouter = router({
-  // Весь инвентарь (userId=1)
-  list: protectedProcedure.query(async () => {
+  // Весь инвентарь
+  list: protectedProcedure.query(async ({ ctx }) => {
     const items = await db
       .select()
       .from(inventory)
-      .where(eq(inventory.userId, 1))
+      .where(eq(inventory.userId, ctx.userId))
       .orderBy(inventory.productName);
     return items;
   }),
@@ -37,7 +37,7 @@ export const inventoryRouter = router({
   // B.1 — продукты истекающие в ближайшие N дней (по умолчанию 3)
   getExpiring: protectedProcedure
     .input(z.object({ days: z.number().int().min(1).max(30).default(3) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const limitDate = new Date();
       limitDate.setDate(limitDate.getDate() + input.days);
       const limitStr = limitDate.toISOString().slice(0, 10);
@@ -46,7 +46,7 @@ export const inventoryRouter = router({
         .from(inventory)
         .where(
           and(
-            eq(inventory.userId, 1),
+            eq(inventory.userId, ctx.userId),
             isNotNull(inventory.expiryDate),
             lte(inventory.expiryDate, limitStr),
           )
@@ -59,7 +59,7 @@ export const inventoryRouter = router({
   // Не учитываем те у которых явно указан срок годности — для них работает B.1.
   getStale: protectedProcedure
     .input(z.object({ days: z.number().int().min(1).max(365).default(30) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - input.days);
       const items = await db
@@ -67,7 +67,7 @@ export const inventoryRouter = router({
         .from(inventory)
         .where(
           and(
-            eq(inventory.userId, 1),
+            eq(inventory.userId, ctx.userId),
             lte(inventory.addedAt, cutoffDate),
           )
         )
@@ -87,12 +87,12 @@ export const inventoryRouter = router({
         category: z.string().max(100).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const productName = await ensureRussianName(input.productName);
       const [created] = await db
         .insert(inventory)
         .values({
-          userId: 1,
+          userId: ctx.userId,
           productName,
           quantity: input.quantity != null ? String(input.quantity) : null,
           unit: input.unit ?? null,
@@ -159,7 +159,7 @@ export const inventoryRouter = router({
         ).min(1).max(100),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // Параллельно переводим все названия с латиницей (одна сетевая поездка
       // на каждое имя, но мутации идут редко — оптимизировать не нужно).
       const translatedNames = await Promise.all(
@@ -175,7 +175,7 @@ export const inventoryRouter = router({
         const [row] = await db
           .insert(inventory)
           .values({
-            userId: 1,
+            userId: ctx.userId,
             productName,
             quantity: item.quantity != null ? String(item.quantity) : null,
             unit: item.unit ?? null,
@@ -226,14 +226,14 @@ export const inventoryRouter = router({
   // Пересчитать сроки — проставить expiryDate всем продуктам где сейчас пусто.
   // Ищет по справочнику shelf_life для каждого продукта по storageType+name.
   recalcExpiry: protectedProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       // Берём все продукты без срока годности
       const itemsWithoutExpiry = await db
         .select()
         .from(inventory)
         .where(
           and(
-            eq(inventory.userId, 1),
+            eq(inventory.userId, ctx.userId),
           )
         );
 

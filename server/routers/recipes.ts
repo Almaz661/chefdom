@@ -486,7 +486,7 @@ export const recipesRouter = router({
         expiringDays: z.number().int().min(1).max(30).default(3),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { inventory } = await import('../db/schema');
       const { isNotNull, lte } = await import('drizzle-orm');
 
@@ -521,14 +521,14 @@ export const recipesRouter = router({
       const inv = await db
         .select({ name: inventory.productName })
         .from(inventory)
-        .where(eq(inventory.userId, 1));
+        .where(eq(inventory.userId, ctx.userId));
 
       // Заготовки тоже считаются доступными ингредиентами
       const { preserves } = await import('../db/schema');
       const preserveRows = await db
         .select({ name: preserves.name })
         .from(preserves)
-        .where(eq(preserves.userId, 1));
+        .where(eq(preserves.userId, ctx.userId));
 
       // Объединяем инвентарь + заготовки
       const allAvailable = [...inv, ...preserveRows];
@@ -542,7 +542,7 @@ export const recipesRouter = router({
         .from(inventory)
         .where(
           and(
-            eq(inventory.userId, 1),
+            eq(inventory.userId, ctx.userId),
             isNotNull(inventory.expiryDate),
             lte(inventory.expiryDate, limitStr),
           ),
@@ -688,7 +688,7 @@ export const recipesRouter = router({
   // Всё в одной транзакции.
   cook: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { inventory, cookingHistory } = await import('../db/schema');
       const { asc } = await import('drizzle-orm');
 
@@ -790,7 +790,7 @@ export const recipesRouter = router({
         const allInv = await tx
           .select()
           .from(inventory)
-          .where(eq(inventory.userId, 1))
+          .where(eq(inventory.userId, ctx.userId))
           .orderBy(asc(inventory.expiryDate));
 
         // Нечёткий матчинг: извлекаем варианты имени + стемминг
@@ -992,7 +992,7 @@ export const recipesRouter = router({
               .from(purchaseItems)
               .where(
                 and(
-                  eq(purchaseItems.userId, 1),
+                  eq(purchaseItems.userId, ctx.userId),
                   ilike(purchaseItems.productName, item.name),
                 ),
               )
@@ -1000,7 +1000,7 @@ export const recipesRouter = router({
 
             if (existing.length === 0) {
               await tx.insert(purchaseItems).values({
-                userId: 1,
+                userId: ctx.userId,
                 productName: item.name,
                 quantity: item.quantity,
                 unit: item.unit,
@@ -1013,7 +1013,7 @@ export const recipesRouter = router({
         // Записываем факт готовки в историю — снапшотом, чтобы не зависеть
         // от рецепта (он может быть позже отредактирован/удалён).
         await tx.insert(cookingHistory).values({
-          userId: 1,
+          userId: ctx.userId,
           recipeId: recipe.id,
           recipeTitle: recipe.title,
           servings: recipe.servings ?? 1,
