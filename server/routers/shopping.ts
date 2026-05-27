@@ -156,7 +156,7 @@ export const shoppingRouter = router({
         const [item] = await tx
           .select()
           .from(purchaseItems)
-          .where(eq(purchaseItems.id, input.id))
+          .where(and(eq(purchaseItems.id, input.id), eq(purchaseItems.userId, ctx.userId)))
           .limit(1);
 
         if (!item) {
