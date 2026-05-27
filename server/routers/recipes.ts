@@ -1024,6 +1024,25 @@ export const recipesRouter = router({
           totalIngredients: ingredients.length,
         });
 
+        // Создаём запись в preserves типа 'cooked' — готовое блюдо с порциями.
+        // Это позволяет отслеживать сколько порций осталось после приготовления.
+        const { preserves } = await import('../db/schema');
+        const today = new Date().toISOString().slice(0, 10);
+        // Срок хранения готового блюда в холодильнике — 3 дня
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 3);
+        const expiryStr = expiryDate.toISOString().slice(0, 10);
+
+        await tx.insert(preserves).values({
+          userId: ctx.userId,
+          preserveType: 'cooked',
+          name: recipe.title,
+          servings: recipe.servings ?? 1,
+          preparedAt: today,
+          expiryDate: expiryStr,
+          notes: `Приготовлено из рецепта`,
+        });
+
         // Проверяем minQuantity — если после списания какой-то продукт
         // упал ниже минимума, авто-добавляем в покупки.
         // Берём свежий снапшот инвентаря (после всех update/delete выше).
