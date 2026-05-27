@@ -130,13 +130,7 @@ export function ShoppingPage() {
                         className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
                       >
                         <button
-                          onClick={() => {
-                            if (item.isChecked === 1) {
-                              toggle.mutate({ id: item.id });
-                            } else {
-                              setStorePick(item.id);
-                            }
-                          }}
+                          onClick={() => toggle.mutate({ id: item.id })}
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                             item.isChecked === 1
                               ? "bg-primary border-primary"
