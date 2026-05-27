@@ -101,6 +101,17 @@ export function MenuPage() {
     },
   });
 
+  const addFromPreserve = trpc.menu.addFromPreserve.useMutation({
+    onSuccess: () => {
+      utils.menu.getWeek.invalidate({ weekStart });
+      utils.preserves.list.invalidate();
+      setPickSlot(null);
+    },
+    onError: (err) => {
+      alert(err.message);
+    },
+  });
+
   const toShopping = trpc.menu.toShopping.useMutation({
     onSuccess: (result) => {
       alert(`Добавлено ${result.added} продуктов в список покупок`);
@@ -320,8 +331,16 @@ export function MenuPage() {
               recipeId,
             });
           }}
+          onSelectPreserve={(preserveId) => {
+            addFromPreserve.mutate({
+              weekStart,
+              dayOfWeek: pickSlot.dayOfWeek,
+              mealType: pickSlot.mealType,
+              preserveId,
+            });
+          }}
           onClose={() => setPickSlot(null)}
-          loading={addItem.isPending}
+          loading={addItem.isPending || addFromPreserve.isPending}
         />
       )}
     </div>
@@ -387,10 +406,12 @@ function MenuSlotCard({
 
 function RecipePickerDialog({
   onSelect,
+  onSelectPreserve,
   onClose,
   loading,
 }: {
   onSelect: (recipeId: number) => void;
+  onSelectPreserve: (preserveId: number) => void;
   onClose: () => void;
   loading: boolean;
 }) {
@@ -404,6 +425,12 @@ function RecipePickerDialog({
   const { data: suggestions, isLoading: suggestionsLoading } = trpc.menu.getSuggestions.useQuery(
     { limit: 6 },
     { enabled: showSuggestions && !search.trim() }
+  );
+
+  // Готовые блюда из заготовок (cooked + frozen с порциями)
+  const { data: preservesList = [] } = trpc.preserves.list.useQuery();
+  const readyMeals = preservesList.filter(
+    p => (p.preserveType === 'cooked' || p.preserveType === 'frozen') && p.servings && p.servings > 0
   );
 
   const recipes = data?.items ?? [];
@@ -463,6 +490,38 @@ function RecipePickerDialog({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
+          {/* Готовые блюда — показываем когда нет поиска и есть готовые */}
+          {!search.trim() && readyMeals.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+                Готовые блюда (без готовки)
+              </h4>
+              <ul className="space-y-1">
+                {readyMeals.slice(0, 5).map((p) => (
+                  <li key={p.id}>
+                    <button
+                      onClick={() => onSelectPreserve(p.id)}
+                      disabled={loading}
+                      className="w-full flex items-center gap-3 p-2 rounded-lg bg-cream/50 hover:bg-cream transition-colors text-left disabled:opacity-50 border border-line/50"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-cream border border-line shrink-0 flex items-center justify-center text-lg">
+                        {p.preserveType === 'cooked' ? '👨‍🍳' : '❄️'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-xs text-primary">
+                          {p.servings} {p.servings === 1 ? 'порция' : p.servings! < 5 ? 'порции' : 'порций'} · разогреть
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Умные подсказки — показываем когда нет поиска */}
           {!search.trim() && showSuggestions && (
             <div className="mb-4">

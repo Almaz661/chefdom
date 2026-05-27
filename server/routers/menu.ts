@@ -109,6 +109,83 @@ export const menuRouter = router({
       return { id: input.itemId };
     }),
 
+  // Добавить готовое блюдо из заготовок в меню (без повторной готовки).
+  // Ищет рецепт по названию заготовки, добавляет в слот меню,
+  // и списывает 1 порцию из preserves.
+  addFromPreserve: protectedProcedure
+    .input(
+      z.object({
+        weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        dayOfWeek: z.number().int().min(0).max(6),
+        mealType: z.enum(mealTypes),
+        preserveId: z.number().int().positive(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      // 1. Найти заготовку
+      const [preserve] = await db
+        .select()
+        .from(preserves)
+        .where(and(eq(preserves.id, input.preserveId), eq(preserves.userId, ctx.userId)))
+        .limit(1);
+
+      if (!preserve) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });
+      }
+
+      // 2. Найти рецепт по названию (нечёткий поиск)
+      const [recipe] = await db
+        .select({ id: recipes.id })
+        .from(recipes)
+        .where(eq(recipes.title, preserve.name))
+        .limit(1);
+
+      if (!recipe) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Рецепт «${preserve.name}» не найден. Можно добавить только блюда для которых есть рецепт.`,
+        });
+      }
+
+      // 3. Найти или создать меню
+      let [menu] = await db
+        .select()
+        .from(menus)
+        .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
+        .limit(1);
+
+      if (!menu) {
+        [menu] = await db
+          .insert(menus)
+          .values({ userId: ctx.userId, weekStartDate: input.weekStart })
+          .returning();
+      }
+
+      // 4. Добавить в слот меню
+      const [created] = await db
+        .insert(menuItems)
+        .values({
+          menuId: menu.id,
+          dayOfWeek: input.dayOfWeek,
+          mealType: input.mealType,
+          recipeId: recipe.id,
+        })
+        .returning({ id: menuItems.id });
+
+      // 5. Списать 1 порцию из заготовки
+      const currentServings = preserve.servings ?? 1;
+      if (currentServings <= 1) {
+        await db.delete(preserves).where(eq(preserves.id, input.preserveId));
+      } else {
+        await db
+          .update(preserves)
+          .set({ servings: currentServings - 1, updatedAt: new Date() })
+          .where(eq(preserves.id, input.preserveId));
+      }
+
+      return { id: created.id, preserveConsumed: true };
+    }),
+
   // Блюдо дня: рецепт из меню на сегодня по времени суток
   getTodayMeal: protectedProcedure.query(async ({ ctx }) => {
     // Определяем день недели (0=Пн...6=Вс)
