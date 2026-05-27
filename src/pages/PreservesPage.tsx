@@ -8,19 +8,19 @@ import {
   AlertTriangle,
   Loader2,
   Sparkles,
+  ChefHat,
+  Minus,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
-// Этап D — заготовки. Три типа в одной таблице, переключение табами.
+// Этап D — заготовки. Четыре типа в одной таблице, переключение табами.
 //
 //  ❄️ Заморозка   — котлеты, фарш, ягоды; есть поле «порции»
 //  🫙 Консервация — варенье, соленья, маринады; дата заготовки + срок
 //  🥒 Открытые    — открытые банки/пачки; дата открытия + годен до
-//
-// Существующая «Морозилка» в Инвентаре не трогается — это разные сценарии
-// (инвентарь = что есть прямо сейчас, заготовки = подготовленное впрок).
+//  👨‍🍳 Готовые     — приготовленные блюда; порции, срок хранения
 
-type PreserveType = "frozen" | "preserved" | "opened";
+type PreserveType = "frozen" | "preserved" | "opened" | "cooked";
 
 const TABS: {
   key: PreserveType;
@@ -28,6 +28,7 @@ const TABS: {
   shortLabel: string;
   icon: typeof Snowflake;
 }[] = [
+  { key: "cooked", label: "Готовые блюда", shortLabel: "Готовые", icon: ChefHat },
   { key: "frozen", label: "Заморозка", shortLabel: "Заморозка", icon: Snowflake },
   { key: "preserved", label: "Консервация", shortLabel: "Консервация", icon: Archive },
   { key: "opened", label: "Открытые продукты", shortLabel: "Открытые", icon: PackageOpen },
@@ -69,17 +70,22 @@ function preparedText(preparedAt: string | null, type: PreserveType): string {
   });
   if (type === "frozen") return `заморозили ${formatted}`;
   if (type === "preserved") return `заготовлено ${formatted}`;
+  if (type === "cooked") return `приготовлено ${formatted}`;
   return `открыто ${formatted}`;
 }
 
 export function PreservesPage() {
-  const [tab, setTab] = useState<PreserveType>("frozen");
+  const [tab, setTab] = useState<PreserveType>("cooked");
   const [showAdd, setShowAdd] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: allItems = [], isLoading } = trpc.preserves.list.useQuery();
 
   const remove = trpc.preserves.remove.useMutation({
+    onSuccess: () => utils.preserves.list.invalidate(),
+  });
+
+  const consumeServings = trpc.preserves.consumeServings.useMutation({
     onSuccess: () => utils.preserves.list.invalidate(),
   });
 
@@ -177,6 +183,11 @@ export function PreservesPage() {
                               · {item.servings} порц.
                             </span>
                           )}
+                          {tab === "cooked" && item.servings && (
+                            <span className="text-ink-muted ml-1">
+                              · {item.servings} порц.
+                            </span>
+                          )}
                         </p>
                         <p
                           className={`text-xs ${
@@ -186,6 +197,17 @@ export function PreservesPage() {
                           {expiryText(item.expiryDate)}
                         </p>
                       </div>
+                      {(tab === "cooked" || tab === "frozen") && item.servings && item.servings > 0 && (
+                        <button
+                          onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
+                          disabled={consumeServings.isPending}
+                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-primary transition-colors shrink-0 border border-line rounded-lg"
+                          aria-label="Съели порцию"
+                          title="Съели 1 порцию"
+                        >
+                          <Minus size={14} />
+                        </button>
+                      )}
                       <button
                         onClick={() => remove.mutate({ id: item.id })}
                         className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
@@ -209,6 +231,8 @@ export function PreservesPage() {
                 strokeWidth={1.5}
               />
               <p className="text-ink-soft text-sm">
+                {tab === "cooked" &&
+                  "Пусто. После готовки блюда автоматически появятся здесь."}
                 {tab === "frozen" &&
                   "Пусто. Добавь котлеты, фарш или ягоды кнопкой [+]."}
                 {tab === "preserved" &&
@@ -233,7 +257,7 @@ export function PreservesPage() {
                           {item.unit ? ` ${item.unit}` : ""}
                         </span>
                       )}
-                      {tab === "frozen" && item.servings && (
+                      {(tab === "frozen" || tab === "cooked") && item.servings && (
                         <span className="text-ink-muted ml-1">
                           · {item.servings} порц.
                         </span>
@@ -246,6 +270,17 @@ export function PreservesPage() {
                       {item.expiryDate && <span>{expiryText(item.expiryDate)}</span>}
                     </div>
                   </div>
+                  {(tab === "cooked" || tab === "frozen") && item.servings && item.servings > 0 && (
+                    <button
+                      onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
+                      disabled={consumeServings.isPending}
+                      className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-primary transition-colors shrink-0 border border-line rounded-lg"
+                      aria-label="Съели порцию"
+                      title="Съели 1 порцию"
+                    >
+                      <Minus size={14} />
+                    </button>
+                  )}
                   <button
                     onClick={() => remove.mutate({ id: item.id })}
                     className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
@@ -355,7 +390,7 @@ function AddPreserveDialog({
       quantity: quantity ? Number(quantity) : null,
       unit: unit.trim() || null,
       servings:
-        preserveType === "frozen" && servings ? Number(servings) : null,
+        (preserveType === "frozen" || preserveType === "cooked") && servings ? Number(servings) : null,
       preparedAt: preparedAt || null,
       expiryDate: expiryDate || null,
     });
@@ -366,23 +401,29 @@ function AddPreserveDialog({
 
   // Подсказки в плейсхолдерах подстраиваются под тип
   const namePlaceholder =
-    preserveType === "frozen"
-      ? "Например: Котлеты говяжьи"
-      : preserveType === "preserved"
-        ? "Например: Варенье малиновое"
-        : "Например: Майонез открытый";
+    preserveType === "cooked"
+      ? "Например: Борщ"
+      : preserveType === "frozen"
+        ? "Например: Котлеты говяжьи"
+        : preserveType === "preserved"
+          ? "Например: Варенье малиновое"
+          : "Например: Майонез открытый";
 
   const preparedLabel =
-    preserveType === "frozen"
-      ? "Дата заморозки"
-      : preserveType === "preserved"
-        ? "Дата заготовки"
-        : "Дата открытия";
+    preserveType === "cooked"
+      ? "Дата приготовления"
+      : preserveType === "frozen"
+        ? "Дата заморозки"
+        : preserveType === "preserved"
+          ? "Дата заготовки"
+          : "Дата открытия";
 
   const expiryLabel =
-    preserveType === "frozen"
-      ? "Хранить до (необязательно)"
-      : "Годен до (необязательно)";
+    preserveType === "cooked"
+      ? "Годен до (обычно 3 дня)"
+      : preserveType === "frozen"
+        ? "Хранить до (необязательно)"
+        : "Годен до (необязательно)";
 
   return (
     <div
@@ -425,7 +466,7 @@ function AddPreserveDialog({
               className="w-28 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </div>
-          {preserveType === "frozen" && (
+          {(preserveType === "frozen" || preserveType === "cooked") && (
             <input
               type="number"
               value={servings}

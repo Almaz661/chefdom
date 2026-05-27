@@ -9,7 +9,7 @@ import { preserves, freezerShelfLife } from '../db/schema';
 // list/listByType работают как у inventory: один SELECT, фильтр на клиенте
 // или явная фильтрация по preserve_type.
 
-const preserveTypes = ['frozen', 'preserved', 'opened'] as const;
+const preserveTypes = ['frozen', 'preserved', 'opened', 'cooked'] as const;
 
 // Опциональные поля дат — пустая строка приравнивается к null,
 // чтобы фронт мог слать "" из необязательного <input type="date">.
@@ -42,6 +42,7 @@ export const preservesRouter = router({
         preparedAt: dateField,
         expiryDate: dateField,
         notes: z.string().max(2000).nullable().optional(),
+        recipeId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -53,8 +54,8 @@ export const preservesRouter = router({
           name: input.name,
           quantity: input.quantity != null ? String(input.quantity) : null,
           unit: input.unit ?? null,
-          // servings храним только для frozen, для других — null
-          servings: input.preserveType === 'frozen' ? input.servings ?? null : null,
+          // servings храним для frozen и cooked
+          servings: ['frozen', 'cooked'].includes(input.preserveType) ? input.servings ?? null : null,
           preparedAt: input.preparedAt ?? null,
           expiryDate: input.expiryDate ?? null,
           notes: input.notes ?? null,
@@ -114,6 +115,46 @@ export const preservesRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });
       }
       return { id: input.id };
+    }),
+
+  // Списать порции готового блюда (cooked/frozen).
+  // Уменьшает servings на указанное количество. Если осталось 0 — удаляет запись.
+  consumeServings: protectedProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        count: z.number().int().min(1).default(1),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const [item] = await db
+        .select()
+        .from(preserves)
+        .where(and(eq(preserves.id, input.id), eq(preserves.userId, ctx.userId)))
+        .limit(1);
+
+      if (!item) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Заготовка не найдена' });
+      }
+
+      const currentServings = item.servings ?? 1;
+      const newServings = currentServings - input.count;
+
+      if (newServings <= 0) {
+        // Удаляем запись
+        await db
+          .delete(preserves)
+          .where(eq(preserves.id, input.id));
+        return { id: input.id, remaining: 0, deleted: true };
+      }
+
+      // Уменьшаем порции
+      await db
+        .update(preserves)
+        .set({ servings: newServings, updatedAt: new Date() })
+        .where(eq(preserves.id, input.id));
+
+      return { id: input.id, remaining: newServings, deleted: false };
     }),
 
   // Этап D — авто-подсказка срока хранения для типа frozen.
