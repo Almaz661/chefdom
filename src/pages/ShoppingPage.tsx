@@ -2,9 +2,44 @@ import { useState, FormEvent } from "react";
 import { ShoppingCart, Plus, Trash2, Loader2, Refrigerator, Snowflake, Package, PackagePlus } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
+// Ключевые слова для авто-определения storageType (дублирует логику бэкенда для превью)
+const FREEZER_KEYWORDS = [
+  'замороженн', 'заморож', 'мороженое', 'пельмен', 'вареник',
+  'наггетс', 'фри', 'ice cream', 'frozen',
+];
+const PANTRY_KEYWORDS = [
+  'крупа', 'рис', 'гречк', 'макарон', 'спагетти', 'лапша', 'мука',
+  'сахар', 'соль', 'масло подсолн', 'масло растит', 'оливков',
+  'консерв', 'горох', 'фасоль', 'чечевиц', 'нут',
+  'чай', 'кофе', 'какао', 'специ', 'перец молот', 'корица',
+  'уксус', 'соус', 'кетчуп', 'майонез', 'горчиц',
+  'печенье', 'крекер', 'сухар', 'хлебц', 'вафл',
+  'варенье', 'джем', 'мёд', 'мед', 'сироп',
+];
+
+function guessStorageType(name: string): 'fridge' | 'freezer' | 'pantry' {
+  const lower = name.toLowerCase();
+  for (const kw of FREEZER_KEYWORDS) {
+    if (lower.includes(kw)) return 'freezer';
+  }
+  for (const kw of PANTRY_KEYWORDS) {
+    if (lower.includes(kw)) return 'pantry';
+  }
+  return 'fridge';
+}
+
+const STORAGE_LABELS = {
+  fridge: { label: 'Холодильник', icon: Refrigerator },
+  freezer: { label: 'Морозилка', icon: Snowflake },
+  pantry: { label: 'Кладовая', icon: Package },
+} as const;
+
+type StorageType = 'fridge' | 'freezer' | 'pantry';
+
 export function ShoppingPage() {
   const [newItem, setNewItem] = useState("");
-  const [storePick, setStorePick] = useState<number | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewItems, setPreviewItems] = useState<{ productName: string; quantity: number | null; unit: string | null; storageType: StorageType }[]>([]);
   const utils = trpc.useUtils();
 
   const { data: items = [], isLoading } = trpc.shopping.list.useQuery();
@@ -22,13 +57,6 @@ export function ShoppingPage() {
     },
   });
 
-  const buyAndStore = trpc.shopping.buyAndStore.useMutation({
-    onSuccess: () => {
-      utils.shopping.list.invalidate();
-      setStorePick(null);
-    },
-  });
-
   const remove = trpc.shopping.remove.useMutation({
     onSuccess: () => {
       utils.shopping.list.invalidate();
@@ -43,8 +71,8 @@ export function ShoppingPage() {
 
   const addBulkSmart = trpc.inventory.addBulkSmart.useMutation({
     onSuccess: (data) => {
-      // После переноса — удаляем перенесённые товары из списка покупок
       clearChecked.mutate();
+      setShowPreview(false);
       alert(`Добавлено в инвентарь: ${data.added} товаров`);
     },
   });
@@ -54,6 +82,43 @@ export function ShoppingPage() {
     const trimmed = newItem.trim();
     if (!trimmed) return;
     add.mutate({ productName: trimmed });
+  };
+
+  // Открыть превью с авто-раскладкой
+  const openPreview = () => {
+    const checkedItems = items.filter(i => i.isChecked === 1);
+    const mapped = checkedItems.map(i => ({
+      productName: i.productName,
+      quantity: i.quantity ? parseFloat(i.quantity) : null,
+      unit: i.unit,
+      storageType: guessStorageType(i.productName),
+    }));
+    setPreviewItems(mapped);
+    setShowPreview(true);
+  };
+
+  // Переключить storageType для элемента в превью (тап по иконке)
+  const cycleStorage = (idx: number) => {
+    setPreviewItems(prev => {
+      const next = [...prev];
+      const current = next[idx].storageType;
+      const order: StorageType[] = ['fridge', 'freezer', 'pantry'];
+      const nextIdx = (order.indexOf(current) + 1) % 3;
+      next[idx] = { ...next[idx], storageType: order[nextIdx] };
+      return next;
+    });
+  };
+
+  // Подтвердить и отправить на бэкенд
+  const confirmPreview = () => {
+    addBulkSmart.mutate({
+      items: previewItems.map(i => ({
+        productName: i.productName,
+        quantity: i.quantity,
+        unit: i.unit,
+        storageType: i.storageType,
+      })),
+    });
   };
 
   const total = items.length;
@@ -130,13 +195,7 @@ export function ShoppingPage() {
                         className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
                       >
                         <button
-                          onClick={() => {
-                            if (item.isChecked === 1) {
-                              toggle.mutate({ id: item.id });
-                            } else {
-                              setStorePick(item.id);
-                            }
-                          }}
+                          onClick={() => toggle.mutate({ id: item.id })}
                           className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                             item.isChecked === 1
                               ? "bg-primary border-primary"
@@ -195,28 +254,15 @@ export function ShoppingPage() {
             </div>
           )}
 
-          {/* Кнопка очистить отмеченные */}
+          {/* Действия с купленными */}
           {checked > 0 && (
             <div className="mt-5 flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => {
-                  const checkedItems = items.filter(i => i.isChecked === 1);
-                  addBulkSmart.mutate({
-                    items: checkedItems.map(i => ({
-                      productName: i.productName,
-                      quantity: i.quantity ? parseFloat(i.quantity) : null,
-                      unit: i.unit,
-                    })),
-                  });
-                }}
+                onClick={openPreview}
                 disabled={addBulkSmart.isPending || clearChecked.isPending}
                 className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-paper rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {addBulkSmart.isPending ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <PackagePlus size={16} />
-                )}
+                <PackagePlus size={16} />
                 <span className="text-sm font-medium">
                   Всё в инвентарь ({checked})
                 </span>
@@ -255,51 +301,75 @@ export function ShoppingPage() {
         </>
       )}
 
-      {/* Диалог выбора локации */}
-      {storePick !== null && (
+      {/* Диалог превью раскладки */}
+      {showPreview && (
         <div
           className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
-          onClick={() => setStorePick(null)}
+          onClick={() => setShowPreview(false)}
         >
           <div
-            className="bg-paper w-full sm:max-w-xs sm:rounded-2xl rounded-t-2xl p-6"
+            className="bg-paper w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[80vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-serif text-lg font-semibold text-ink mb-4 text-center">
-              Куда положить?
-            </h3>
-            <div className="flex flex-col gap-2">
+            <div className="p-4 border-b border-line">
+              <h3 className="font-serif text-lg font-semibold text-ink text-center">
+                Раскладываем по местам
+              </h3>
+              <p className="text-xs text-ink-muted text-center mt-1">
+                Нажми на иконку чтобы изменить место хранения
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              <ul className="space-y-2">
+                {previewItems.map((item, idx) => {
+                  const storage = STORAGE_LABELS[item.storageType];
+                  const Icon = storage.icon;
+                  return (
+                    <li
+                      key={idx}
+                      className="flex items-center gap-3 bg-cream rounded-lg px-4 py-3"
+                    >
+                      <button
+                        onClick={() => cycleStorage(idx)}
+                        className="w-9 h-9 rounded-lg border border-line bg-paper flex items-center justify-center shrink-0 hover:border-primary transition-colors"
+                        title={`Сейчас: ${storage.label}. Нажми чтобы изменить`}
+                      >
+                        <Icon size={18} className="text-primary" />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink truncate">
+                          {item.productName}
+                        </p>
+                        <p className="text-xs text-ink-muted">
+                          → {storage.label}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="p-4 border-t border-line flex gap-3">
               <button
-                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'fridge' })}
-                disabled={buyAndStore.isPending}
-                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
+                onClick={() => setShowPreview(false)}
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
               >
-                <Refrigerator size={20} className="text-primary" />
-                <span className="text-sm font-medium text-ink">Холодильник</span>
+                Отмена
               </button>
               <button
-                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'freezer' })}
-                disabled={buyAndStore.isPending}
-                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
+                onClick={confirmPreview}
+                disabled={addBulkSmart.isPending}
+                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
-                <Snowflake size={20} className="text-primary" />
-                <span className="text-sm font-medium text-ink">Морозилка</span>
-              </button>
-              <button
-                onClick={() => buyAndStore.mutate({ id: storePick, storageType: 'pantry' })}
-                disabled={buyAndStore.isPending}
-                className="flex items-center gap-3 px-4 h-12 rounded-lg border border-line hover:border-primary hover:bg-cream transition-colors"
-              >
-                <Package size={20} className="text-primary" />
-                <span className="text-sm font-medium text-ink">Кладовая</span>
+                {addBulkSmart.isPending ? (
+                  <Loader2 size={18} className="animate-spin mx-auto" />
+                ) : (
+                  `Подтвердить (${previewItems.length})`
+                )}
               </button>
             </div>
-            <button
-              onClick={() => setStorePick(null)}
-              className="mt-4 w-full h-10 text-sm text-ink-muted hover:text-ink transition-colors"
-            >
-              Отмена
-            </button>
           </div>
         </div>
       )}
