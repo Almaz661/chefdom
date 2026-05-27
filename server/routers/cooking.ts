@@ -138,10 +138,10 @@ export const cookingRouter = router({
   // --- Удалить ошибочную запись из истории.
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(cookingHistory)
-        .where(eq(cookingHistory.id, input.id))
+        .where(and(eq(cookingHistory.id, input.id), eq(cookingHistory.userId, ctx.userId)))
         .returning({ id: cookingHistory.id });
       if (result.length === 0) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Запись не найдена' });

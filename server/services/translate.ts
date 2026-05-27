@@ -6,9 +6,17 @@
 // Если DeepL вернул ошибку — возвращает оригинал (best-effort, не ломает импорт).
 
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
+const API_TIMEOUT_MS = 10000; // 10 секунд таймаут на внешние API
 
 function getApiKey(): string | null {
   return process.env.DEEPL_API_KEY || null;
+}
+
+/** Создаёт AbortSignal с таймаутом */
+function timeoutSignal(ms: number): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
 }
 
 /**
@@ -44,6 +52,7 @@ export async function translateToRu(
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      signal: timeoutSignal(API_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -107,6 +116,7 @@ export async function translatePlainToRu(
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      signal: timeoutSignal(API_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -164,6 +174,7 @@ export async function translateBatchToRu(
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: params.toString(),
+      signal: timeoutSignal(API_TIMEOUT_MS),
     });
 
     if (!res.ok) {
@@ -245,6 +256,7 @@ export async function translatePlainBatch(
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: params.toString(),
+        signal: timeoutSignal(API_TIMEOUT_MS),
       });
 
       if (!res.ok) {

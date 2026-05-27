@@ -117,13 +117,13 @@ export const inventoryRouter = router({
         category: z.string().max(100).nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...fields } = input;
 
       const [existing] = await db
         .select({ id: inventory.id })
         .from(inventory)
-        .where(eq(inventory.id, id))
+        .where(and(eq(inventory.id, id), eq(inventory.userId, ctx.userId)))
         .limit(1);
 
       if (!existing) {
@@ -138,7 +138,7 @@ export const inventoryRouter = router({
       if (fields.expiryDate !== undefined) updates.expiryDate = fields.expiryDate;
       if (fields.category !== undefined) updates.category = fields.category;
 
-      await db.update(inventory).set(updates).where(eq(inventory.id, id));
+      await db.update(inventory).set(updates).where(and(eq(inventory.id, id), eq(inventory.userId, ctx.userId)));
       return { id };
     }),
 
@@ -211,10 +211,10 @@ export const inventoryRouter = router({
   // Удалить
   remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(inventory)
-        .where(eq(inventory.id, input.id))
+        .where(and(eq(inventory.id, input.id), eq(inventory.userId, ctx.userId)))
         .returning({ id: inventory.id });
 
       if (result.length === 0) {
