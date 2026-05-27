@@ -108,11 +108,11 @@ export const shoppingRouter = router({
   // Переключить чекбокс
   toggle: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [item] = await db
         .select({ id: purchaseItems.id, isChecked: purchaseItems.isChecked })
         .from(purchaseItems)
-        .where(eq(purchaseItems.id, input.id))
+        .where(and(eq(purchaseItems.id, input.id), eq(purchaseItems.userId, ctx.userId)))
         .limit(1);
 
       if (!item) {
@@ -123,7 +123,7 @@ export const shoppingRouter = router({
       await db
         .update(purchaseItems)
         .set({ isChecked: newVal })
-        .where(eq(purchaseItems.id, input.id));
+        .where(and(eq(purchaseItems.id, input.id), eq(purchaseItems.userId, ctx.userId)));
 
       return { id: input.id, isChecked: newVal };
     }),
@@ -131,10 +131,10 @@ export const shoppingRouter = router({
   // Удалить одну позицию
   remove: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(purchaseItems)
-        .where(eq(purchaseItems.id, input.id))
+        .where(and(eq(purchaseItems.id, input.id), eq(purchaseItems.userId, ctx.userId)))
         .returning({ id: purchaseItems.id });
 
       if (result.length === 0) {

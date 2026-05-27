@@ -382,7 +382,16 @@ export const receiptsRouter = router({
   // Добавить позицию вручную (если OCR что-то пропустил)
   addItem: protectedProcedure
     .input(z.object({ receiptId: z.number().int().positive(), item: ItemInput }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Проверяем что чек принадлежит пользователю
+      const [receipt] = await db
+        .select({ id: receipts.id })
+        .from(receipts)
+        .where(and(eq(receipts.id, input.receiptId), eq(receipts.userId, ctx.userId)))
+        .limit(1);
+      if (!receipt) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Чек не найден' });
+      }
       const [created] = await db
         .insert(receiptItems)
         .values({
@@ -413,7 +422,7 @@ export const receiptsRouter = router({
         price: z.number().nullable().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...rest } = input;
       const updateData: Record<string, unknown> = {};
       if (rest.productName !== undefined) updateData.productName = rest.productName;
@@ -424,6 +433,23 @@ export const receiptsRouter = router({
       if (rest.unit !== undefined) updateData.unit = rest.unit;
       if (rest.price !== undefined) {
         updateData.price = rest.price === null ? null : String(rest.price);
+      }
+      // Проверяем что позиция принадлежит чеку текущего юзера
+      const [item] = await db
+        .select({ id: receiptItems.id, receiptId: receiptItems.receiptId })
+        .from(receiptItems)
+        .where(eq(receiptItems.id, id))
+        .limit(1);
+      if (!item) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+      }
+      const [receipt] = await db
+        .select({ id: receipts.id })
+        .from(receipts)
+        .where(and(eq(receipts.id, item.receiptId), eq(receipts.userId, ctx.userId)))
+        .limit(1);
+      if (!receipt) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
       }
       const result = await db
         .update(receiptItems)
@@ -439,7 +465,24 @@ export const receiptsRouter = router({
   // Удалить позицию
   deleteItem: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Проверяем что позиция принадлежит чеку текущего юзера
+      const [item] = await db
+        .select({ id: receiptItems.id, receiptId: receiptItems.receiptId })
+        .from(receiptItems)
+        .where(eq(receiptItems.id, input.id))
+        .limit(1);
+      if (!item) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+      }
+      const [receipt] = await db
+        .select({ id: receipts.id })
+        .from(receipts)
+        .where(and(eq(receipts.id, item.receiptId), eq(receipts.userId, ctx.userId)))
+        .limit(1);
+      if (!receipt) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Позиция не найдена' });
+      }
       await db.delete(receiptItems).where(eq(receiptItems.id, input.id));
       return { id: input.id };
     }),

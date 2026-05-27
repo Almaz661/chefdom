@@ -96,7 +96,24 @@ export const menuRouter = router({
   // Удалить из слота
   removeItem: protectedProcedure
     .input(z.object({ itemId: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Проверяем что menuItem принадлежит меню текущего пользователя
+      const [item] = await db
+        .select({ id: menuItems.id, menuId: menuItems.menuId })
+        .from(menuItems)
+        .where(eq(menuItems.id, input.itemId))
+        .limit(1);
+      if (!item) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
+      }
+      const [menu] = await db
+        .select({ id: menus.id })
+        .from(menus)
+        .where(and(eq(menus.id, item.menuId), eq(menus.userId, ctx.userId)))
+        .limit(1);
+      if (!menu) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
+      }
       const result = await db
         .delete(menuItems)
         .where(eq(menuItems.id, input.itemId))

@@ -51,6 +51,7 @@ export function RecipeDetailPage() {
         wakeLockRef.current = lock;
         setWakeLockActive(true);
         lock.addEventListener("release", () => {
+          wakeLockRef.current = null;
           setWakeLockActive(false);
         });
       } catch {

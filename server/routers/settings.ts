@@ -26,10 +26,11 @@ export const settingsRouter = router({
   // Текущая валюта по умолчанию (для отображения в Настройках и
   // подстановки в форме создания чека).
   // Берём первого пользователя — мульти-юзер пока не поддерживается.
-  getCurrency: protectedProcedure.query(async () => {
+  getCurrency: protectedProcedure.query(async ({ ctx }) => {
     const [user] = await db
       .select({ defaultCurrency: users.defaultCurrency })
       .from(users)
+      .where(eq(users.id, ctx.userId))
       .limit(1);
     const value = user?.defaultCurrency === "RUB" ? "RUB" : "EUR";
     return { currency: value as AppCurrency };
@@ -40,13 +41,11 @@ export const settingsRouter = router({
   //  - fallback в парсере OCR, если магазин не распознан.
   setCurrency: protectedProcedure
     .input(z.object({ currency: currencySchema }))
-    .mutation(async ({ input }) => {
-      const [user] = await db.select({ id: users.id }).from(users).limit(1);
-      if (!user) throw new Error("Пользователь не найден");
+    .mutation(async ({ input, ctx }) => {
       await db
         .update(users)
         .set({ defaultCurrency: input.currency })
-        .where(eq(users.id, user.id));
+        .where(eq(users.id, ctx.userId));
       return { currency: input.currency };
     }),
 
