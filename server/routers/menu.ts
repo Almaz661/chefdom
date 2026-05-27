@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, desc, sql as rawSql, lte, isNotNull } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { menus, menuItems, recipes, recipeIngredients, purchaseItems } from '../db/schema';
+import { menus, menuItems, recipes, recipeIngredients, purchaseItems, inventory, cookingHistory, preserves } from '../db/schema';
 
 const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
 
@@ -353,5 +353,227 @@ export const menuRouter = router({
       });
 
       return { added, deduped };
+    }),
+
+  // Умные подсказки для выбора рецепта при заполнении меню.
+  // Возвращает рекомендованные рецепты с причинами:
+  // - Истекающие ингредиенты (используй пока не пропало)
+  // - Давно не готовили (разнообразие)
+  // - Никогда не готовили (попробуй новое)
+  getSuggestions: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(20).default(10) }))
+    .query(async ({ input, ctx }) => {
+      type Suggestion = {
+        recipe: {
+          id: number;
+          title: string;
+          imageUrl: string | null;
+          totalTime: number | null;
+          category: string | null;
+        };
+        reason: string;
+        reasonType: 'expiring' | 'not_cooked_long' | 'never_cooked' | 'available';
+        priority: number; // меньше = важнее
+        expiringIngredients?: string[];
+        daysSinceCooked?: number;
+        availablePercent?: number;
+      };
+
+      const suggestions: Suggestion[] = [];
+
+      // 1. Получаем истекающие продукты (в ближайшие 4 дня)
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() + 4);
+      const limitStr = limitDate.toISOString().slice(0, 10);
+
+      const expiringItems = await db
+        .select({ productName: inventory.productName, expiryDate: inventory.expiryDate })
+        .from(inventory)
+        .where(
+          and(
+            eq(inventory.userId, ctx.userId),
+            isNotNull(inventory.expiryDate),
+            lte(inventory.expiryDate, limitStr),
+          )
+        );
+
+      // + заготовки которые скоро истекают
+      const expiringPreserves = await db
+        .select({ name: preserves.name, expiryDate: preserves.expiryDate })
+        .from(preserves)
+        .where(
+          and(
+            eq(preserves.userId, ctx.userId),
+            isNotNull(preserves.expiryDate),
+            lte(preserves.expiryDate, limitStr),
+          )
+        );
+
+      const expiringNames = new Set([
+        ...expiringItems.map(i => i.productName.toLowerCase()),
+        ...expiringPreserves.map(i => i.name.toLowerCase()),
+      ]);
+
+      // 2. Получаем всё что есть в наличии (для matching)
+      const allInventory = await db
+        .select({ productName: inventory.productName })
+        .from(inventory)
+        .where(eq(inventory.userId, ctx.userId));
+
+      const allPreserves = await db
+        .select({ name: preserves.name })
+        .from(preserves)
+        .where(eq(preserves.userId, ctx.userId));
+
+      const availableNames = new Set([
+        ...allInventory.map(i => i.productName.toLowerCase()),
+        ...allPreserves.map(i => i.name.toLowerCase()),
+      ]);
+
+      // 3. История готовки — когда последний раз готовили каждый рецепт
+      const cookHistory = await db
+        .select({ recipeId: cookingHistory.recipeId, cookedAt: cookingHistory.cookedAt })
+        .from(cookingHistory)
+        .where(eq(cookingHistory.userId, ctx.userId))
+        .orderBy(desc(cookingHistory.cookedAt));
+
+      const lastCookedMap = new Map<number, Date>();
+      for (const h of cookHistory) {
+        if (h.recipeId && !lastCookedMap.has(h.recipeId)) {
+          lastCookedMap.set(h.recipeId, h.cookedAt);
+        }
+      }
+      const everCookedIds = new Set(lastCookedMap.keys());
+
+      // 4. Получаем все рецепты с ингредиентами
+      const allRecipes = await db
+        .select({
+          id: recipes.id,
+          title: recipes.title,
+          imageUrl: recipes.imageUrl,
+          totalTime: recipes.totalTime,
+          category: recipes.category,
+        })
+        .from(recipes);
+
+      const allIngredients = await db
+        .select({
+          recipeId: recipeIngredients.recipeId,
+          name: recipeIngredients.name,
+        })
+        .from(recipeIngredients);
+
+      // Группируем ингредиенты по рецепту
+      const ingredientsByRecipe = new Map<number, string[]>();
+      for (const ing of allIngredients) {
+        if (!ingredientsByRecipe.has(ing.recipeId)) {
+          ingredientsByRecipe.set(ing.recipeId, []);
+        }
+        ingredientsByRecipe.get(ing.recipeId)!.push(ing.name.toLowerCase());
+      }
+
+      // Простой fuzzy match для ингредиентов
+      function fuzzyMatch(ingredientName: string, availableSet: Set<string>): boolean {
+        const ingLower = ingredientName.toLowerCase();
+        // Точное вхождение
+        for (const avail of availableSet) {
+          if (avail.includes(ingLower) || ingLower.includes(avail)) {
+            return true;
+          }
+        }
+        // Стемминг: убираем окончания
+        const stemmed = ingLower.replace(/[аяеёиоуыэюь]+$/, '');
+        if (stemmed.length >= 3) {
+          for (const avail of availableSet) {
+            const availStemmed = avail.replace(/[аяеёиоуыэюь]+$/, '');
+            if (availStemmed.includes(stemmed) || stemmed.includes(availStemmed)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      // 5. Оцениваем каждый рецепт
+      for (const recipe of allRecipes) {
+        const ings = ingredientsByRecipe.get(recipe.id) || [];
+        if (ings.length === 0) continue;
+
+        // Проверяем истекающие ингредиенты
+        const matchedExpiring: string[] = [];
+        for (const ing of ings) {
+          if (fuzzyMatch(ing, expiringNames)) {
+            matchedExpiring.push(ing);
+          }
+        }
+
+        // Проверяем доступность
+        let availableCount = 0;
+        for (const ing of ings) {
+          if (fuzzyMatch(ing, availableNames)) {
+            availableCount++;
+          }
+        }
+        const availablePercent = Math.round((availableCount / ings.length) * 100);
+
+        // Если есть истекающие ингредиенты — приоритет 1
+        if (matchedExpiring.length > 0) {
+          suggestions.push({
+            recipe,
+            reason: `Используй ${matchedExpiring.slice(0, 2).join(', ')} пока не испортились`,
+            reasonType: 'expiring',
+            priority: 1,
+            expiringIngredients: matchedExpiring,
+            availablePercent,
+          });
+          continue; // не дублируем рецепт в других категориях
+        }
+
+        // Давно не готовили (>14 дней)
+        const lastCooked = lastCookedMap.get(recipe.id);
+        if (lastCooked) {
+          const daysSince = Math.floor((Date.now() - lastCooked.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysSince > 14) {
+            suggestions.push({
+              recipe,
+              reason: `Давно не готовили — ${daysSince} дней`,
+              reasonType: 'not_cooked_long',
+              priority: 2,
+              daysSinceCooked: daysSince,
+              availablePercent,
+            });
+            continue;
+          }
+        } else {
+          // Никогда не готовили
+          suggestions.push({
+            recipe,
+            reason: 'Ещё не пробовали — время попробовать!',
+            reasonType: 'never_cooked',
+            priority: 3,
+            availablePercent,
+          });
+          continue;
+        }
+
+        // Высокая доступность ингредиентов (>70%)
+        if (availablePercent >= 70) {
+          suggestions.push({
+            recipe,
+            reason: `${availablePercent}% ингредиентов есть дома`,
+            reasonType: 'available',
+            priority: 4,
+            availablePercent,
+          });
+        }
+      }
+
+      // Сортируем: сначала по приоритету, потом по availablePercent
+      suggestions.sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        return (b.availablePercent || 0) - (a.availablePercent || 0);
+      });
+
+      return suggestions.slice(0, input.limit);
     }),
 });

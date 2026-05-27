@@ -395,12 +395,30 @@ function RecipePickerDialog({
   loading: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
   const { data, isLoading } = trpc.recipes.list.useQuery({
     search: search.trim() || undefined,
   });
 
+  const { data: suggestions, isLoading: suggestionsLoading } = trpc.menu.getSuggestions.useQuery(
+    { limit: 6 },
+    { enabled: showSuggestions && !search.trim() }
+  );
+
   const recipes = data?.items ?? [];
+  const hasSuggestions = suggestions && suggestions.length > 0;
+
+  // Иконка для типа рекомендации
+  const getReasonIcon = (type: string) => {
+    switch (type) {
+      case 'expiring': return '⏰';
+      case 'not_cooked_long': return '🔄';
+      case 'never_cooked': return '✨';
+      case 'available': return '✅';
+      default: return '💡';
+    }
+  };
 
   return (
     <div
@@ -445,6 +463,87 @@ function RecipePickerDialog({
 
         {/* List */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
+          {/* Умные подсказки — показываем когда нет поиска */}
+          {!search.trim() && showSuggestions && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider">
+                  Рекомендации
+                </h4>
+                <button
+                  onClick={() => setShowSuggestions(false)}
+                  className="text-xs text-ink-muted hover:text-ink"
+                >
+                  Скрыть
+                </button>
+              </div>
+              {suggestionsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 size={20} className="animate-spin text-primary" />
+                </div>
+              ) : hasSuggestions ? (
+                <ul className="space-y-1">
+                  {suggestions.map((s) => (
+                    <li key={s.recipe.id}>
+                      <button
+                        onClick={() => onSelect(s.recipe.id)}
+                        disabled={loading}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg bg-cream/50 hover:bg-cream transition-colors text-left disabled:opacity-50 border border-line/50"
+                      >
+                        {s.recipe.imageUrl ? (
+                          <img
+                            src={s.recipe.imageUrl}
+                            alt=""
+                            loading="lazy"
+                            className="w-12 h-12 rounded-lg object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-cream border border-line shrink-0 flex items-center justify-center text-lg">
+                            {getReasonIcon(s.reasonType)}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-ink truncate">
+                            {s.recipe.title}
+                          </p>
+                          <p className="text-xs text-primary truncate">
+                            {getReasonIcon(s.reasonType)} {s.reason}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-ink-muted text-center py-2">
+                  Нет рекомендаций
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Скрытые подсказки — показать кнопку */}
+          {!search.trim() && !showSuggestions && (
+            <button
+              onClick={() => setShowSuggestions(true)}
+              className="mb-3 text-xs text-primary hover:underline"
+            >
+              Показать рекомендации
+            </button>
+          )}
+
+          {/* Все рецепты */}
+          {search.trim() && (
+            <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+              Результаты поиска
+            </h4>
+          )}
+          {!search.trim() && (
+            <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+              Все рецепты
+            </h4>
+          )}
+          
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 size={24} className="animate-spin text-primary" />
