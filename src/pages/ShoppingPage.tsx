@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { ShoppingCart, Plus, Trash2, Loader2, Refrigerator, Snowflake, Package } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Loader2, Refrigerator, Snowflake, Package, PackagePlus } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 export function ShoppingPage() {
@@ -38,6 +38,14 @@ export function ShoppingPage() {
   const clearChecked = trpc.shopping.clearChecked.useMutation({
     onSuccess: () => {
       utils.shopping.list.invalidate();
+    },
+  });
+
+  const addBulkSmart = trpc.inventory.addBulkSmart.useMutation({
+    onSuccess: (data) => {
+      // После переноса — удаляем перенесённые товары из списка покупок
+      clearChecked.mutate();
+      alert(`Добавлено в инвентарь: ${data.added} товаров`);
     },
   });
 
@@ -189,13 +197,38 @@ export function ShoppingPage() {
 
           {/* Кнопка очистить отмеченные */}
           {checked > 0 && (
-            <button
-              onClick={() => clearChecked.mutate()}
-              disabled={clearChecked.isPending}
-              className="mt-5 text-sm text-ink-muted hover:text-alert transition-colors disabled:opacity-50"
-            >
-              Очистить отмеченные ({checked})
-            </button>
+            <div className="mt-5 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  const checkedItems = items.filter(i => i.isChecked === 1);
+                  addBulkSmart.mutate({
+                    items: checkedItems.map(i => ({
+                      productName: i.productName,
+                      quantity: i.quantity ? parseFloat(i.quantity) : null,
+                      unit: i.unit,
+                    })),
+                  });
+                }}
+                disabled={addBulkSmart.isPending || clearChecked.isPending}
+                className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-paper rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {addBulkSmart.isPending ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <PackagePlus size={16} />
+                )}
+                <span className="text-sm font-medium">
+                  Всё в инвентарь ({checked})
+                </span>
+              </button>
+              <button
+                onClick={() => clearChecked.mutate()}
+                disabled={clearChecked.isPending || addBulkSmart.isPending}
+                className="text-sm text-ink-muted hover:text-alert transition-colors disabled:opacity-50"
+              >
+                Очистить отмеченные
+              </button>
+            </div>
           )}
 
           {/* Форма добавления */}
