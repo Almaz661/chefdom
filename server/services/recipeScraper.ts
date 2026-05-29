@@ -90,7 +90,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
   // Стратегия 2: сайт-специфика
   if (source.includes("menunedeli.ru")) {
     const menu = parseMenunedeli($, url);
-    console.log(`[scraper] menunedeli: title="${menu?.title || ""}", ing=${menu?.ingredients?.length ?? 0}, steps=${menu?.steps?.length ?? 0}`);
     if (menu && isValidRecipe(menu)) {
       return finalize(menu, sourceUrl, source);
     }
@@ -98,7 +97,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
 
   if (source.includes("povar.ru")) {
     const povar = parsePovarRu($, url);
-    console.log(`[scraper] povar.ru: title="${povar?.title || ""}", ing=${povar?.ingredients?.length ?? 0}, steps=${povar?.steps?.length ?? 0}`);
     if (povar && isValidRecipe(povar)) {
       return finalize(povar, sourceUrl, source);
     }
@@ -106,7 +104,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
 
   // Стратегия 3: microdata
   const micro = parseMicrodata($, url);
-  console.log(`[scraper] microdata: title="${micro?.title || ""}", ing=${micro?.ingredients?.length ?? 0}, steps=${micro?.steps?.length ?? 0}`);
   if (micro && isValidRecipe(micro)) {
     // Если title из microdata мусорный — подменить на h1
     if (micro.title && isJunkTitle(micro.title)) {
@@ -118,7 +115,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
         if (fromUrl) micro.title = fromUrl;
       }
     }
-    console.log(`[scraper] → используем microdata, title="${micro.title}"`);
     return finalize(micro, sourceUrl, source);
   }
 
@@ -156,7 +152,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
     }
 
     if (isValidRecipe(micro)) {
-      console.log(`[scraper] → используем microdata (дополненная), title="${micro.title}", ing=${micro.ingredients?.length}, steps=${micro.steps?.length}`);
       return finalize(micro, sourceUrl, source);
     }
   }
@@ -197,8 +192,6 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
     });
   }
 
-  console.log(`[scraper] universal: title="${uniTitle || ""}", ing=${genericIngredients.length}, steps=${genericSteps.length}`);
-
   // Если есть ингредиенты — принимаем даже без шагов (лучше рецепт без шагов чем ничего)
   if (uniTitle && genericIngredients.length > 0 && (genericSteps.length > 0 || genericIngredients.length >= 3)) {
     const combined: Partial<ScrapedRecipe> = {
@@ -209,21 +202,17 @@ export async function scrapeRecipe(url: string): Promise<ScrapedRecipe> {
       ingredients: genericIngredients,
       steps: genericSteps,
     };
-    console.log(`[scraper] → используем universal fallback`);
     return finalize(combined, sourceUrl, source);
   }
 
   // Стратегия 5: чистый generic (только title + image, без данных)
   const generic = parseGeneric($, url);
-  console.log(`[scraper] generic: title="${generic?.title || ""}"`)
   if (generic.title && generic.title.length > 0) {
     // Если JSON-LD дал хоть что-то (но не прошло isValidRecipe), используем его
     // вместо чистого generic — обычно там хоть title правильный.
     if (jsonLd && jsonLd.title) {
-      console.log(`[scraper] → используем JSON-LD (partial) с generic fallback`);
       return finalize(jsonLd, sourceUrl, source);
     }
-    console.log(`[scraper] → используем generic`);
     return finalize(generic, sourceUrl, source);
   }
 
