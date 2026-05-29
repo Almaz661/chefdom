@@ -23,7 +23,7 @@ function DeleteAllButton() {
     <button
       onClick={() => {
         if (confirm('Удалить ВСЕ товары из каталога? Это действие нельзя отменить.')) {
-          deleteAll.mutate();
+          deleteAll.mutate({ confirm: true });
         }
       }}
       disabled={deleteAll.isPending}

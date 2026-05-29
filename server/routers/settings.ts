@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { router, protectedProcedure } from "../trpc";
 import { db } from "../db/index";
 import {
@@ -243,19 +243,43 @@ export const settingsRouter = router({
         if (!user) throw new Error("Пользователь не найден");
         const userId = user.id;
 
-        // Удаляем все данные (порядок важен из-за FK)
-        await tx.delete(receiptItems);
-        await tx.delete(receipts);
-        await tx.delete(cookingHistory);
-        await tx.delete(preserves);
-        await tx.delete(products);
-        await tx.delete(purchaseItems);
-        await tx.delete(menuItems);
-        await tx.delete(menus);
-        await tx.delete(inventory);
+        // Удаляем данные ТОЛЬКО текущего пользователя (порядок важен из-за FK).
+        // Ранее удалялось ВСЁ без WHERE — мина при расширении на 2+ пользователей.
+
+        // 1. receipt_items (FK → receipts): удаляем items чеков этого юзера
+        const userReceiptIds = await tx
+          .select({ id: receipts.id })
+          .from(receipts)
+          .where(eq(receipts.userId, userId));
+        if (userReceiptIds.length > 0) {
+          await tx.delete(receiptItems).where(
+            inArray(receiptItems.receiptId, userReceiptIds.map(r => r.id))
+          );
+        }
+        await tx.delete(receipts).where(eq(receipts.userId, userId));
+        await tx.delete(cookingHistory).where(eq(cookingHistory.userId, userId));
+        await tx.delete(preserves).where(eq(preserves.userId, userId));
+        await tx.delete(purchaseItems).where(eq(purchaseItems.userId, userId));
+        // menu_items (FK → menus): удаляем items меню этого юзера
+        const userMenuIds = await tx
+          .select({ id: menus.id })
+          .from(menus)
+          .where(eq(menus.userId, userId));
+        if (userMenuIds.length > 0) {
+          await tx.delete(menuItems).where(
+            inArray(menuItems.menuId, userMenuIds.map(m => m.id))
+          );
+        }
+        await tx.delete(menus).where(eq(menus.userId, userId));
+        await tx.delete(inventory).where(eq(inventory.userId, userId));
+        // recipes/ingredients/steps — глобальные (без userId), удаляем все
+        // (для одно-семейного режима это корректно; при мульти-юзере
+        // нужно добавить userId в recipes)
         await tx.delete(recipeIngredients);
         await tx.delete(recipeSteps);
         await tx.delete(recipes);
+        // products — глобальный каталог цен, тоже полная очистка
+        await tx.delete(products);
 
         // --- Рецепты ---
         for (const r of input.recipes) {
