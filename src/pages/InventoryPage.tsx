@@ -122,6 +122,7 @@ export function InventoryPage() {
     unit: string | null;
     expiryDate: string | null;
     category: string | null;
+    minQuantity: string | null;
   };
 
   // Преобразуем оба источника к общему виду.
@@ -135,6 +136,7 @@ export function InventoryPage() {
       unit: i.unit,
       expiryDate: i.expiryDate,
       category: i.category,
+      minQuantity: i.minQuantity ?? null,
     }));
 
   // Заготовки frozen добавляем только во вкладке «Морозилка».
@@ -150,6 +152,7 @@ export function InventoryPage() {
             unit: p.unit,
             expiryDate: p.expiryDate,
             category: "Заготовки",
+            minQuantity: null,
           }))
       : [];
 
@@ -318,6 +321,11 @@ export function InventoryPage() {
                           {item.quantity && (
                             <span className="text-ink-muted ml-1">
                               {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                            </span>
+                          )}
+                          {item.minQuantity && (
+                            <span className="text-xs text-primary/70 ml-1.5" title="Мин. остаток для авто-докупки">
+                              (мин: {item.minQuantity})
                             </span>
                           )}
                         </p>
@@ -550,6 +558,7 @@ function AddInventoryDialog({
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [minQuantity, setMinQuantity] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -569,6 +578,7 @@ function AddInventoryDialog({
       unit: unit.trim() || null,
       storageType,
       expiryDate: expiryDate || null,
+      minQuantity: minQuantity ? Number(minQuantity) : null,
     });
   };
 
@@ -619,6 +629,16 @@ function AddInventoryDialog({
             className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
           />
           <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+          <input
+            type="number"
+            value={minQuantity}
+            onChange={(e) => setMinQuantity(e.target.value)}
+            placeholder="Мин. остаток (авто-докупка)"
+            step="any"
+            min="0"
+            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+          />
+          <p className="text-xs text-ink-muted">Когда кол-во ниже — автоматически в покупки</p>
 
           <div className="flex gap-3 pt-2">
             <button
