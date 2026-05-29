@@ -309,7 +309,7 @@ export const preserves = pgTable('preserves', {
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  preserveType: text('preserve_type').notNull(), // 'frozen' | 'preserved' | 'opened'
+  preserveType: text('preserve_type').notNull(), // 'frozen' | 'preserved' | 'opened' | 'cooked'
   name: text('name').notNull(),
   quantity: numeric('quantity'),
   unit: text('unit'),
