@@ -1096,6 +1096,24 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '028_menus_unique_user_week',
+    up: async (sql) => {
+      // Дедупликация: если есть дубли (user_id, week_start_date) — оставляем
+      // один (с наименьшим id), остальные удаляем. Затем создаём уникальный
+      // индекс. Это делает getWeek/addItem race-safe: INSERT ON CONFLICT DO NOTHING.
+      await sql`
+        DELETE FROM menus
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM menus GROUP BY user_id, week_start_date
+        )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_menus_user_week
+        ON menus(user_id, week_start_date)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

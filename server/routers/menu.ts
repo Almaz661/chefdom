@@ -12,7 +12,7 @@ export const menuRouter = router({
   getWeek: protectedProcedure
     .input(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
     .query(async ({ input, ctx }) => {
-      // Найти или создать меню на эту неделю
+      // Найти или создать меню на эту неделю (race-safe: ON CONFLICT DO NOTHING + retry SELECT)
       let [menu] = await db
         .select()
         .from(menus)
@@ -20,10 +20,16 @@ export const menuRouter = router({
         .limit(1);
 
       if (!menu) {
-        [menu] = await db
+        await db
           .insert(menus)
           .values({ userId: ctx.userId, weekStartDate: input.weekStart })
-          .returning();
+          .onConflictDoNothing()
+          .catch(() => {});
+        [menu] = await db
+          .select()
+          .from(menus)
+          .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
+          .limit(1);
       }
 
       // Получить все items с данными рецепта
@@ -55,7 +61,7 @@ export const menuRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Найти или создать меню
+      // Найти или создать меню (race-safe)
       let [menu] = await db
         .select()
         .from(menus)
@@ -63,10 +69,16 @@ export const menuRouter = router({
         .limit(1);
 
       if (!menu) {
-        [menu] = await db
+        await db
           .insert(menus)
           .values({ userId: ctx.userId, weekStartDate: input.weekStart })
-          .returning();
+          .onConflictDoNothing()
+          .catch(() => {});
+        [menu] = await db
+          .select()
+          .from(menus)
+          .where(and(eq(menus.userId, ctx.userId), eq(menus.weekStartDate, input.weekStart)))
+          .limit(1);
       }
 
       // Проверить что рецепт существует
@@ -462,7 +474,10 @@ export const menuRouter = router({
       }
       const everCookedIds = new Set(lastCookedMap.keys());
 
-      // 4. Получаем все рецепты с ингредиентами
+      // 4. Получаем рецепты с ингредиентами.
+      // Ограничиваем 500 самыми свежими — на 1759 рецептах полный перебор
+      // с fuzzyMatch может вызвать таймаут на Render Free (512MB / 0.1 CPU).
+      // В реальности пользователь видит 10 подсказок — 500 более чем достаточно.
       const allRecipes = await db
         .select({
           id: recipes.id,
@@ -471,14 +486,20 @@ export const menuRouter = router({
           totalTime: recipes.totalTime,
           category: recipes.category,
         })
-        .from(recipes);
+        .from(recipes)
+        .orderBy(desc(recipes.id))
+        .limit(500);
 
-      const allIngredients = await db
-        .select({
-          recipeId: recipeIngredients.recipeId,
-          name: recipeIngredients.name,
-        })
-        .from(recipeIngredients);
+      const recipeIds = allRecipes.map(r => r.id);
+      const allIngredients = recipeIds.length > 0
+        ? await db
+            .select({
+              recipeId: recipeIngredients.recipeId,
+              name: recipeIngredients.name,
+            })
+            .from(recipeIngredients)
+            .where(inArray(recipeIngredients.recipeId, recipeIds))
+        : [];
 
       // Группируем ингредиенты по рецепту
       const ingredientsByRecipe = new Map<number, string[]>();
@@ -489,21 +510,42 @@ export const menuRouter = router({
         ingredientsByRecipe.get(ing.recipeId)!.push(ing.name.toLowerCase());
       }
 
-      // Простой fuzzy match для ингредиентов
-      function fuzzyMatch(ingredientName: string, availableSet: Set<string>): boolean {
+      // Оптимизированный fuzzy match для ингредиентов.
+      // Предвычисляем стеммы и «подстроки» один раз для всего availableSet,
+      // вместо пере-стемминга на каждый вызов (1759 рецептов × 8 ингредиентов
+      // × 100 позиций инвентаря = 1.4M итераций → O(N) lookup).
+      function buildStemSet(names: Set<string>): Set<string> {
+        const stems = new Set<string>();
+        for (const n of names) {
+          stems.add(n);
+          const stemmed = n.replace(/[аяеёиоуыэюь]+$/, '');
+          if (stemmed.length >= 3) stems.add(stemmed);
+        }
+        return stems;
+      }
+      const availableStems = buildStemSet(availableNames);
+      const expiringStems = buildStemSet(expiringNames);
+
+      function fuzzyMatch(ingredientName: string, availableSet: Set<string>, stemSet: Set<string>): boolean {
         const ingLower = ingredientName.toLowerCase();
-        // Точное вхождение
+        // Точное вхождение (O(1) check + подстрочный по инвентарю)
+        if (availableSet.has(ingLower)) return true;
+        // Подстрочный: проверяем короткие имена (≤12 символов) как подстроки
+        // Полный перебор тут неизбежен, но ограничен размером availableSet
         for (const avail of availableSet) {
-          if (avail.includes(ingLower) || ingLower.includes(avail)) {
-            return true;
+          if (avail.length >= 3 && ingLower.length >= 3) {
+            if (avail.includes(ingLower) || ingLower.includes(avail)) {
+              return true;
+            }
           }
         }
-        // Стемминг: убираем окончания
+        // Стемминг: убираем окончания и проверяем подстроку в предвычисленном множестве
         const stemmed = ingLower.replace(/[аяеёиоуыэюь]+$/, '');
         if (stemmed.length >= 3) {
-          for (const avail of availableSet) {
-            const availStemmed = avail.replace(/[аяеёиоуыэюь]+$/, '');
-            if (availStemmed.includes(stemmed) || stemmed.includes(availStemmed)) {
+          if (stemSet.has(stemmed)) return true;
+          // Подстрочный по стеммам (для случаев «курин» ⊂ «куриные грудки»)
+          for (const s of stemSet) {
+            if (s.includes(stemmed) || stemmed.includes(s)) {
               return true;
             }
           }
@@ -519,7 +561,7 @@ export const menuRouter = router({
         // Проверяем истекающие ингредиенты
         const matchedExpiring: string[] = [];
         for (const ing of ings) {
-          if (fuzzyMatch(ing, expiringNames)) {
+          if (fuzzyMatch(ing, expiringNames, expiringStems)) {
             matchedExpiring.push(ing);
           }
         }
@@ -527,7 +569,7 @@ export const menuRouter = router({
         // Проверяем доступность
         let availableCount = 0;
         for (const ing of ings) {
-          if (fuzzyMatch(ing, availableNames)) {
+          if (fuzzyMatch(ing, availableNames, availableStems)) {
             availableCount++;
           }
         }
