@@ -159,8 +159,9 @@ export const productsRouter = router({
       return { id: input.id };
     }),
 
-  // Удалить ВСЕ товары из каталога
+  // Удалить ВСЕ товары из каталога (требует явного подтверждения)
   deleteAll: protectedProcedure
+    .input(z.object({ confirm: z.literal(true) }))
     .mutation(async () => {
       await db.delete(products);
       return { ok: true };
