@@ -999,10 +999,33 @@ export const recipesRouter = router({
           }
         }
 
-        // Авто-добавление недостающих ингредиентов в список покупок
+        // Авто-добавление недостающих ингредиентов в список покупок.
+        // Исключаем «базовые продукты» — соль/масло и т.д. которые всегда есть.
         if (missingItems.length > 0) {
           const { purchaseItems } = await import('../db/schema');
+
+          // Загружаем базовые продукты для исключения
+          const basicProducts = await tx
+            .select({ productName: inventory.productName })
+            .from(inventory)
+            .where(and(eq(inventory.userId, ctx.userId), eq(inventory.isBasic, 1)));
+          const basicNames = new Set(basicProducts.map(b => norm(b.productName)));
+
           for (const item of missingItems) {
+            // Пропускаем базовые продукты
+            if (basicNames.has(norm(item.name))) continue;
+            // Проверяем нечёткое совпадение с базовыми
+            const itemStem = stem(norm(item.name).split(/\s+/)[0] || '');
+            let isBasicMatch = false;
+            for (const bn of basicNames) {
+              const bnStem = stem(bn.split(/\s+/)[0] || '');
+              if (bnStem.length >= 3 && itemStem.length >= 3 && (bnStem.includes(itemStem) || itemStem.includes(bnStem))) {
+                isBasicMatch = true;
+                break;
+              }
+            }
+            if (isBasicMatch) continue;
+
             // Не добавляем если уже есть в покупках (нечувствительно к регистру)
             const existing = await tx
               .select({ id: purchaseItems.id })

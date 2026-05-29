@@ -87,6 +87,7 @@ export const inventoryRouter = router({
         expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
         minQuantity: z.number().positive().nullable().optional(),
         category: z.string().max(100).nullable().optional(),
+        isBasic: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -102,6 +103,7 @@ export const inventoryRouter = router({
           expiryDate: input.expiryDate ?? null,
           minQuantity: input.minQuantity != null ? String(input.minQuantity) : null,
           category: input.category ?? null,
+          isBasic: input.isBasic ? 1 : 0,
         })
         .returning({ id: inventory.id });
       return { id: created.id };
@@ -119,6 +121,7 @@ export const inventoryRouter = router({
         expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
         minQuantity: z.number().positive().nullable().optional(),
         category: z.string().max(100).nullable().optional(),
+        isBasic: z.boolean().optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -142,6 +145,7 @@ export const inventoryRouter = router({
       if (fields.expiryDate !== undefined) updates.expiryDate = fields.expiryDate;
       if (fields.minQuantity !== undefined) updates.minQuantity = fields.minQuantity != null ? String(fields.minQuantity) : null;
       if (fields.category !== undefined) updates.category = fields.category;
+      if (fields.isBasic !== undefined) updates.isBasic = fields.isBasic ? 1 : 0;
 
       await db.update(inventory).set(updates).where(and(eq(inventory.id, id), eq(inventory.userId, ctx.userId)));
       return { id };

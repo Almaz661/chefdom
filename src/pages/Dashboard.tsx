@@ -65,6 +65,14 @@ export function Dashboard() {
   ];
   // B.2 — продукты которые лежат давно (>30 дней)
   const { data: stale = [] } = trpc.inventory.getStale.useQuery({ days: 30 });
+  // Продукты ниже минимума — нужно докупить
+  const { data: allInventory = [] } = trpc.inventory.list.useQuery();
+  const belowMinimum = allInventory.filter(item => {
+    if (!item.minQuantity) return false;
+    const qty = item.quantity ? parseFloat(item.quantity) : 0;
+    const min = parseFloat(item.minQuantity);
+    return !isNaN(min) && min > 0 && qty < min;
+  });
   // Список покупок — для счётчика
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
   // «Недавно готовила» — последние 5 (раздел 6.4 макета)
@@ -143,6 +151,29 @@ export function Dashboard() {
               className="text-xs font-medium text-ink-soft hover:text-ink shrink-0"
             >
               Открыть инвентарь
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Алерт «ниже минимума» — нужно докупить */}
+      {belowMinimum.length > 0 && (
+        <section className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <ShoppingCart size={20} className="text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink mb-1">
+                {belowMinimum.length} {belowMinimum.length === 1 ? "продукт ниже" : "продукта ниже"} минимума — пора докупить
+              </p>
+              <p className="text-sm text-ink-soft truncate">
+                {belowMinimum.map(i => i.productName).join(" · ")}
+              </p>
+            </div>
+            <Link
+              to="/shopping"
+              className="text-xs font-medium text-primary hover:text-primary-dark shrink-0"
+            >
+              К покупкам
             </Link>
           </div>
         </section>

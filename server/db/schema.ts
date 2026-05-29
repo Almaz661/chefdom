@@ -153,6 +153,7 @@ export const inventory = pgTable('inventory', {
   expiryDate: text('expiry_date'),
   minQuantity: numeric('min_quantity'),
   category: text('category'),
+  isBasic: integer('is_basic').notNull().default(0),
   addedAt: timestamp('added_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
