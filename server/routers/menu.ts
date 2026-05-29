@@ -330,6 +330,28 @@ export const menuRouter = router({
         }
       }
 
+      // Загружаем инвентарь + заготовки — то что УЖЕ ЕСТЬ дома.
+      // Не будем добавлять в покупки ингредиенты которые есть в наличии.
+      const invItems = await db
+        .select({ productName: inventory.productName })
+        .from(inventory)
+        .where(eq(inventory.userId, ctx.userId));
+      const preserveItems = await db
+        .select({ name: preserves.name })
+        .from(preserves)
+        .where(eq(preserves.userId, ctx.userId));
+      const atHomeKeys = new Set([
+        ...invItems.map(i => normalizeName(i.productName)),
+        ...preserveItems.map(p => normalizeName(p.name)),
+      ]);
+
+      // Убираем из aggregated то что уже есть дома
+      for (const [key] of aggregated) {
+        if (atHomeKeys.has(key)) {
+          aggregated.delete(key);
+        }
+      }
+
       // Получить текущий список покупок для дедупликации.
       // Также удалим старые дубли, которые могли попасть в список
       // до того, как normalizeName стала учитывать модификаторы.
