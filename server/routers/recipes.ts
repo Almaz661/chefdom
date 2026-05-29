@@ -470,18 +470,24 @@ export const recipesRouter = router({
   // Время выполнения: ~0.5–1 с на рецепт (зависит от числа ингредиентов
   // и сети до Neon). Для 100 рецептов это ~1–2 минуты — запрос блокирующий,
   // фронт показывает спиннер. Если рецептов сильно больше — нужно будет
-  // переделать в job с прогрессом, как sectionImport.
+  // Пересчёт КБЖУ всех рецептов. Batch по 10 параллельно, чтобы
+  // на 15000 рецептов не упасть по таймауту (было ~1 рецепт/сек).
   recalcAllNutrition: protectedProcedure.mutation(async () => {
     const allRecipes = await db.select({ id: recipes.id }).from(recipes);
     let updated = 0;
     let failed = 0;
-    for (const r of allRecipes) {
-      try {
-        const result = await calcRecipeNutrition(r.id);
-        if (result && result.matched > 0) updated++;
-      } catch (err) {
-        failed++;
-        console.warn(`[recalcAllNutrition] recipe ${r.id} failed:`, err);
+    const BATCH = 10;
+    for (let i = 0; i < allRecipes.length; i += BATCH) {
+      const batch = allRecipes.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map((r) => calcRecipeNutrition(r.id))
+      );
+      for (const res of results) {
+        if (res.status === 'fulfilled' && res.value && res.value.matched > 0) {
+          updated++;
+        } else if (res.status === 'rejected') {
+          failed++;
+        }
       }
     }
     return { total: allRecipes.length, updated, failed };
