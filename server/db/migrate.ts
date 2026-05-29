@@ -1,5 +1,6 @@
 import { client } from './index';
 import { seedSubstitutions } from './seed-substitutions';
+import { normalizeRecipeCategory } from '../services/categoryNormalize';
 import bcrypt from 'bcryptjs';
 
 type Sql = typeof client;
@@ -1043,6 +1044,33 @@ const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_price_history_product
         ON price_history(product_name, created_at DESC)
       `;
+    },
+  },
+  {
+    version: '026_normalize_recipe_categories',
+    up: async (sql) => {
+      // Нормализация существующих категорий рецептов. До этой миграции
+      // category хранилась свободным текстом, из-за чего «Десерты», «Десерт»
+      // и «десерт» (регистр + ед./мн. число) считались разными категориями
+      // и дробили список рецептов на отдельные чипы с раздельными счётчиками.
+      //
+      // Проходим по всем уникальным значениям, приводим к каноничной метке
+      // тем же нормализатором, что и пути записи (единый источник правды),
+      // и обновляем строки, где значение изменилось. Идемпотентно: повторный
+      // прогон не делает ничего (canonical === category).
+      const rows = await sql<{ category: string }[]>`
+        SELECT DISTINCT category FROM recipes
+        WHERE category IS NOT NULL AND category <> ''
+      `;
+      for (const { category } of rows) {
+        const canonical = normalizeRecipeCategory(category);
+        if (canonical && canonical !== category) {
+          await sql`
+            UPDATE recipes SET category = ${canonical}
+            WHERE category = ${category}
+          `;
+        }
+      }
     },
   },
   {

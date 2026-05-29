@@ -7,6 +7,7 @@ import { recipes, recipeIngredients, recipeSteps } from '../db/schema';
 import { scrapeRecipe } from '../services/recipeScraper';
 import { startSectionImport, getActiveJob, cancelActiveJob } from '../services/sectionImport';
 import { calcRecipeNutrition } from '../services/nutritionCalc';
+import { normalizeRecipeCategory } from '../services/categoryNormalize';
 
 const PAGE_SIZE = 20;
 
@@ -56,7 +57,7 @@ function toRecipeRow(input: z.infer<typeof recipeFields>) {
     totalTime: input.totalTime ?? null,
     sourceUrl: input.sourceUrl ?? null,
     source: input.source ?? null,
-    category: input.category ?? null,
+    category: normalizeRecipeCategory(input.category),
     cuisine: input.cuisine ?? null,
     difficulty: input.difficulty ?? null,
     calories: input.calories ?? null,
@@ -152,7 +153,17 @@ export const recipesRouter = router({
       GROUP BY category
       ORDER BY count DESC, category ASC
     `;
-    return rows;
+    // Защитное слияние: сводим варианты («Десерт»/«десерт»/«Десерты»)
+    // к каноничной метке и суммируем счётчики. Корректно даже если в БД
+    // ещё остались ненормализованные значения (до прогона миграции 026).
+    const merged = new Map<string, number>();
+    for (const r of rows) {
+      const canonical = normalizeRecipeCategory(r.category) ?? r.category;
+      merged.set(canonical, (merged.get(canonical) ?? 0) + r.count);
+    }
+    return [...merged.entries()]
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category, 'ru'));
   }),
 
   getCuisines: protectedProcedure.query(async () => {
@@ -367,7 +378,7 @@ export const recipesRouter = router({
             totalTime: scraped.totalTime,
             sourceUrl: scraped.sourceUrl,
             source: scraped.source,
-            category: scraped.category,
+            category: normalizeRecipeCategory(scraped.category),
             cuisine: scraped.cuisine,
             difficulty: scraped.difficulty,
             calories: scraped.calories,
@@ -1151,7 +1162,7 @@ export const recipesRouter = router({
         });
       }
 
-      const prompt = `Ты — кулинарный эксперт. Из текста ниже извлеки рецепт и верни ТОЛЬКО JSON (без markdown, без \`\`\`):
+      const prompt = `Ты — кулинарный эксперт. Из текста ниже (название, описание, субтитры) восстанови рецепт и верни ТОЛЬКО JSON (без markdown, без \`\`\`):
 
 {
   "title": "Название блюда на русском",
@@ -1160,7 +1171,7 @@ export const recipesRouter = router({
   "prepTime": null,
   "cookTime": null,
   "totalTime": null,
-  "category": "Обед/Ужин/Завтрак/Десерт/Закуска",
+  "category": "Завтраки/Супы/Салаты/Основные блюда/Десерты/Закуски/Соусы/Выпечка/Напитки",
   "cuisine": "Русская/Итальянская/...",
   "difficulty": "Легко/Средне/Сложно",
   "ingredients": [
@@ -1174,8 +1185,10 @@ export const recipesRouter = router({
 Правила:
 - Если количество не указано — amount: null
 - Единицы: г, кг, мл, л, шт, ст.л., ч.л., стакан
+- ВАЖНО: шаги приготовления почти никогда не записаны явным нумерованным списком. Извлекай их из описания и субтитров — реконструируй последовательность действий своими словами в логичном порядке. Даже если в тексте только разговорная речь автора, выдели из неё этапы готовки и сформулируй их как чёткие шаги.
 - Шаги — по порядку, без нумерации в тексте
-- Если не можешь извлечь рецепт — верни {"error": "причина"}
+- НЕ отказывайся, если шаги не оформлены явно — твоя задача восстановить их из контекста.
+- Возвращай {"error": "причина"} ТОЛЬКО если в тексте вообще нет кулинарной информации (нет ни ингредиентов, ни процесса готовки).
 
 Текст:
 ${textForAI}`;
@@ -1241,7 +1254,7 @@ ${textForAI}`;
               totalTime: parsed.totalTime || null,
               sourceUrl: input.url,
               source: `YouTube: ${videoInfo.channelTitle}`,
-              category: parsed.category || null,
+              category: normalizeRecipeCategory(parsed.category),
               cuisine: parsed.cuisine || null,
               difficulty: parsed.difficulty || null,
               calories: null,
