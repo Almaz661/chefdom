@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { scrapeRecipe } from "./recipeScraper";
 import { calcRecipeNutrition } from "./nutritionCalc";
 import { validateFetchUrl } from "./urlValidation";
+import { normalizeRecipeCategory } from "./categoryNormalize";
 import { db } from "../db/index";
 import { recipes, recipeIngredients, recipeSteps } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -222,7 +223,7 @@ async function runImport(job: ImportJob): Promise<void> {
 
       // Если категория из URL раздела известна — используем её,
       // иначе оставляем то что определил scrapeRecipe (по названию)
-      const finalCategory = sectionCategory ?? scraped.category;
+      const finalCategory = normalizeRecipeCategory(sectionCategory ?? scraped.category);
 
       const newRecipeId = await db.transaction(async (tx) => {
         const [created] = await tx
