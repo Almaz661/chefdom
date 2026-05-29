@@ -1096,6 +1096,73 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '028_menus_unique_user_week',
+    up: async (sql) => {
+      // Дедупликация: если есть дубли (user_id, week_start_date) — оставляем
+      // один (с наименьшим id), остальные удаляем. Затем создаём уникальный
+      // индекс. Это делает getWeek/addItem race-safe: INSERT ON CONFLICT DO NOTHING.
+      await sql`
+        DELETE FROM menus
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM menus GROUP BY user_id, week_start_date
+        )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_menus_user_week
+        ON menus(user_id, week_start_date)
+      `;
+    },
+  },
+  {
+    version: '029_performance_indexes',
+    up: async (sql) => {
+      // Индексы для масштабирования на 15000+ рецептов:
+      //
+      // 1. recipes.category — фильтр по категории (чипы на странице рецептов)
+      //    и GROUP BY в getCategories. Без индекса — seq-scan всей таблицы.
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_recipes_category
+        ON recipes(category) WHERE category IS NOT NULL
+      `;
+
+      // 2. recipes.title — для текстового поиска (ILIKE %term%).
+      //    pg_trgm GIN индекс ускоряет LIKE/ILIKE с wildcard.
+      await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`;
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_recipes_title_trgm
+        ON recipes USING gin(title gin_trgm_ops)
+      `;
+
+      // 3. recipe_ingredients.recipe_id — JOIN при загрузке ингредиентов
+      //    рецепта (cook, whatToCook, getSuggestions). FK обычно создаёт
+      //    индекс автоматически, но на всякий случай.
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id
+        ON recipe_ingredients(recipe_id)
+      `;
+
+      // 4. inventory(user_id, expiry_date) — для быстрой выборки
+      //    истекающих продуктов (алерты на главной, whatToCook).
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_inventory_user_expiry
+        ON inventory(user_id, expiry_date) WHERE expiry_date IS NOT NULL
+      `;
+
+      // 5. cooking_history(user_id, recipe_id, cooked_at) — для
+      //    getSuggestions (последняя готовка каждого рецепта).
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_cooking_history_user_recipe
+        ON cooking_history(user_id, recipe_id, cooked_at DESC)
+      `;
+
+      // 6. receipts(user_id, created_at) — список чеков с сортировкой.
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_receipts_user_created
+        ON receipts(user_id, created_at DESC)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
