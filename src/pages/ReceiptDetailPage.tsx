@@ -33,6 +33,29 @@ function formatPrice(price: string | null, currency: string): string {
   })}`;
 }
 
+// Авто-определение типа хранения по названию продукта
+const FREEZER_KW = [
+  'замороженн', 'заморож', 'мороженое', 'пельмен', 'вареник',
+  'наггетс', 'фри', 'ice cream', 'frozen', 'bevroren',
+];
+const PANTRY_KW = [
+  'крупа', 'рис', 'гречк', 'макарон', 'спагетти', 'лапша', 'мука',
+  'сахар', 'соль', 'масло подсолн', 'масло растит', 'оливков',
+  'консерв', 'горох', 'фасоль', 'чечевиц', 'нут',
+  'чай', 'кофе', 'какао', 'специ', 'перец молот', 'корица',
+  'уксус', 'соус', 'кетчуп', 'майонез', 'горчиц',
+  'печенье', 'крекер', 'сухар', 'хлебц', 'вафл',
+  'варенье', 'джем', 'мёд', 'мед', 'сироп',
+  'pasta', 'rijst', 'suiker', 'zout', 'olie', 'azijn',
+  'thee', 'koffie', 'saus', 'mosterd', 'peper',
+];
+function guessStorage(name: string): 'fridge' | 'freezer' | 'pantry' {
+  const l = name.toLowerCase();
+  for (const kw of FREEZER_KW) { if (l.includes(kw)) return 'freezer'; }
+  for (const kw of PANTRY_KW) { if (l.includes(kw)) return 'pantry'; }
+  return 'fridge';
+}
+
 // Компонент элемента в списке «В инвентарь» с автозаполнением срока
 type InventoryItemSelection = {
   checked: boolean;
@@ -215,7 +238,7 @@ export function ReceiptDetailPage() {
     },
   });
 
-  const addBulkToInventory = trpc.inventory.addBulk.useMutation({
+  const addBulkToInventory = trpc.inventory.addBulkSmart.useMutation({
     onSuccess: () => {
       utils.inventory.list.invalidate();
       setShowToInventory(false);
@@ -390,7 +413,7 @@ export function ReceiptDetailPage() {
             // Инициализируем чекбоксы для всех позиций
             const sel: typeof invSelections = {};
             items.forEach(it => {
-              sel[it.id] = { checked: true, storage: 'fridge', expiryDate: '' };
+              sel[it.id] = { checked: true, storage: guessStorage(it.productName), expiryDate: '' };
             });
             setInvSelections(sel);
             setShowToInventory(true);
