@@ -1231,6 +1231,60 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: '031_shelf_life_missing_pantry_keywords',
+    up: async (sql) => {
+      // Добавляем недостающие ключевые слова в shelf_life для pantry.
+      // Проблема: recalcExpiry не находил совпадения для майонеза, воды,
+      // сгущёнки, подсолнечного масла (порядок слов другой) и перца (ё/е).
+      const entries = [
+        // Соусы и приправы (pantry)
+        { storageType: 'pantry', keyword: 'майонез', days: 180, priority: 7, description: 'Майонез закрытый, ~6 месяцев' },
+        { storageType: 'pantry', keyword: 'кетчуп', days: 365, priority: 7, description: 'Кетчуп, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'горчиц', days: 365, priority: 6, description: 'Горчица, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'соевый соус', days: 730, priority: 7, description: 'Соевый соус, ~24 месяца' },
+        // Вода
+        { storageType: 'pantry', keyword: 'вода', days: 365, priority: 3, description: 'Вода бутилированная, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'минеральн', days: 365, priority: 5, description: 'Минеральная вода, ~12 месяцев' },
+        // Сгущёнка
+        { storageType: 'pantry', keyword: 'сгущён', days: 365, priority: 7, description: 'Сгущёнка, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'сгущенк', days: 365, priority: 7, description: 'Сгущёнка, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'сгущенн', days: 365, priority: 6, description: 'Сгущённое молоко, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'конденс', days: 365, priority: 5, description: 'Конденсированное молоко, ~12 месяцев' },
+        // Масло подсолнечное — вариант порядка слов
+        { storageType: 'pantry', keyword: 'подсолнечн', days: 365, priority: 7, description: 'Подсолнечное масло, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'sonnenblumen', days: 365, priority: 6, description: 'Sonnenblumenöl, ~12 месяцев' },
+        // Перец — вариант без ё
+        { storageType: 'pantry', keyword: 'перец черн', days: 730, priority: 7, description: 'Перец чёрный, ~24 месяца' },
+        { storageType: 'pantry', keyword: 'черный перец', days: 730, priority: 7, description: 'Чёрный перец, ~24 месяца' },
+        { storageType: 'pantry', keyword: 'черн перец', days: 730, priority: 6, description: 'Чёрный перец, ~24 месяца' },
+        { storageType: 'pantry', keyword: 'pieprz', days: 730, priority: 5, description: 'Pieprz (перец), ~24 месяца' },
+        // Чай — иностранные варианты
+        { storageType: 'pantry', keyword: 'herbata', days: 365, priority: 5, description: 'Herbata (чай), ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'thee', days: 365, priority: 5, description: 'Thee (чай), ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'tee', days: 365, priority: 5, description: 'Tee (чай), ~12 месяцев' },
+        // Соль — иностранные
+        { storageType: 'pantry', keyword: 'salz', days: 1825, priority: 5, description: 'Salz (соль), ~5 лет' },
+        { storageType: 'pantry', keyword: 'zout', days: 1825, priority: 5, description: 'Zout (соль), ~5 лет' },
+        // Крупа — иностранные
+        { storageType: 'pantry', keyword: 'grütze', days: 365, priority: 5, description: 'Grütze (крупа), ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'gruetze', days: 365, priority: 5, description: 'Grütze (крупа), ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'krupa', days: 365, priority: 5, description: 'Крупа, ~12 месяцев' },
+        // Холодильник — майонез открытый
+        { storageType: 'fridge', keyword: 'майонез', days: 30, priority: 7, description: 'Майонез открытый, ~1 месяц' },
+        { storageType: 'fridge', keyword: 'кетчуп', days: 60, priority: 6, description: 'Кетчуп открытый, ~2 месяца' },
+        { storageType: 'fridge', keyword: 'вода', days: 7, priority: 2, description: 'Вода открытая, ~7 дней' },
+      ];
+
+      for (const e of entries) {
+        await sql`
+          INSERT INTO shelf_life (storage_type, keyword, days, priority, description)
+          VALUES (${e.storageType}, ${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT DO NOTHING
+        `;
+      }
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
