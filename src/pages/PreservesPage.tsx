@@ -201,11 +201,12 @@ export function PreservesPage() {
                         <button
                           onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                           disabled={consumeServings.isPending}
-                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-primary transition-colors shrink-0 border border-line rounded-lg"
+                          className="flex items-center gap-1 px-2.5 h-8 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
                           aria-label="Съели порцию"
-                          title="Съели 1 порцию"
+                          title="Списать 1 съеденную порцию"
                         >
                           <Minus size={14} />
+                          Съесть
                         </button>
                       )}
                       <button
@@ -274,11 +275,12 @@ export function PreservesPage() {
                     <button
                       onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                       disabled={consumeServings.isPending}
-                      className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-primary transition-colors shrink-0 border border-line rounded-lg"
+                      className="flex items-center gap-1 px-2.5 h-8 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
                       aria-label="Съели порцию"
-                      title="Съели 1 порцию"
+                      title="Списать 1 съеденную порцию"
                     >
                       <Minus size={14} />
+                      Съесть
                     </button>
                   )}
                   <button
