@@ -111,6 +111,9 @@ export function InventoryPage() {
   const removePreserve = trpc.preserves.remove.useMutation({
     onSuccess: () => utils.preserves.list.invalidate(),
   });
+  const toggleBasic = trpc.inventory.update.useMutation({
+    onSuccess: () => utils.inventory.list.invalidate(),
+  });
 
   // Универсальный тип карточки в списке. source различает обычный
   // инвентарь и заготовку — кнопка «Удалить» использует разный мутатор.
@@ -123,6 +126,7 @@ export function InventoryPage() {
     expiryDate: string | null;
     category: string | null;
     minQuantity: string | null;
+    isBasic: boolean;
   };
 
   // Преобразуем оба источника к общему виду.
@@ -137,6 +141,7 @@ export function InventoryPage() {
       expiryDate: i.expiryDate,
       category: i.category,
       minQuantity: i.minQuantity ?? null,
+      isBasic: (i as any).isBasic === 1,
     }));
 
   // Заготовки frozen добавляем только во вкладке «Морозилка».
@@ -153,6 +158,7 @@ export function InventoryPage() {
             expiryDate: p.expiryDate,
             category: "Заготовки",
             minQuantity: null,
+            isBasic: false,
           }))
       : [];
 
@@ -488,6 +494,9 @@ export function InventoryPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink truncate">
+                            {item.isBasic && (
+                              <span className="text-xs text-primary/70 mr-1" title="Базовый продукт — не попадает в покупки">📌</span>
+                            )}
                             {item.productName}
                             {item.quantity && (
                               <span className="text-ink-muted ml-1">
@@ -501,6 +510,20 @@ export function InventoryPage() {
                             </p>
                           )}
                         </div>
+                        {item.source === "inventory" && (
+                          <button
+                            onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
+                              item.isBasic
+                                ? "text-primary bg-primary/10"
+                                : "text-ink-muted hover:text-primary hover:bg-primary/5"
+                            }`}
+                            title={item.isBasic ? "Убрать из базовых" : "Пометить как базовый (не попадает в покупки)"}
+                            aria-label="Базовый продукт"
+                          >
+                            📌
+                          </button>
+                        )}
                         <button
                           onClick={() => handleRemove(item)}
                           className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"

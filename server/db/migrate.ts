@@ -1285,6 +1285,16 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: '032_inventory_is_basic',
+    up: async (sql) => {
+      // «Базовые продукты» — соль, масло, мука и т.д. которые ВСЕГДА есть дома.
+      // При генерации списка покупок из меню (toShopping) и при готовке (cook)
+      // базовые продукты не добавляются в покупки как недостающие.
+      // Пользователь помечает продукт как базовый через UI.
+      await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS is_basic INTEGER NOT NULL DEFAULT 0`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

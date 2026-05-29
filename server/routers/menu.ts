@@ -332,6 +332,8 @@ export const menuRouter = router({
 
       // Загружаем инвентарь + заготовки — то что УЖЕ ЕСТЬ дома.
       // Не будем добавлять в покупки ингредиенты которые есть в наличии.
+      // Также исключаем «базовые продукты» (isBasic=1) — соль, масло и т.д.
+      // которые пользователь пометил как «всегда есть дома».
       const invItems = await db
         .select({ productName: inventory.productName })
         .from(inventory)
@@ -340,9 +342,14 @@ export const menuRouter = router({
         .select({ name: preserves.name })
         .from(preserves)
         .where(eq(preserves.userId, ctx.userId));
+      const basicItems = await db
+        .select({ productName: inventory.productName })
+        .from(inventory)
+        .where(and(eq(inventory.userId, ctx.userId), eq(inventory.isBasic, 1)));
       const atHomeKeys = new Set([
         ...invItems.map(i => normalizeName(i.productName)),
         ...preserveItems.map(p => normalizeName(p.name)),
+        ...basicItems.map(i => normalizeName(i.productName)),
       ]);
 
       // Убираем из aggregated то что уже есть дома
@@ -657,4 +664,26 @@ export const menuRouter = router({
 
       return suggestions.slice(0, input.limit);
     }),
+
+  // Список готовых блюд из заготовок (cooked/frozen) — для подстановки в меню
+  // без нажатия «Готовить». Если блюдо уже готово — зачем готовить заново.
+  getCookedPreserves: protectedProcedure.query(async ({ ctx }) => {
+    const rows = await db
+      .select({
+        id: preserves.id,
+        name: preserves.name,
+        servings: preserves.servings,
+        preserveType: preserves.preserveType,
+        expiryDate: preserves.expiryDate,
+      })
+      .from(preserves)
+      .where(
+        and(
+          eq(preserves.userId, ctx.userId),
+          rawSql`${preserves.preserveType} IN ('cooked', 'frozen')`,
+        )
+      )
+      .orderBy(preserves.name);
+    return rows;
+  }),
 });
