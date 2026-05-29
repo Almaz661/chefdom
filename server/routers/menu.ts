@@ -209,6 +209,52 @@ export const menuRouter = router({
 
       const recipeIds = [...recipeCount.keys()];
 
+      // Определяем привычный множитель порций для каждого рецепта.
+      // Если пользователь обычно готовит рецепт ×2 (servings в cookingHistory
+      // вдвое больше базового recipe.servings), покупки удваиваются.
+      const portionMultiplier = new Map<number, number>();
+      for (const recipeId of recipeIds) {
+        // Базовое количество порций рецепта
+        const [recipe] = await db
+          .select({ servings: recipes.servings })
+          .from(recipes)
+          .where(eq(recipes.id, recipeId))
+          .limit(1);
+        if (!recipe || !recipe.servings) {
+          portionMultiplier.set(recipeId, 1);
+          continue;
+        }
+
+        // Последние 5 готовок этого рецепта
+        const history = await db
+          .select({ servings: cookingHistory.servings })
+          .from(cookingHistory)
+          .where(
+            and(
+              eq(cookingHistory.userId, ctx.userId),
+              eq(cookingHistory.recipeId, recipeId),
+            ),
+          )
+          .orderBy(desc(cookingHistory.cookedAt))
+          .limit(5);
+
+        if (history.length === 0) {
+          portionMultiplier.set(recipeId, 1);
+          continue;
+        }
+
+        // Среднее отношение: сколько порций готовили / базовое
+        const avgServings = history.reduce((sum, h) => sum + (h.servings || 1), 0) / history.length;
+        const ratio = avgServings / recipe.servings;
+
+        // Если отношение > 1.3 — считаем привычным множителем (округляем до 0.5)
+        if (ratio > 1.3) {
+          portionMultiplier.set(recipeId, Math.round(ratio * 2) / 2); // 1.5, 2, 2.5, 3...
+        } else {
+          portionMultiplier.set(recipeId, 1);
+        }
+      }
+
       // Получить ингредиенты всех рецептов
       const ingredients = await db
         .select()
@@ -299,7 +345,7 @@ export const menuRouter = router({
       for (const ing of ingredients) {
         const nameNorm = normalizeName(ing.name);
         const key = nameNorm;
-        const multiplier = recipeCount.get(ing.recipeId) || 1;
+        const multiplier = (recipeCount.get(ing.recipeId) || 1) * (portionMultiplier.get(ing.recipeId) || 1);
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
 
