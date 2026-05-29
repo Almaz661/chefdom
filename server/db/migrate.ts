@@ -1163,6 +1163,74 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '030_freezer_bakery_desserts',
+    up: async (sql) => {
+      // Добавляем выпечку и десерты в справочник сроков заморозки.
+      // Ранее эти категории отсутствовали — при замораживании тортов,
+      // пирогов, кексов и т.д. система не подсказывала срок годности.
+      const entries = [
+        // --- Выпечка ---
+        { keyword: 'пирог', days: 120, priority: 7, description: 'Пирог, ~4 мес' },
+        { keyword: 'пирож', days: 90, priority: 7, description: 'Пирожки, ~3 мес' },
+        { keyword: 'кулич', days: 120, priority: 7, description: 'Кулич, ~4 мес' },
+        { keyword: 'кекс', days: 120, priority: 7, description: 'Кекс, ~4 мес' },
+        { keyword: 'маффин', days: 90, priority: 7, description: 'Маффины, ~3 мес' },
+        { keyword: 'круассан', days: 60, priority: 7, description: 'Круассаны, ~2 мес' },
+        { keyword: 'штрудел', days: 90, priority: 7, description: 'Штрудель, ~3 мес' },
+        { keyword: 'шарлотк', days: 90, priority: 7, description: 'Шарлотка, ~3 мес' },
+        { keyword: 'чебурек', days: 90, priority: 7, description: 'Чебуреки, ~3 мес' },
+        { keyword: 'самса', days: 90, priority: 7, description: 'Самса, ~3 мес' },
+        { keyword: 'хачапур', days: 60, priority: 7, description: 'Хачапури, ~2 мес' },
+        { keyword: 'пицц', days: 60, priority: 7, description: 'Пицца, ~2 мес' },
+        { keyword: 'лепёшк', days: 90, priority: 6, description: 'Лепёшки, ~3 мес' },
+        { keyword: 'лепешк', days: 90, priority: 6, description: 'Лепёшки, ~3 мес' },
+        { keyword: 'сырник', days: 60, priority: 7, description: 'Сырники, ~2 мес' },
+        { keyword: 'оладь', days: 60, priority: 7, description: 'Оладьи, ~2 мес' },
+        { keyword: 'выпечк', days: 90, priority: 5, description: 'Выпечка (общее), ~3 мес' },
+
+        // --- Десерты ---
+        { keyword: 'торт', days: 90, priority: 7, description: 'Торт, ~3 мес' },
+        { keyword: 'чизкейк', days: 90, priority: 8, description: 'Чизкейк, ~3 мес' },
+        { keyword: 'тирамису', days: 60, priority: 8, description: 'Тирамису, ~2 мес' },
+        { keyword: 'бисквит', days: 120, priority: 7, description: 'Бисквит, ~4 мес' },
+        { keyword: 'безе', days: 90, priority: 7, description: 'Безе/Меренга, ~3 мес' },
+        { keyword: 'меренг', days: 90, priority: 7, description: 'Меренга, ~3 мес' },
+        { keyword: 'пирожн', days: 60, priority: 7, description: 'Пирожное, ~2 мес' },
+        { keyword: 'эклер', days: 60, priority: 7, description: 'Эклеры, ~2 мес' },
+        { keyword: 'профитрол', days: 60, priority: 7, description: 'Профитроли, ~2 мес' },
+        { keyword: 'брауни', days: 90, priority: 7, description: 'Брауни, ~3 мес' },
+        { keyword: 'печень', days: 120, priority: 5, description: 'Печенье, ~4 мес' },
+        { keyword: 'вафл', days: 90, priority: 6, description: 'Вафли, ~3 мес' },
+        { keyword: 'зефир', days: 60, priority: 7, description: 'Зефир, ~2 мес' },
+        { keyword: 'пастил', days: 90, priority: 7, description: 'Пастила, ~3 мес' },
+        { keyword: 'мусс', days: 60, priority: 6, description: 'Мусс, ~2 мес' },
+        { keyword: 'панна', days: 60, priority: 7, description: 'Панна-котта, ~2 мес' },
+        { keyword: 'желе', days: 30, priority: 6, description: 'Желе, ~1 мес' },
+        { keyword: 'мороженое', days: 120, priority: 7, description: 'Мороженое, ~4 мес' },
+        { keyword: 'морожен', days: 120, priority: 6, description: 'Мороженое, ~4 мес' },
+        { keyword: 'сорбет', days: 120, priority: 7, description: 'Сорбет, ~4 мес' },
+        { keyword: 'десерт', days: 60, priority: 4, description: 'Десерт (общее), ~2 мес' },
+
+        // --- Крем и начинки ---
+        { keyword: 'крем', days: 60, priority: 5, description: 'Крем кондитерский, ~2 мес' },
+        { keyword: 'глазур', days: 120, priority: 6, description: 'Глазурь, ~4 мес' },
+        { keyword: 'ганаш', days: 90, priority: 7, description: 'Ганаш, ~3 мес' },
+        { keyword: 'начинк', days: 60, priority: 5, description: 'Начинка, ~2 мес' },
+      ];
+
+      for (const e of entries) {
+        await sql`
+          INSERT INTO freezer_shelf_life (keyword, days, priority, description)
+          VALUES (${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT (keyword) DO UPDATE SET
+            days = EXCLUDED.days,
+            priority = EXCLUDED.priority,
+            description = EXCLUDED.description
+        `;
+      }
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
