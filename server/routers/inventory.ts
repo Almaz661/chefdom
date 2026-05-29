@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, lte, isNotNull, sql as rawSql } from 'drizzle-orm';
+import { eq, and, lte, isNotNull, isNull, sql as rawSql } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { inventory, shelfLife, products } from '../db/schema';
@@ -69,6 +69,7 @@ export const inventoryRouter = router({
           and(
             eq(inventory.userId, ctx.userId),
             lte(inventory.addedAt, cutoffDate),
+            isNull(inventory.expiryDate),
           )
         )
         .orderBy(inventory.addedAt);

@@ -39,6 +39,7 @@ async function updateProductMasterPrices(
   parsedItems: Array<{ productName: string; price: number | null }>,
   storeName: string | null,
   purchaseDate: string | null,
+  currency: 'EUR' | 'RUB' = 'EUR',
 ): Promise<void> {
   for (const item of parsedItems) {
     if (item.price === null) continue;
@@ -72,7 +73,7 @@ async function updateProductMasterPrices(
         price: String(item.price),
         storeName: storeName ?? null,
         purchaseDate: purchaseDate ?? null,
-        currency: 'EUR',
+        currency: currency,
       })
       .catch(() => {});
   }
@@ -240,7 +241,7 @@ export const receiptsRouter = router({
       });
 
       // 5. Обновляем Product Master — сохраняем цены для будущих чеков
-      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate);
+      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate, parsed.currency);
 
       return {
         id: created.id,
@@ -321,7 +322,7 @@ export const receiptsRouter = router({
       });
 
       // Обновляем Product Master — сохраняем цены для будущих чеков
-      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate);
+      await updateProductMasterPrices(parsed.items, parsed.storeName, parsed.purchaseDate, parsed.currency);
 
       return {
         id: input.id,

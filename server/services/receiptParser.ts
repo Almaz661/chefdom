@@ -53,7 +53,12 @@ export function matchItemsWithProductMaster(
   prices: number[],
   productMaster: ProductMasterEntry[],
 ): Array<{ name: string; price: number }> {
-  const usedPrices = new Set<number>();
+  // FIX: трекаем использованные цены по ИНДЕКСУ, а не по значению.
+  // Старая реализация использовала Set<number> с VALUE цены — если два
+  // товара стоили одинаково (1,29 + 1,29), Set.has(1.29) возвращал true
+  // для второго и он получал чужую цену. Теперь каждый индекс используется
+  // ровно один раз, дубли цен обрабатываются корректно.
+  const usedIndices = new Set<number>();
   const result: Array<{ name: string; price: number }> = [];
 
   names.forEach((name) => {
@@ -65,31 +70,31 @@ export function matchItemsWithProductMaster(
 
     if (entry && entry.lastPrice !== null) {
       // Ищем БЛИЖАЙШУЮ неиспользованную цену к lastPrice
-      let closestPrice: number | null = null;
+      let closestIdx = -1;
       let minDiff = Infinity;
 
-      prices.forEach(price => {
-        if (!usedPrices.has(price)) {
+      prices.forEach((price, idx) => {
+        if (!usedIndices.has(idx)) {
           const diff = Math.abs(price - entry.lastPrice!);
           if (diff < minDiff) {
             minDiff = diff;
-            closestPrice = price;
+            closestIdx = idx;
           }
         }
       });
 
-      if (closestPrice !== null) {
-        result.push({ name, price: closestPrice });
-        usedPrices.add(closestPrice);
+      if (closestIdx !== -1) {
+        result.push({ name, price: prices[closestIdx] });
+        usedIndices.add(closestIdx);
         return;
       }
     }
 
     // Fallback: берём первую неиспользованную цену по порядку
-    const availablePrices = prices.filter(p => !usedPrices.has(p));
-    if (availablePrices.length > 0) {
-      result.push({ name, price: availablePrices[0] });
-      usedPrices.add(availablePrices[0]);
+    const fallbackIdx = prices.findIndex((_, idx) => !usedIndices.has(idx));
+    if (fallbackIdx !== -1) {
+      result.push({ name, price: prices[fallbackIdx] });
+      usedIndices.add(fallbackIdx);
     }
   });
 
