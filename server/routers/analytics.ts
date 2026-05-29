@@ -177,6 +177,93 @@ export const analyticsRouter = router({
       };
     }),
 
+  // Ценовая аналитика: для каждого товара — в каком магазине дешевле.
+  // Берёт все записи из price_history, группирует по (product_name, store_name),
+  // считает среднюю и минимальную цену. Возвращает топ-50 товаров с разбивкой.
+  priceComparison: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+    .query(async ({ input }) => {
+      const { priceHistory } = await import('../db/schema');
+
+      // Получаем агрегат: товар × магазин → средняя цена, мин. цена, кол-во покупок
+      const rows = await db.execute<{
+        product_name: string;
+        store_name: string;
+        avg_price: string;
+        min_price: string;
+        max_price: string;
+        buy_count: string;
+        last_date: string | null;
+      }>(sql`
+        SELECT
+          product_name,
+          COALESCE(store_name, 'Неизвестно') AS store_name,
+          ROUND(AVG(price::numeric), 2) AS avg_price,
+          MIN(price::numeric) AS min_price,
+          MAX(price::numeric) AS max_price,
+          COUNT(*)::text AS buy_count,
+          MAX(purchase_date) AS last_date
+        FROM price_history
+        GROUP BY product_name, store_name
+        HAVING COUNT(*) >= 1
+        ORDER BY product_name, avg_price ASC
+      `);
+
+      // Группируем по товару
+      const byProduct = new Map<string, Array<{
+        store: string;
+        avgPrice: number;
+        minPrice: number;
+        maxPrice: number;
+        buyCount: number;
+        lastDate: string | null;
+      }>>();
+
+      for (const r of rows) {
+        const arr = byProduct.get(r.product_name) || [];
+        arr.push({
+          store: r.store_name,
+          avgPrice: parseFloat(r.avg_price),
+          minPrice: parseFloat(r.min_price),
+          maxPrice: parseFloat(r.max_price),
+          buyCount: parseInt(r.buy_count, 10),
+          lastDate: r.last_date,
+        });
+        byProduct.set(r.product_name, arr);
+      }
+
+      // Берём только те товары, которые покупались в 2+ магазинах (иначе сравнивать не с чем)
+      const result: Array<{
+        productName: string;
+        stores: Array<{
+          store: string;
+          avgPrice: number;
+          minPrice: number;
+          maxPrice: number;
+          buyCount: number;
+          lastDate: string | null;
+          isCheapest: boolean;
+        }>;
+        savings: number; // разница между самым дорогим и самым дешёвым средним
+      }> = [];
+
+      for (const [productName, stores] of byProduct) {
+        if (stores.length < 2) continue;
+        const minAvg = Math.min(...stores.map(s => s.avgPrice));
+        const maxAvg = Math.max(...stores.map(s => s.avgPrice));
+        result.push({
+          productName,
+          stores: stores.map(s => ({ ...s, isCheapest: s.avgPrice === minAvg })),
+          savings: Math.round((maxAvg - minAvg) * 100) / 100,
+        });
+      }
+
+      // Сортируем по потенциальной экономии (больше savings — интереснее)
+      result.sort((a, b) => b.savings - a.savings);
+
+      return result.slice(0, input.limit);
+    }),
+
   // Топ-5 рецептов за период
   topRecipes: protectedProcedure
     .input(z.object({ period: PeriodSchema.optional() }))

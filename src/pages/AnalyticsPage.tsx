@@ -22,7 +22,7 @@ function pluralTimes(n: number): string {
 
 export function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("month");
-  const [tab, setTab] = useState<"cooking" | "spending">("cooking");
+  const [tab, setTab] = useState<"cooking" | "spending" | "prices">("cooking");
 
   const { data: topRecipes = [] } = trpc.analytics.topRecipes.useQuery({ period });
   const { data: consumption = [] } = trpc.analytics.productConsumption.useQuery({ period });
@@ -36,6 +36,11 @@ export function AnalyticsPage() {
   const { data: spending } = trpc.analytics.spendingReport.useQuery(
     { period: spendingPeriod },
     { enabled: tab === "spending" },
+  );
+
+  const { data: priceComparison = [] } = trpc.analytics.priceComparison.useQuery(
+    { limit: 30 },
+    { enabled: tab === "prices" },
   );
 
   return (
@@ -61,6 +66,14 @@ export function AnalyticsPage() {
           }`}
         >
           Расходы
+        </button>
+        <button
+          onClick={() => setTab("prices")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "prices" ? "bg-primary text-paper" : "text-ink-soft hover:text-ink"
+          }`}
+        >
+          Где дешевле
         </button>
       </div>
 
@@ -282,6 +295,38 @@ export function AnalyticsPage() {
             </>
           )}
         </>
+      )}
+      {tab === "prices" && (
+        <div className="space-y-4">
+          {priceComparison.length === 0 ? (
+            <p className="text-ink-muted text-center py-8">
+              Нужно минимум 2 чека из разных магазинов с одним и тем же товаром
+            </p>
+          ) : (
+            priceComparison.map((item) => (
+              <div key={item.productName} className="bg-paper border border-line rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-ink">{item.productName}</h3>
+                  <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
+                    экономия {item.savings.toFixed(2)}
+                  </span>
+                </div>
+                <ul className="space-y-1.5">
+                  {item.stores.map((s, idx) => (
+                    <li key={idx} className="flex items-center justify-between text-sm">
+                      <span className={s.isCheapest ? "text-green-700 font-medium" : "text-ink-soft"}>
+                        {s.isCheapest && "✓ "}{s.store}
+                      </span>
+                      <span className={`tabular-nums ${s.isCheapest ? "text-green-700 font-medium" : "text-ink-muted"}`}>
+                        {s.avgPrice.toFixed(2)} (мин: {s.minPrice.toFixed(2)})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
+        </div>
       )}
     </div>
   );
