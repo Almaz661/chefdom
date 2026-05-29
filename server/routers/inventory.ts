@@ -85,6 +85,7 @@ export const inventoryRouter = router({
         unit: z.string().max(50).nullable().optional(),
         storageType: z.enum(storageTypes).default('fridge'),
         expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        minQuantity: z.number().positive().nullable().optional(),
         category: z.string().max(100).nullable().optional(),
       }),
     )
@@ -99,6 +100,7 @@ export const inventoryRouter = router({
           unit: input.unit ?? null,
           storageType: input.storageType,
           expiryDate: input.expiryDate ?? null,
+          minQuantity: input.minQuantity != null ? String(input.minQuantity) : null,
           category: input.category ?? null,
         })
         .returning({ id: inventory.id });
@@ -115,6 +117,7 @@ export const inventoryRouter = router({
         unit: z.string().max(50).nullable().optional(),
         storageType: z.enum(storageTypes).optional(),
         expiryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        minQuantity: z.number().positive().nullable().optional(),
         category: z.string().max(100).nullable().optional(),
       }),
     )
@@ -137,6 +140,7 @@ export const inventoryRouter = router({
       if (fields.unit !== undefined) updates.unit = fields.unit;
       if (fields.storageType !== undefined) updates.storageType = fields.storageType;
       if (fields.expiryDate !== undefined) updates.expiryDate = fields.expiryDate;
+      if (fields.minQuantity !== undefined) updates.minQuantity = fields.minQuantity != null ? String(fields.minQuantity) : null;
       if (fields.category !== undefined) updates.category = fields.category;
 
       await db.update(inventory).set(updates).where(and(eq(inventory.id, id), eq(inventory.userId, ctx.userId)));
