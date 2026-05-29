@@ -1045,6 +1045,29 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '027_preserves_allow_cooked',
+    up: async (sql) => {
+      // Тип 'cooked' (готовое блюдо) добавлен в код позже миграции 019:
+      // cook-флоу (recipes.cook) вставляет в preserves запись типа 'cooked'
+      // с порциями. Но CHECK-констрейнт из 019 разрешал только
+      // frozen/preserved/opened, поэтому нажатие «Готовить» падало с
+      // ошибкой: new row for relation "preserves" violates check
+      // constraint "preserves_preserve_type_check".
+      //
+      // Пересоздаём констрейнт, добавив 'cooked'. DROP ... IF EXISTS +
+      // ADD — идемпотентно в рамках одного прогона миграции.
+      await sql`
+        ALTER TABLE preserves
+        DROP CONSTRAINT IF EXISTS preserves_preserve_type_check
+      `;
+      await sql`
+        ALTER TABLE preserves
+        ADD CONSTRAINT preserves_preserve_type_check
+        CHECK (preserve_type IN ('frozen','preserved','opened','cooked'))
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
