@@ -364,7 +364,7 @@ export const settingsRouter = router({
               userId,
               storeName: receiptData.storeName ?? receiptData.store_name ?? null,
               purchaseDate: receiptData.purchaseDate ?? receiptData.purchase_date ?? null,
-              totalAmount: receiptData.totalAmount ?? receiptData.total_amount
+              totalAmount: (receiptData.totalAmount ?? receiptData.total_amount) != null
                 ? String(receiptData.totalAmount ?? receiptData.total_amount)
                 : null,
               currency: receiptData.currency ?? "EUR",
@@ -414,7 +414,7 @@ export const settingsRouter = router({
               .insert(products)
               .values({
                 nameRu,
-                lastPrice: item.lastPrice ?? item.last_price
+                lastPrice: (item.lastPrice ?? item.last_price) != null
                   ? String(item.lastPrice ?? item.last_price)
                   : null,
                 storeName: item.storeName ?? item.store_name ?? null,
