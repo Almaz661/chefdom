@@ -11,10 +11,11 @@ import { translateBatchToRu } from '../services/translate';
 // Валюта по умолчанию из настроек пользователя (Settings → Валюта).
 // Используется когда currency не указан явно при создании чека и как
 // fallback в парсере OCR для нераспознанных магазинов.
-async function getUserDefaultCurrency(): Promise<'EUR' | 'RUB'> {
+async function getUserDefaultCurrency(userId: number): Promise<'EUR' | 'RUB'> {
   const [user] = await db
     .select({ defaultCurrency: users.defaultCurrency })
     .from(users)
+    .where(eq(users.id, userId))
     .limit(1);
   return user?.defaultCurrency === 'RUB' ? 'RUB' : 'EUR';
 }
@@ -143,7 +144,7 @@ export const receiptsRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const currency = input.currency ?? (await getUserDefaultCurrency());
+      const currency = input.currency ?? (await getUserDefaultCurrency(ctx.userId));
       const [created] = await db
         .insert(receipts)
         .values({
@@ -195,7 +196,7 @@ export const receiptsRouter = router({
       }
 
       // 2. Парсинг (если магазин не распознан — берём валюту из настроек)
-      const userDefaultCurrency = await getUserDefaultCurrency();
+      const userDefaultCurrency = await getUserDefaultCurrency(ctx.userId);
       const pm = await loadProductMaster();
       const parsed = parseReceiptText(recognized.text, userDefaultCurrency, pm);
 
@@ -277,7 +278,7 @@ export const receiptsRouter = router({
         });
       }
 
-      const userDefaultCurrency = await getUserDefaultCurrency();
+      const userDefaultCurrency = await getUserDefaultCurrency(ctx.userId);
       const pm = await loadProductMaster();
       const parsed = parseReceiptText(receipt.ocrRaw, userDefaultCurrency, pm);
 
