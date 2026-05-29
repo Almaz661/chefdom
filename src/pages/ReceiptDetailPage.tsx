@@ -17,6 +17,24 @@ import {
 import { trpc } from "../utils/trpc";
 
 // G.19 — детальная страница чека.
+
+// Авто-определение storageType по ключевым словам в названии товара
+const FREEZER_KW = ['замороженн', 'заморож', 'мороженое', 'пельмен', 'вареник', 'наггетс', 'фри'];
+const PANTRY_KW = [
+  'крупа', 'рис', 'гречк', 'макарон', 'спагетти', 'лапша', 'мука',
+  'сахар', 'соль', 'масло подсолн', 'масло растит', 'оливков',
+  'консерв', 'горох', 'фасоль', 'чечевиц', 'нут',
+  'чай', 'кофе', 'какао', 'специ', 'перец молот', 'корица',
+  'уксус', 'соус', 'кетчуп', 'майонез', 'горчиц',
+  'печенье', 'крекер', 'сухар', 'хлебц', 'вафл',
+  'варенье', 'джем', 'мёд', 'мед', 'сироп',
+];
+function guessStorageType(name: string): 'fridge' | 'freezer' | 'pantry' {
+  const lower = name.toLowerCase();
+  for (const kw of FREEZER_KW) { if (lower.includes(kw)) return 'freezer'; }
+  for (const kw of PANTRY_KW) { if (lower.includes(kw)) return 'pantry'; }
+  return 'fridge';
+}
 // Чек создаётся фотографией со страницы списка (см. ReceiptsPage),
 // здесь — просмотр шапки и позиций. Если что-то распозналось плохо:
 // удалить позицию (или весь чек) и пересфотографировать.
@@ -215,7 +233,7 @@ export function ReceiptDetailPage() {
     },
   });
 
-  const addBulkToInventory = trpc.inventory.addBulk.useMutation({
+  const addBulkToInventory = trpc.inventory.addBulkSmart.useMutation({
     onSuccess: () => {
       utils.inventory.list.invalidate();
       setShowToInventory(false);
@@ -390,7 +408,7 @@ export function ReceiptDetailPage() {
             // Инициализируем чекбоксы для всех позиций
             const sel: typeof invSelections = {};
             items.forEach(it => {
-              sel[it.id] = { checked: true, storage: 'fridge', expiryDate: '' };
+              sel[it.id] = { checked: true, storage: guessStorageType(it.productName), expiryDate: '' };
             });
             setInvSelections(sel);
             setShowToInventory(true);
