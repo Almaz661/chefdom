@@ -1086,4 +1086,212 @@ export const recipesRouter = router({
         return { consumed, total: ingredients.length, addedToShopping: missingItems.length + autoAdded };
       });
     }),
+
+  // --- ИМПОРТ ИЗ YOUTUBE ---
+  // Принимает URL видео, извлекает описание + субтитры,
+  // отправляет в Gemini AI для структурирования в рецепт.
+  importFromYoutube: protectedProcedure
+    .input(z.object({ url: z.string().min(10).max(500) }))
+    .mutation(async ({ input }) => {
+      const { extractVideoId, getVideoInfo, getVideoCaptions, extractLinksFromDescription } = await import('../services/youtube');
+
+      // 1. Извлечь video ID
+      const videoId = extractVideoId(input.url);
+      if (!videoId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Некорректная ссылка на YouTube. Поддерживаются: youtube.com/watch?v=..., youtu.be/..., shorts/...',
+        });
+      }
+
+      // 2. Получить информацию о видео
+      const videoInfo = await getVideoInfo(videoId);
+      if (!videoInfo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Видео не найдено. Проверь ссылку.',
+        });
+      }
+
+      // 3. Проверить есть ли ссылка на сайт с рецептом в описании
+      const siteLinks = extractLinksFromDescription(videoInfo.description);
+
+      // 4. Получить субтитры (если доступны)
+      let captions: string | null = null;
+      try {
+        captions = await getVideoCaptions(videoId);
+      } catch {
+        // Субтитры недоступны — не критично
+      }
+
+      // 5. Собрать текст для AI
+      const textForAI = [
+        `Название видео: ${videoInfo.title}`,
+        `Канал: ${videoInfo.channelTitle}`,
+        '',
+        'Описание видео:',
+        videoInfo.description.slice(0, 3000),
+        '',
+        captions ? `Субтитры (первые 4000 символов):\n${captions.slice(0, 4000)}` : '',
+      ].filter(Boolean).join('\n');
+
+      if (textForAI.length < 50) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Не удалось извлечь достаточно текста из видео. Попробуй добавить рецепт вручную.',
+        });
+      }
+
+      // 6. Отправить в Gemini AI для извлечения рецепта
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'GEMINI_API_KEY не настроен.',
+        });
+      }
+
+      const prompt = `Ты — кулинарный эксперт. Из текста ниже извлеки рецепт и верни ТОЛЬКО JSON (без markdown, без \`\`\`):
+
+{
+  "title": "Название блюда на русском",
+  "description": "Краткое описание (1-2 предложения)",
+  "servings": 4,
+  "prepTime": null,
+  "cookTime": null,
+  "totalTime": null,
+  "category": "Обед/Ужин/Завтрак/Десерт/Закуска",
+  "cuisine": "Русская/Итальянская/...",
+  "difficulty": "Легко/Средне/Сложно",
+  "ingredients": [
+    { "name": "Название ингредиента", "amount": 200, "unit": "г" }
+  ],
+  "steps": [
+    { "instruction": "Шаг приготовления" }
+  ]
+}
+
+Правила:
+- Если количество не указано — amount: null
+- Единицы: г, кг, мл, л, шт, ст.л., ч.л., стакан
+- Шаги — по порядку, без нумерации в тексте
+- Если не можешь извлечь рецепт — верни {"error": "причина"}
+
+Текст:
+${textForAI}`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3 },
+          }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Gemini API вернул ошибку ${res.status}. Попробуй позже.`,
+          });
+        }
+
+        const data = await res.json() as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        // Убираем markdown обёртку если есть
+        const jsonText = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        let parsed: any;
+        try {
+          parsed = JSON.parse(jsonText);
+        } catch {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'AI не смог извлечь рецепт из этого видео. Попробуй видео где автор проговаривает ингредиенты и шаги.',
+          });
+        }
+
+        if (parsed.error) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `AI не нашёл рецепт: ${parsed.error}`,
+          });
+        }
+
+        // 7. Сохранить рецепт в БД
+        const result = await db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(recipes)
+            .values({
+              title: parsed.title || videoInfo.title,
+              description: parsed.description || null,
+              imageUrl: videoInfo.thumbnailUrl,
+              servings: parsed.servings || 4,
+              prepTime: parsed.prepTime || null,
+              cookTime: parsed.cookTime || null,
+              totalTime: parsed.totalTime || null,
+              sourceUrl: input.url,
+              source: `YouTube: ${videoInfo.channelTitle}`,
+              category: parsed.category || null,
+              cuisine: parsed.cuisine || null,
+              difficulty: parsed.difficulty || null,
+              calories: null,
+            })
+            .returning({ id: recipes.id });
+
+          if (parsed.ingredients?.length > 0) {
+            await tx.insert(recipeIngredients).values(
+              parsed.ingredients.map((ing: any, idx: number) => ({
+                recipeId: created.id,
+                name: ing.name || 'Без названия',
+                amount: ing.amount != null ? String(ing.amount) : null,
+                unit: ing.unit || null,
+                groupName: ing.groupName || null,
+                sortOrder: idx,
+              })),
+            );
+          }
+
+          if (parsed.steps?.length > 0) {
+            await tx.insert(recipeSteps).values(
+              parsed.steps.map((s: any, idx: number) => ({
+                recipeId: created.id,
+                stepNumber: idx + 1,
+                instruction: s.instruction || s,
+                imageUrl: null,
+                timerMinutes: s.timerMinutes || null,
+              })),
+            );
+          }
+
+          return { id: created.id };
+        });
+
+        // 8. Авто-расчёт КБЖУ
+        try {
+          await calcRecipeNutrition(result.id);
+        } catch {
+          // Не критично
+        }
+
+        return {
+          id: result.id,
+          title: parsed.title || videoInfo.title,
+          ingredientsCount: parsed.ingredients?.length || 0,
+          stepsCount: parsed.steps?.length || 0,
+          siteLinks, // ссылки на сайты из описания (если AI не справился — пользователь может импортировать оттуда)
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    }),
 });

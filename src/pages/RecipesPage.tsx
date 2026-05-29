@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Search, Plus, Download, FolderDown, ChefHat, BookOpen } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Plus, Download, FolderDown, ChefHat, BookOpen, Youtube, Loader2 } from "lucide-react";
 import { trpc } from "../utils/trpc";
 import { RecipeImportDialog } from "../components/RecipeImportDialog";
 import { SectionImportDialog } from "../components/SectionImportDialog";
@@ -112,6 +112,7 @@ export function RecipesPage() {
   const [category, setCategory] = useState<string | undefined>();
   const [importOpen, setImportOpen] = useState(false);
   const [sectionOpen, setSectionOpen] = useState(false);
+  const [youtubeOpen, setYoutubeOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -205,6 +206,14 @@ export function RecipesPage() {
             <FolderDown size={18} />
             Раздел
           </button>
+          <button
+            type="button"
+            onClick={() => setYoutubeOpen(true)}
+            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-red-500 hover:text-red-500 transition-colors"
+          >
+            <Youtube size={18} />
+            YouTube
+          </button>
         </div>
       )}
 
@@ -279,6 +288,90 @@ export function RecipesPage() {
         open={sectionOpen}
         onClose={() => setSectionOpen(false)}
       />
+      {youtubeOpen && (
+        <YouTubeImportDialog onClose={() => setYoutubeOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+// --- YouTube Import Dialog ---
+function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
+  const [url, setUrl] = useState("");
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
+
+  const importYt = trpc.recipes.importFromYoutube.useMutation({
+    onSuccess: (result) => {
+      utils.recipes.list.invalidate();
+      utils.recipes.getStats.invalidate();
+      onClose();
+      navigate(`/recipes/${result.id}`);
+    },
+  });
+
+  return (
+    <div
+      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      onClick={() => !importYt.isPending && onClose()}
+    >
+      <div
+        className="bg-paper w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="font-serif text-xl font-semibold text-ink mb-2 flex items-center gap-2">
+          <Youtube size={22} className="text-red-500" />
+          Импорт из YouTube
+        </h3>
+        <p className="text-sm text-ink-soft mb-4">
+          Вставь ссылку на видео с рецептом. AI извлечёт ингредиенты и шаги из описания и субтитров.
+        </p>
+
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=..."
+          autoFocus
+          className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary mb-4"
+        />
+
+        {importYt.error && (
+          <p className="text-sm text-alert mb-4">{importYt.error.message}</p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={importYt.isPending}
+            className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            disabled={!url.trim() || importYt.isPending}
+            onClick={() => importYt.mutate({ url: url.trim() })}
+            className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-2"
+          >
+            {importYt.isPending ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Извлекаю...
+              </>
+            ) : (
+              "Импортировать"
+            )}
+          </button>
+        </div>
+
+        {importYt.isPending && (
+          <p className="text-xs text-ink-muted text-center mt-3">
+            AI анализирует видео... Обычно 10-20 секунд.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
