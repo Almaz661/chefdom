@@ -94,14 +94,14 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Content */}
       <main className="lg:pl-56 flex-1 pb-20 lg:pb-0 min-h-screen">
-        {/* Кнопка «Назад» — мобильная, на всех страницах кроме главной */}
+        {/* Кнопка «Назад» — на всех страницах кроме главной */}
         {!isHome && (
-          <div className="lg:hidden px-4 pt-4">
+          <div className="px-5 pt-5">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 text-ink-muted hover:text-ink text-sm transition-colors"
+              className="flex items-center gap-1.5 text-ink-muted hover:text-primary text-sm font-medium transition-colors"
             >
-              <ArrowLeft size={16} strokeWidth={1.5} />
+              <ArrowLeft size={18} strokeWidth={1.5} />
               <span>Назад</span>
             </button>
           </div>
