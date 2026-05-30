@@ -1,69 +1,158 @@
 @import "tailwindcss";
 
 @theme {
-  /* Premium Dark Kitchen — Graphite + Champagne Gold */
-  --color-primary: #c9a96e;
-  --color-primary-dark: #a8874d;
-  --color-primary-light: #c9a96e1a;
+  /* ═══════════════════════════════════════════════════════════════
+     CHEFDOM — Тёплая премиальная гастрономическая атмосфера
+     
+     Ассоциации: дорогая кухня вечером, латунная фурнитура, 
+     чёрный камень, винный шкаф, ресторан после открытия.
+     
+     НЕ Apple, НЕ SaaS, НЕ скандинавский минимализм.
+     ═══════════════════════════════════════════════════════════════ */
 
-  --color-surface: #1a1a1a;
-  --color-surface-elevated: #242424;
-  --color-surface-hover: #2a2a2a;
+  /* Primary — шампанское золото / латунь / старое золото */
+  --color-primary: #c5a55a;
+  --color-primary-dark: #a68b3c;
+  --color-primary-light: rgba(197, 165, 90, 0.08);
 
-  --color-cream: #111111;
-  --color-paper: #1e1e1e;
+  /* Фон — графит + тёмно-синий + угольный. Как дорогой камень. */
+  --color-cream: #131720;
+  --color-paper: #1a1f2c;
+  --color-surface: #1a1f2c;
+  --color-surface-elevated: #212738;
+  --color-surface-hover: #282f42;
 
-  --color-ink: #f0ece4;
-  --color-ink-soft: #a09a90;
-  --color-ink-muted: #6b6560;
+  /* Текст — молочно-белый, приглушённый */
+  --color-ink: #f2efe9;
+  --color-ink-soft: #b8b2a8;
+  --color-ink-muted: #6e6960;
 
-  --color-fresh: #6b9e7a;
-  --color-warning: #d4a843;
-  --color-alert: #c45c4f;
-  --color-cool: #6a8fa0;
+  /* Semantic */
+  --color-fresh: #7db87d;
+  --color-warning: #dba944;
+  --color-alert: #cc5544;
+  --color-cool: #7aafc4;
 
-  --color-line: #2e2e2e;
-  --color-line-strong: #3a3a3a;
+  /* Borders — мягкое свечение, как подсвеченные панели */
+  --color-line: #2a3040;
+  --color-line-strong: #3a4258;
 
-  /* Fonts */
+  /* Glow — тёплое свечение по краям карточек */
+  --color-glow: rgba(197, 165, 90, 0.06);
+
+  /* Typography */
   --font-serif: "Lora", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
-html,
-body,
-#root {
+/* ═══ Base ═══ */
+
+html, body, #root {
   height: 100%;
 }
 
 body {
-  background-color: #111111;
+  background-color: #131720;
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
   font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-button {
-  font-family: inherit;
-}
+button { font-family: inherit; }
+
+/* ═══ Transitions ═══ */
 
 a, button, input, select, textarea {
-  transition: all 0.15s ease;
+  transition: color 0.2s ease, background-color 0.2s ease,
+              border-color 0.2s ease, box-shadow 0.3s ease,
+              transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* ═══ Scrollbar ═══ */
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3a4258; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4a5570; }
+
+/* ═══ Selection ═══ */
+
+::selection {
+  background: rgba(197, 165, 90, 0.25);
+  color: var(--color-ink);
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* ═══ Focus ═══ */
+
+:focus-visible {
+  outline: 1.5px solid var(--color-primary);
+  outline-offset: 2px;
 }
-::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
-  border-radius: 2px;
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Stagger fade up on page load */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+
+.animate-in {
+  opacity: 0;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-in:nth-child(1) { animation-delay: 0ms; }
+.animate-in:nth-child(2) { animation-delay: 100ms; }
+.animate-in:nth-child(3) { animation-delay: 200ms; }
+.animate-in:nth-child(4) { animation-delay: 300ms; }
+.animate-in:nth-child(5) { animation-delay: 400ms; }
+.animate-in:nth-child(6) { animation-delay: 500ms; }
+.animate-in:nth-child(7) { animation-delay: 600ms; }
+
+/* Hero image slow drift */
+@keyframes slowDrift {
+  0%, 100% { transform: scale(1.0) translate(0, 0); }
+  50% { transform: scale(1.04) translate(-0.5%, -0.3%); }
+}
+.animate-drift { animation: slowDrift 25s ease-in-out infinite; }
+
+/* Soft pulse for CTA */
+@keyframes softPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(197, 165, 90, 0.3); }
+  50% { box-shadow: 0 0 20px 4px rgba(197, 165, 90, 0.1); }
+}
+.animate-cta { animation: softPulse 4s ease-in-out infinite; }
+
+/* Card lift on hover */
+.card-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.4),
+              0 0 0 1px rgba(197, 165, 90, 0.08);
+}
+
+/* Page transition */
+main {
+  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Glow border for cards — матовое стекло / подсвеченные панели */
+.card-glow {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03),
+              0 0 0 1px rgba(197, 165, 90, 0.04),
+              0 2px 8px 0 rgba(0, 0, 0, 0.2);
+}
+.card-glow:hover {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+              0 0 0 1px rgba(197, 165, 90, 0.12),
+              0 8px 24px 0 rgba(0, 0, 0, 0.3);
 }

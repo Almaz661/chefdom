@@ -5,8 +5,8 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#111111",
-  "theme_color": "#1a1a1a",
+  "background_color": "#131720",
+  "theme_color": "#1a1f2c",
   "lang": "ru",
   "icons": [
     {
