@@ -117,30 +117,30 @@ export function MenuPage() {
   const nextWeek = () => setWeekStart((w) => shiftWeek(w, 7));
 
   return (
-    <div className="max-w-6xl mx-auto p-4 lg:p-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
       {/* Заголовок + навигация недели */}
-      <header className="flex items-center justify-between mb-6">
+      <header className="flex items-center justify-between mb-8">
         <button
           onClick={prevWeek}
-          className="p-2 rounded-lg hover:bg-cream transition-colors"
+          className="p-1.5 rounded-lg text-ink-muted hover:text-ink transition-colors"
           aria-label="Предыдущая неделя"
         >
-          <ChevronLeft size={24} />
+          <ChevronLeft size={18} />
         </button>
         <div className="text-center">
-          <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+          <h1 className="font-serif text-xl font-semibold text-ink">
             Меню недели
           </h1>
-          <p className="text-ink-soft text-sm mt-1">
+          <p className="text-ink-muted text-xs mt-1">
             {formatWeekRange(weekStart)}
           </p>
         </div>
         <button
           onClick={nextWeek}
-          className="p-2 rounded-lg hover:bg-cream transition-colors"
+          className="p-1.5 rounded-lg text-ink-muted hover:text-ink transition-colors"
           aria-label="Следующая неделя"
         >
-          <ChevronRight size={24} />
+          <ChevronRight size={18} />
         </button>
       </header>
 
