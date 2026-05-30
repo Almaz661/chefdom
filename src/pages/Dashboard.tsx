@@ -76,9 +76,8 @@ export function Dashboard() {
 
       {/* ═══════════════════════════════════════════════════════
           GREETING — editorial, magazine-style
-          Large serif, two-line. Date as subtle uppercase caption.
           ═══════════════════════════════════════════════════════ */}
-      <header className="max-w-3xl mx-auto px-6 pt-12 lg:pt-16">
+      <header className="max-w-3xl mx-auto px-6 pt-12 lg:pt-16 animate-section">
         <p className="text-primary text-[11px] font-medium uppercase tracking-[0.2em] mb-3">
           {formatToday()}
         </p>
@@ -94,7 +93,7 @@ export function Dashboard() {
           Visually distinct but not heavy. Left colored bar = status.
           ═══════════════════════════════════════════════════════ */}
       {(expiringTotal > 0 || stale.length > 0) && (
-        <section className="max-w-3xl mx-auto px-6 mt-10">
+        <section className="max-w-3xl mx-auto px-6 mt-10 animate-section">
           <div className="space-y-2">
             {expiringTotal > 0 && (
               <Link
@@ -148,19 +147,19 @@ export function Dashboard() {
           Full-width cinematic image with warm overlay.
           Generous padding. Strong text hierarchy on image.
           ═══════════════════════════════════════════════════════ */}
-      <section className="max-w-3xl mx-auto px-6 mt-12">
+      <section className="max-w-3xl mx-auto px-6 mt-12 animate-section">
         {todayMeal ? (
           <Link
             to={`/recipes/${todayMeal.recipe.id}`}
             className="block rounded-2xl overflow-hidden relative group cursor-pointer"
           >
-            {/* Image container */}
-            <div className="aspect-[16/8] lg:aspect-[16/7] bg-surface-elevated">
+            {/* Image container with Ken Burns */}
+            <div className="aspect-[16/8] lg:aspect-[16/7] bg-surface-elevated overflow-hidden">
               {todayMeal.recipe.imageUrl ? (
                 <img
                   src={todayMeal.recipe.imageUrl}
                   alt={todayMeal.recipe.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[800ms] ease-out"
+                  className="w-full h-full object-cover animate-ken-burns group-hover:scale-[1.03]"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (
@@ -191,9 +190,9 @@ export function Dashboard() {
                   {todayMeal.recipe.servings || 4} порций
                 </span>
               </div>
-              {/* Cook CTA */}
+              {/* Cook CTA with pulse glow */}
               <div className="mt-5">
-                <span className="inline-flex items-center gap-2 bg-primary/90 text-cream px-4 py-2 rounded-lg text-xs font-semibold group-hover:bg-primary transition-colors">
+                <span className="inline-flex items-center gap-2 bg-primary/90 text-cream px-4 py-2 rounded-lg text-xs font-semibold group-hover:bg-primary transition-colors animate-pulse-glow">
                   <Flame size={13} strokeWidth={2} />
                   Готовить
                 </span>
@@ -222,11 +221,11 @@ export function Dashboard() {
           Distinct from hero (card format), but quieter.
           Warm surface with subtle left accent.
           ═══════════════════════════════════════════════════════ */}
-      <section className="max-w-3xl mx-auto px-6 mt-12">
+      <section className="max-w-3xl mx-auto px-6 mt-12 animate-section">
         <div className="grid grid-cols-3 gap-3">
           <Link
             to="/what-to-cook"
-            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group card-hover"
           >
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <ChefHat size={17} className="text-primary" strokeWidth={1.8} />
@@ -236,7 +235,7 @@ export function Dashboard() {
           </Link>
           <Link
             to="/shopping"
-            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group relative"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group relative card-hover"
           >
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <ShoppingCart size={17} className="text-primary" strokeWidth={1.8} />
@@ -253,7 +252,7 @@ export function Dashboard() {
           </Link>
           <Link
             to="/preserves"
-            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group card-hover"
           >
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
               <Snowflake size={17} className="text-primary" strokeWidth={1.8} />
@@ -269,7 +268,7 @@ export function Dashboard() {
           Warm highlight card — single row, golden accent.
           ═══════════════════════════════════════════════════════ */}
       {topRecipe && topRecipe.count >= 2 && (
-        <section className="max-w-3xl mx-auto px-6 mt-10">
+        <section className="max-w-3xl mx-auto px-6 mt-10 animate-section">
           <div className="flex items-center gap-4 bg-surface-elevated rounded-xl px-5 py-4 border border-line">
             <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
               <span className="text-base">🏆</span>
@@ -299,7 +298,7 @@ export function Dashboard() {
           No borders — photography speaks. Subtle text below.
           ═══════════════════════════════════════════════════════ */}
       {recentCooks.length > 0 && (
-        <section className="max-w-3xl mx-auto px-6 mt-12">
+        <section className="max-w-3xl mx-auto px-6 mt-12 animate-section">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-[0.15em]">
               Недавно готовили
@@ -346,7 +345,7 @@ export function Dashboard() {
           WEEKLY MENU — minimal bottom section
           Seven day indicators. Today = filled copper circle.
           ═══════════════════════════════════════════════════════ */}
-      <section className="max-w-3xl mx-auto px-6 mt-12">
+      <section className="max-w-3xl mx-auto px-6 mt-12 animate-section">
         <div className="bg-surface-elevated rounded-xl px-5 py-5 border border-line">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.15em] flex items-center gap-2">
