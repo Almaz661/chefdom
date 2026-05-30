@@ -1,28 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  /* Палитра — тёплая «кухня шефа», не корпоративный sleek */
-  --color-primary: #c44e12;
-  --color-primary-dark: #8c2f08;
-  --color-primary-light: #fff1e8;
+  /* Premium Dark Kitchen Palette */
+  --color-primary: #c9a96e;
+  --color-primary-dark: #a8874d;
+  --color-primary-light: #c9a96e1a;
 
-  --color-cream: #faf6f0;
-  --color-paper: #ffffff;
+  --color-surface: #1a1a1a;
+  --color-surface-elevated: #242424;
+  --color-surface-hover: #2a2a2a;
 
-  --color-ink: #1f1a14;
-  --color-ink-soft: #6b5b47;
-  --color-ink-muted: #a0907b;
+  --color-cream: #111111;
+  --color-paper: #1e1e1e;
 
-  --color-fresh: #4a7c59;
-  --color-warning: #d9962e;
-  --color-alert: #b53a2d;
-  --color-cool: #4a6b7c;
+  --color-ink: #f0ece4;
+  --color-ink-soft: #a09a90;
+  --color-ink-muted: #6b6560;
 
-  --color-line: #e8dfd3;
-  --color-line-strong: #c9b89e;
+  --color-fresh: #6b9e7a;
+  --color-warning: #d4a843;
+  --color-alert: #c45c4f;
+  --color-cool: #6a8fa0;
 
-  /* Шрифты — serif для заголовков (как в кулинарной книге), sans для тела */
-  --font-serif: "Lora", "Playfair Display", Georgia, serif;
+  --color-line: #2e2e2e;
+  --color-line-strong: #3a3a3a;
+
+  /* Fonts */
+  --font-serif: "Lora", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
@@ -33,14 +37,30 @@ body,
 }
 
 body {
-  background-color: var(--color-cream);
+  background-color: #111111;
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: "tnum"; /* tabular numbers — для граммов, цен, КБЖУ */
+  font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 button {
   font-family: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

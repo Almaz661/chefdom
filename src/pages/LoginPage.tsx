@@ -47,20 +47,20 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-cream px-6">
       <div className="w-full max-w-xs">
-        <h1 className="font-serif text-4xl font-semibold text-primary text-center mb-2">
-          ШефДом!
+        <h1 className="font-serif text-4xl font-semibold text-primary text-center mb-2 tracking-wide">
+          ШефДом
         </h1>
-        <p className="text-ink-soft text-center mb-10">Введите PIN-код</p>
+        <p className="text-ink-muted text-center text-sm mb-10 tracking-wider uppercase">Введите PIN-код</p>
 
         {/* Точки PIN-кода */}
-        <div className="flex justify-center gap-3 mb-6">
+        <div className="flex justify-center gap-4 mb-6">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className={`w-4 h-4 rounded-full border-2 transition-colors ${
+              className={`w-3 h-3 rounded-full transition-all duration-200 ${
                 pin.length > i
-                  ? "bg-primary border-primary"
-                  : "border-line-strong"
+                  ? "bg-primary"
+                  : "bg-line-strong"
               }`}
             />
           ))}
@@ -83,7 +83,7 @@ export function LoginPage() {
               type="button"
               onClick={() => press(String(d))}
               disabled={login.isPending}
-              className="h-16 rounded-xl bg-paper border border-line text-2xl font-serif font-medium text-ink hover:bg-primary-light hover:border-primary-light active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-16 rounded-xl bg-surface-elevated border border-line text-2xl font-serif font-medium text-ink hover:border-primary/40 hover:text-primary active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {d}
             </button>
@@ -93,7 +93,7 @@ export function LoginPage() {
             type="button"
             onClick={() => press("0")}
             disabled={login.isPending}
-            className="h-16 rounded-xl bg-paper border border-line text-2xl font-serif font-medium text-ink hover:bg-primary-light hover:border-primary-light active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-16 rounded-xl bg-surface-elevated border border-line text-2xl font-serif font-medium text-ink hover:border-primary/40 hover:text-primary active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             0
           </button>
