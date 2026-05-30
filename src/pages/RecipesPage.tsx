@@ -151,15 +151,15 @@ export function RecipesPage() {
   const categories = cats.data ?? [];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 lg:p-10">
+    <div className="max-w-5xl mx-auto px-5 py-8 lg:py-12">
       {/* Заголовок страницы */}
-      <header className="mb-6">
-        <div className="flex items-baseline justify-between gap-3 mb-1 flex-wrap">
-          <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink">
+      <header className="mb-8">
+        <div className="flex items-baseline justify-between gap-3">
+          <h1 className="font-serif text-2xl font-semibold text-ink">
             Рецепты
           </h1>
           {!isEmpty && (
-            <span className="text-ink-muted text-sm font-medium">
+            <span className="text-ink-muted text-xs">
               {total} в книге
             </span>
           )}

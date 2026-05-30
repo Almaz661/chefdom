@@ -140,8 +140,8 @@ export function ShoppingPage() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink mb-6">
+    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+      <h1 className="font-serif text-2xl font-semibold text-ink mb-8">
         Покупки
       </h1>
 
