@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Home,
   BookOpen,
@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   ChefHat,
+  ArrowLeft,
 } from "lucide-react";
 import { clearAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -39,7 +40,11 @@ const navItems: NavItem[] = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const logoutMutation = trpc.auth.logout.useMutation();
+
+  // Показываем кнопку «назад» на всех страницах кроме главной
+  const isHome = location.pathname === "/";
 
   const logout = () => {
     logoutMutation.mutate(undefined, {
@@ -88,7 +93,21 @@ export function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Content */}
-      <main className="lg:pl-56 flex-1 pb-20 lg:pb-0 min-h-screen">{children}</main>
+      <main className="lg:pl-56 flex-1 pb-20 lg:pb-0 min-h-screen">
+        {/* Кнопка «Назад» — мобильная, на всех страницах кроме главной */}
+        {!isHome && (
+          <div className="lg:hidden px-4 pt-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 text-ink-muted hover:text-ink text-sm transition-colors"
+            >
+              <ArrowLeft size={16} strokeWidth={1.5} />
+              <span>Назад</span>
+            </button>
+          </div>
+        )}
+        {children}
+      </main>
 
       {/* Mobile nav */}
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-line lg:hidden flex">
