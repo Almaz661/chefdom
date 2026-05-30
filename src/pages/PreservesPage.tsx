@@ -106,17 +106,17 @@ export function PreservesPage() {
   const TabIconComp = tabIcon;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-serif text-2xl font-semibold text-ink">
           Заготовки
         </h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="w-10 h-10 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors"
+          className="w-9 h-9 rounded-lg bg-primary text-cream flex items-center justify-center hover:bg-primary-dark transition-colors"
           aria-label="Добавить заготовку"
         >
-          <Plus size={20} />
+          <Plus size={16} />
         </button>
       </div>
 

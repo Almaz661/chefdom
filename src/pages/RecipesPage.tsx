@@ -66,9 +66,9 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
   return (
     <Link
       to={`/recipes/${r.id}`}
-      className="block bg-paper rounded-xl border border-line overflow-hidden hover:border-primary hover:shadow-sm transition-all"
+      className="block bg-surface-elevated rounded-lg border border-line overflow-hidden hover:border-primary/30 transition-colors"
     >
-      <div className="aspect-[16/10] bg-cream overflow-hidden">
+      <div className="aspect-[16/9] bg-paper overflow-hidden">
         {showImage ? (
           <img
             src={r.imageUrl!}
@@ -80,18 +80,18 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ChefHat
-              size={36}
-              className="text-line-strong"
-              strokeWidth={1.5}
+              size={24}
+              className="text-ink-muted"
+              strokeWidth={1}
             />
           </div>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="font-serif text-lg font-semibold text-ink mb-1 line-clamp-2 leading-tight">
+      <div className="p-3">
+        <h3 className="font-serif text-sm font-semibold text-ink mb-0.5 line-clamp-2 leading-snug">
           {r.title}
         </h3>
-        <p className="text-ink-soft text-sm">
+        <p className="text-ink-muted text-xs">
           {[
             r.totalTime ? `${r.totalTime} мин` : null,
             `${r.servings} порц.`,
@@ -151,15 +151,15 @@ export function RecipesPage() {
   const categories = cats.data ?? [];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 lg:p-10">
+    <div className="max-w-5xl mx-auto px-5 py-8 lg:py-12">
       {/* Заголовок страницы */}
-      <header className="mb-6">
-        <div className="flex items-baseline justify-between gap-3 mb-1 flex-wrap">
-          <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink">
+      <header className="mb-8">
+        <div className="flex items-baseline justify-between gap-3 mb-1">
+          <h1 className="font-serif text-2xl font-semibold text-ink">
             Рецепты
           </h1>
           {!isEmpty && (
-            <span className="text-ink-muted text-sm font-medium">
+            <span className="text-ink-muted text-xs">
               {total} в книге
             </span>
           )}
@@ -168,50 +168,50 @@ export function RecipesPage() {
 
       {/* Действия — поиск + кнопки добавить/импорт. Скрыты в полностью пустом состоянии (там свои CTA). */}
       {!isEmpty && (
-        <div className="flex flex-wrap gap-3 mb-5">
-          <div className="relative flex-1 min-w-[240px]">
+        <div className="flex flex-wrap gap-2 mb-6">
+          <div className="relative flex-1 min-w-[200px]">
             <Search
-              size={18}
+              size={15}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
-              strokeWidth={2}
+              strokeWidth={1.5}
             />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Поиск по названию..."
-              className="w-full bg-paper border border-line rounded-lg pl-10 pr-4 h-12 text-ink placeholder:text-ink-muted focus:outline-none focus:border-primary transition-colors"
+              placeholder="Поиск..."
+              className="w-full bg-surface-elevated border border-line rounded-lg pl-9 pr-4 h-10 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-primary/40 transition-colors"
             />
           </div>
           <Link
             to="/recipes/add"
-            className="inline-flex items-center gap-2 bg-primary text-paper px-4 h-12 rounded-lg font-medium hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-1.5 bg-primary text-cream px-3 h-10 rounded-lg text-xs font-medium hover:bg-primary-dark transition-colors"
           >
-            <Plus size={18} />
+            <Plus size={14} />
             Добавить
           </Link>
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 border border-line text-ink-soft px-3 h-10 rounded-lg text-xs font-medium hover:border-primary/40 hover:text-primary transition-colors"
           >
-            <Download size={18} />
+            <Download size={14} />
             Импорт
           </button>
           <button
             type="button"
             onClick={() => setSectionOpen(true)}
-            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-primary hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 border border-line text-ink-soft px-3 h-10 rounded-lg text-xs font-medium hover:border-primary/40 hover:text-primary transition-colors"
           >
-            <FolderDown size={18} />
+            <FolderDown size={14} />
             Раздел
           </button>
           <button
             type="button"
             onClick={() => setYoutubeOpen(true)}
-            className="inline-flex items-center gap-2 bg-paper text-ink border border-line px-4 h-12 rounded-lg font-medium hover:border-red-500 hover:text-red-500 transition-colors"
+            className="inline-flex items-center gap-1.5 border border-line text-ink-soft px-3 h-10 rounded-lg text-xs font-medium hover:border-alert/40 hover:text-alert transition-colors"
           >
-            <Youtube size={18} />
+            <Youtube size={14} />
             YouTube
           </button>
         </div>
@@ -219,14 +219,14 @@ export function RecipesPage() {
 
       {/* Чипы категорий */}
       {!isEmpty && categories.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-1.5 mb-8">
           <button
             type="button"
             onClick={() => setCategory(undefined)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
               category === undefined
-                ? "bg-primary text-paper"
-                : "bg-paper text-ink-soft border border-line hover:border-primary"
+                ? "bg-primary text-cream"
+                : "text-ink-muted border border-line hover:border-primary/40"
             }`}
           >
             Все
@@ -238,14 +238,14 @@ export function RecipesPage() {
               onClick={() =>
                 setCategory(category === c.category ? undefined : c.category)
               }
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 category === c.category
-                  ? "bg-primary text-paper"
-                  : "bg-paper text-ink-soft border border-line hover:border-primary"
+                  ? "bg-primary text-cream"
+                  : "text-ink-muted border border-line hover:border-primary/40"
               }`}
             >
-              {c.category}{" "}
-              <span className="text-xs opacity-70">{c.count}</span>
+              {c.category}
+              <span className="opacity-50 ml-1">{c.count}</span>
             </button>
           ))}
         </div>
@@ -262,7 +262,7 @@ export function RecipesPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {items.map((r) => (
               <RecipeCard key={r.id} r={r} />
             ))}

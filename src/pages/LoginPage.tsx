@@ -9,7 +9,6 @@ export function LoginPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Если уже авторизована — сразу на главную
   useEffect(() => {
     if (isAuthenticated()) navigate("/", { replace: true });
   }, [navigate]);
@@ -46,46 +45,43 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-cream px-6">
-      <div className="w-full max-w-xs">
-        <div className="text-center mb-12">
-          <h1 className="font-serif text-4xl font-bold text-primary tracking-tight mb-1">
-            ШефДом!
-          </h1>
-          <p className="text-ink-muted text-sm">Введите PIN-код</p>
-        </div>
+      <div className="w-full max-w-[280px]">
+        {/* Brand */}
+        <h1 className="font-serif text-3xl font-semibold text-primary text-center mb-1 tracking-wide">
+          ШефДом
+        </h1>
+        <p className="text-ink-muted text-xs text-center mb-12 uppercase tracking-[0.2em]">
+          Введите PIN
+        </p>
 
-        {/* Точки PIN-кода */}
-        <div className="flex justify-center gap-4 mb-6">
+        {/* PIN dots */}
+        <div className="flex justify-center gap-5 mb-8">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
-                pin.length > i
-                  ? "bg-primary scale-110 shadow-md"
-                  : "bg-line-strong"
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
+                pin.length > i ? "bg-primary" : "bg-line-strong"
               }`}
             />
           ))}
         </div>
 
-        {/* Сообщение об ошибке (минимум занимает место — не прыгает layout) */}
-        <div className="min-h-[24px] mb-4">
+        {/* Error */}
+        <div className="min-h-[20px] mb-6">
           {error && (
-            <p className="text-alert text-sm text-center font-medium">
-              {error}
-            </p>
+            <p className="text-alert text-xs text-center">{error}</p>
           )}
         </div>
 
-        {/* Клавиатура 3×4 */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Numpad */}
+        <div className="grid grid-cols-3 gap-2.5">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
             <button
               key={d}
               type="button"
               onClick={() => press(String(d))}
               disabled={login.isPending}
-              className="h-16 rounded-2xl bg-paper border border-line text-2xl font-serif font-medium text-ink shadow-sm hover:shadow-md hover:border-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-14 rounded-lg bg-surface-elevated border border-line text-xl font-serif text-ink hover:border-primary/40 hover:text-primary active:scale-95 transition-all disabled:opacity-40"
             >
               {d}
             </button>
@@ -95,7 +91,7 @@ export function LoginPage() {
             type="button"
             onClick={() => press("0")}
             disabled={login.isPending}
-            className="h-16 rounded-xl bg-paper border border-line text-2xl font-serif font-medium text-ink hover:bg-primary-light hover:border-primary-light active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-14 rounded-lg bg-surface-elevated border border-line text-xl font-serif text-ink hover:border-primary/40 hover:text-primary active:scale-95 transition-all disabled:opacity-40"
           >
             0
           </button>
@@ -103,10 +99,10 @@ export function LoginPage() {
             type="button"
             onClick={erase}
             disabled={login.isPending || pin.length === 0}
-            className="h-16 rounded-xl flex items-center justify-center text-ink-muted hover:bg-paper hover:border-line border border-transparent active:scale-95 transition-all disabled:opacity-30"
+            className="h-14 rounded-lg flex items-center justify-center text-ink-muted hover:text-ink active:scale-95 transition-all disabled:opacity-20"
             aria-label="Стереть"
           >
-            <Delete size={24} strokeWidth={2} />
+            <Delete size={20} strokeWidth={1.5} />
           </button>
         </div>
       </div>

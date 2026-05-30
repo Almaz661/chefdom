@@ -117,30 +117,30 @@ export function MenuPage() {
   const nextWeek = () => setWeekStart((w) => shiftWeek(w, 7));
 
   return (
-    <div className="max-w-6xl mx-auto p-4 lg:p-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 lg:py-12">
       {/* Заголовок + навигация недели */}
-      <header className="flex items-center justify-between mb-6">
+      <header className="flex items-center justify-between mb-8">
         <button
           onClick={prevWeek}
-          className="p-2 rounded-lg hover:bg-cream transition-colors"
+          className="p-1.5 rounded-lg text-ink-muted hover:text-ink transition-colors"
           aria-label="Предыдущая неделя"
         >
-          <ChevronLeft size={24} />
+          <ChevronLeft size={18} />
         </button>
         <div className="text-center">
-          <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+          <h1 className="font-serif text-xl font-semibold text-ink">
             Меню недели
           </h1>
-          <p className="text-ink-soft text-sm mt-1">
+          <p className="text-ink-muted text-xs mt-1">
             {formatWeekRange(weekStart)}
           </p>
         </div>
         <button
           onClick={nextWeek}
-          className="p-2 rounded-lg hover:bg-cream transition-colors"
+          className="p-1.5 rounded-lg text-ink-muted hover:text-ink transition-colors"
           aria-label="Следующая неделя"
         >
-          <ChevronRight size={24} />
+          <ChevronRight size={18} />
         </button>
       </header>
 
@@ -155,7 +155,7 @@ export function MenuPage() {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="w-20" />
+                  <th className="w-16" />
                   {DAYS.map((label, idx) => {
                     const dayDate = getDayDate(weekStart, idx);
                     const isToday = dayDate === todayStr;
@@ -163,11 +163,11 @@ export function MenuPage() {
                       <th
                         key={idx}
                         className={`text-center px-1 pb-3 ${
-                          isToday ? "text-primary" : "text-ink-soft"
+                          isToday ? "text-primary" : "text-ink-muted"
                         }`}
                       >
-                        <div className="text-sm font-medium">{label}</div>
-                        <div className="text-xs">{formatShort(dayDate)}</div>
+                        <div className="text-xs font-medium">{label}</div>
+                        <div className="text-[10px] opacity-70">{formatShort(dayDate)}</div>
                       </th>
                     );
                   })}
@@ -176,7 +176,7 @@ export function MenuPage() {
               <tbody>
                 {MEALS.map(({ key, label }) => (
                   <tr key={key}>
-                    <td className="text-xs text-ink-muted font-medium pr-2 align-top pt-3">
+                    <td className="text-[10px] text-ink-muted font-medium pr-2 align-top pt-3 uppercase tracking-wider">
                       {label}
                     </td>
                     {DAYS.map((_, dayIdx) => {
@@ -186,7 +186,7 @@ export function MenuPage() {
                       return (
                         <td
                           key={dayIdx}
-                          className="border border-line p-1.5 align-top min-w-[120px] min-h-[100px]"
+                          className="border border-line/50 p-1 align-top min-w-[110px]"
                         >
                           <div className="space-y-1">
                             {items && items.map((item) => (
@@ -202,14 +202,14 @@ export function MenuPage() {
                               onClick={() =>
                                 setPickSlot({ dayOfWeek: dayIdx, mealType: key })
                               }
-                              className={`w-full flex items-center justify-center rounded-lg border-2 border-dashed border-line hover:border-primary hover:bg-primary-light/30 transition-colors ${
-                                items && items.length > 0 ? "h-8" : "h-[90px]"
+                              className={`w-full flex items-center justify-center rounded-lg border border-dashed border-line/60 hover:border-primary/40 transition-colors ${
+                                items && items.length > 0 ? "h-7" : "h-[70px]"
                               }`}
                               aria-label={`Добавить ${label} ${DAYS[dayIdx]}`}
                             >
                               <Plus
-                                size={items && items.length > 0 ? 14 : 20}
-                                className="text-line-strong"
+                                size={items && items.length > 0 ? 12 : 14}
+                                className="text-ink-muted"
                               />
                             </button>
                           </div>
@@ -230,18 +230,18 @@ export function MenuPage() {
               return (
                 <section
                   key={dayIdx}
-                  className={`bg-paper rounded-xl border p-4 ${
-                    isToday ? "border-primary" : "border-line"
+                  className={`rounded-lg p-3 ${
+                    isToday ? "bg-surface-elevated border border-primary/20" : "border border-line"
                   }`}
                 >
                   <h3
-                    className={`font-medium text-sm mb-3 ${
-                      isToday ? "text-primary" : "text-ink-soft"
+                    className={`font-medium text-xs mb-2.5 ${
+                      isToday ? "text-primary" : "text-ink-muted"
                     }`}
                   >
                     {label}, {formatShort(dayDate)}
                     {isToday && (
-                      <span className="ml-2 text-xs bg-primary text-paper px-2 py-0.5 rounded-full">
+                      <span className="ml-2 text-[9px] bg-primary text-cream px-1.5 py-0.5 rounded uppercase tracking-wider">
                         сегодня
                       </span>
                     )}
@@ -297,14 +297,14 @@ export function MenuPage() {
 
       {/* Кнопка «В покупки» */}
       {!isLoading && data && data.items.length > 0 && (
-        <div className="mt-6 flex justify-center">
+        <div className="mt-8 flex justify-center">
           <button
             onClick={() => toShopping.mutate({ weekStart })}
             disabled={toShopping.isPending}
-            className="inline-flex items-center gap-2 px-6 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-5 h-10 rounded-lg bg-primary text-cream text-xs font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
           >
-            <ShoppingCart size={18} />
-            {toShopping.isPending ? "Добавляю..." : "В покупки →"}
+            <ShoppingCart size={14} />
+            {toShopping.isPending ? "Добавляю..." : "В покупки"}
           </button>
         </div>
       )}

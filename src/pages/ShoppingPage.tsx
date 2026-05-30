@@ -140,8 +140,8 @@ export function ShoppingPage() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink mb-6">
+    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+      <h1 className="font-serif text-2xl font-semibold text-ink mb-8">
         Покупки
       </h1>
 
@@ -153,14 +153,12 @@ export function ShoppingPage() {
         <>
           {/* Прогресс-бар */}
           {total > 0 && (
-            <div className="mb-6">
-              <div className="flex justify-between text-sm text-ink-soft mb-1.5">
-                <span>
-                  {checked} из {total} куплены
-                </span>
+            <div className="mb-8">
+              <div className="flex justify-between text-xs text-ink-muted mb-1.5">
+                <span>{checked} из {total}</span>
                 <span>{progress}%</span>
               </div>
-              <div className="h-2.5 bg-cream rounded-full overflow-hidden">
+              <div className="h-1 bg-line rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
@@ -171,32 +169,32 @@ export function ShoppingPage() {
 
           {/* Список по категориям */}
           {total === 0 ? (
-            <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
+            <div className="bg-paper border border-dashed border-line rounded-xl py-14 text-center">
               <ShoppingCart
-                size={32}
-                className="text-line-strong mx-auto mb-3"
-                strokeWidth={1.5}
+                size={24}
+                className="text-ink-muted mx-auto mb-3"
+                strokeWidth={1}
               />
-              <p className="text-ink-soft text-sm">
-                Список пуст. Добавьте продукты ниже.
+              <p className="text-ink-muted text-sm">
+                Список пуст
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-6">
               {categories.map((cat) => (
                 <section key={cat}>
-                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+                  <h3 className="text-[10px] font-medium text-ink-muted uppercase tracking-[0.15em] mb-2">
                     {cat}
                   </h3>
-                  <ul className="space-y-1">
+                  <ul className="space-y-px">
                     {grouped[cat].map((item) => (
                       <li
                         key={item.id}
-                        className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-surface-elevated transition-colors group"
                       >
                         <button
                           onClick={() => toggle.mutate({ id: item.id })}
-                          className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
                             item.isChecked === 1
                               ? "bg-primary border-primary"
                               : "border-line-strong hover:border-primary"
@@ -209,14 +207,14 @@ export function ShoppingPage() {
                         >
                           {item.isChecked === 1 && (
                             <svg
-                              width="14"
-                              height="14"
+                              width="12"
+                              height="12"
                               viewBox="0 0 14 14"
                               fill="none"
                             >
                               <path
                                 d="M3 7l3 3 5-5"
-                                stroke="white"
+                                stroke="#0f0f0f"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -233,7 +231,7 @@ export function ShoppingPage() {
                         >
                           {item.productName}
                           {item.quantity && (
-                            <span className="text-ink-muted ml-2">
+                            <span className="text-ink-muted ml-1.5 text-xs">
                               {item.quantity}
                               {item.unit ? ` ${item.unit}` : ""}
                             </span>
@@ -241,10 +239,10 @@ export function ShoppingPage() {
                         </span>
                         <button
                           onClick={() => remove.mutate({ id: item.id })}
-                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                          className="w-6 h-6 flex items-center justify-center text-ink-muted hover:text-alert opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           aria-label="Удалить"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={13} />
                         </button>
                       </li>
                     ))}
@@ -256,23 +254,21 @@ export function ShoppingPage() {
 
           {/* Действия с купленными */}
           {checked > 0 && (
-            <div className="mt-5 flex flex-col sm:flex-row gap-3">
+            <div className="mt-6 flex flex-col sm:flex-row gap-2">
               <button
                 onClick={openPreview}
                 disabled={addBulkSmart.isPending || clearChecked.isPending}
-                className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-paper rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-cream rounded-lg hover:bg-primary-dark disabled:opacity-50 transition-colors text-xs font-medium"
               >
-                <PackagePlus size={16} />
-                <span className="text-sm font-medium">
-                  Всё в инвентарь ({checked})
-                </span>
+                <PackagePlus size={14} />
+                В инвентарь ({checked})
               </button>
               <button
                 onClick={() => clearChecked.mutate()}
                 disabled={clearChecked.isPending || addBulkSmart.isPending}
-                className="text-sm text-ink-muted hover:text-alert transition-colors disabled:opacity-50"
+                className="text-xs text-ink-muted hover:text-alert transition-colors px-2"
               >
-                Очистить отмеченные
+                Очистить
               </button>
             </div>
           )}
@@ -280,22 +276,22 @@ export function ShoppingPage() {
           {/* Форма добавления */}
           <form
             onSubmit={handleAdd}
-            className="mt-6 flex gap-2"
+            className="mt-8 flex gap-2"
           >
             <input
               type="text"
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Добавить покупку..."
-              className="flex-1 h-12 px-4 bg-paper border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              placeholder="Добавить..."
+              className="flex-1 h-10 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-primary/40"
             />
             <button
               type="submit"
               disabled={!newItem.trim() || add.isPending}
-              className="w-12 h-12 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-10 h-10 rounded-lg bg-primary text-cream flex items-center justify-center hover:bg-primary-dark disabled:opacity-40 transition-colors"
               aria-label="Добавить"
             >
-              <Plus size={20} />
+              <Plus size={16} />
             </button>
           </form>
         </>

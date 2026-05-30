@@ -69,15 +69,14 @@ function RecalcExpiryButton() {
         }
       }}
       disabled={recalc.isPending}
-      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-xs font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      className="w-9 h-9 rounded-lg border border-line flex items-center justify-center text-ink-muted hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50"
       title="Пересчитать сроки годности из справочника"
     >
       {recalc.isPending ? (
         <Loader2 size={14} className="animate-spin" />
       ) : (
-        <span>📅</span>
+        <span className="text-xs">📅</span>
       )}
-      <span className="hidden sm:inline">{recalc.isPending ? 'Считаю…' : 'Сроки'}</span>
     </button>
   );
 }
@@ -212,29 +211,29 @@ export function InventoryPage() {
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-serif text-2xl font-semibold text-ink">
           Инвентарь
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <RecalcExpiryButton />
           <button
             onClick={() => setShowScanner(!showScanner)}
-            className={`w-10 h-10 rounded-lg border bg-paper flex items-center justify-center transition-colors ${
-              showScanner ? "border-primary text-primary" : "border-line text-ink-soft hover:border-primary hover:text-primary"
+            className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${
+              showScanner ? "border-primary text-primary" : "border-line text-ink-muted hover:border-primary/40 hover:text-primary"
             }`}
             aria-label="Сканировать штрих-код"
             title="Сфотографировать штрих-код"
           >
-            <ScanLine size={20} />
+            <ScanLine size={16} />
           </button>
           <button
             onClick={() => setShowAdd(true)}
-            className="w-10 h-10 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors"
+            className="w-9 h-9 rounded-lg bg-primary text-cream flex items-center justify-center hover:bg-primary-dark transition-colors"
             aria-label="Добавить продукт"
           >
-            <Plus size={20} />
+            <Plus size={16} />
           </button>
         </div>
       </div>
@@ -250,18 +249,18 @@ export function InventoryPage() {
       )}
 
       {/* Табы */}
-      <div className="flex gap-1 bg-cream rounded-lg p-1 mb-6">
+      <div className="flex gap-px mb-8">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
               tab === key
-                ? "bg-paper text-primary shadow-sm"
-                : "text-ink-muted hover:text-ink"
+                ? "bg-surface-elevated text-primary border border-line"
+                : "text-ink-muted hover:text-ink-soft"
             }`}
           >
-            <Icon size={18} />
+            <Icon size={15} strokeWidth={1.5} />
             <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
@@ -472,53 +471,54 @@ export function InventoryPage() {
             <div className="space-y-5">
               {categories.map((cat) => (
                 <section key={cat}>
-                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <h3 className="text-[10px] font-medium text-ink-muted uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1">
                     {cat === "Заготовки" && (
-                      <Snowflake size={12} className="text-cool" />
+                      <Snowflake size={10} className="text-cool" />
                     )}
                     {cat}
                     {cat === "Заготовки" && (
                       <Link
                         to="/preserves"
-                        className="ml-auto text-primary normal-case font-normal tracking-normal"
+                        className="ml-auto text-primary normal-case font-normal tracking-normal text-[10px]"
                       >
-                        в раздел →
+                        →
                       </Link>
                     )}
                   </h3>
-                  <ul className="space-y-1">
+                  <ul className="space-y-px">
                     {grouped[cat].map((item) => (
                       <li
                         key={`${item.source}-${item.id}`}
-                        className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
+                        className="flex items-center gap-3 rounded-lg px-4 py-2.5 hover:bg-surface-elevated transition-colors group"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">
+                          <p className="text-sm text-ink truncate">
                             {item.isBasic && (
-                              <span className="text-xs text-primary/70 mr-1" title="Базовый продукт — не попадает в покупки">📌</span>
+                              <span className="text-primary/60 mr-1" title="Базовый продукт">📌</span>
                             )}
                             {item.productName}
                             {item.quantity && (
-                              <span className="text-ink-muted ml-1">
+                              <span className="text-ink-muted ml-1.5 text-xs">
                                 {item.quantity}{item.unit ? ` ${item.unit}` : ""}
                               </span>
                             )}
                           </p>
-                          {item.expiryDate && (
-                            <p className="text-xs text-ink-muted">
-                              {expiryText(item.expiryDate)}
-                            </p>
-                          )}
                         </div>
+                        {item.expiryDate && (
+                          <span className={`text-[11px] shrink-0 ${
+                            daysUntilExpiry(item.expiryDate)! < 0 ? "text-alert" :
+                            daysUntilExpiry(item.expiryDate)! <= 3 ? "text-warning" : "text-ink-muted"
+                          }`}>
+                            {expiryText(item.expiryDate)}
+                          </span>
+                        )}
                         {item.source === "inventory" && (
                           <button
                             onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
-                              item.isBasic
-                                ? "text-primary bg-primary/10"
-                                : "text-ink-muted hover:text-primary hover:bg-primary/5"
+                            className={`w-6 h-6 flex items-center justify-center rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${
+                              item.isBasic ? "opacity-100 text-primary" : "text-ink-muted hover:text-primary"
                             }`}
-                            title={item.isBasic ? "Убрать из базовых" : "Пометить как базовый (не попадает в покупки)"}
+                            title={item.isBasic ? "Убрать из базовых" : "Базовый"}
                             aria-label="Базовый продукт"
                           >
                             📌
@@ -526,10 +526,10 @@ export function InventoryPage() {
                         )}
                         <button
                           onClick={() => handleRemove(item)}
-                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                          className="w-6 h-6 flex items-center justify-center text-ink-muted hover:text-alert opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           aria-label="Удалить"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={13} />
                         </button>
                       </li>
                     ))}

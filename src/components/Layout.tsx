@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ChefHat,
 } from "lucide-react";
 import { clearAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -37,7 +38,6 @@ const navItems: NavItem[] = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-
   const logoutMutation = trpc.auth.logout.useMutation();
 
   const logout = () => {
@@ -51,63 +51,63 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Сайдбар — десктоп (lg+) */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:bg-paper lg:border-r lg:border-line lg:px-4 lg:py-6 lg:shadow-sm">
+      {/* ═══ Desktop Sidebar ═══ */}
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-52 lg:flex-col lg:bg-paper lg:border-r lg:border-line lg:px-3 lg:py-8">
+        {/* Brand */}
         <div className="px-3 mb-10">
-          <h1 className="font-serif text-2xl font-bold text-primary tracking-tight">
-            ШефДом!
+          <h1 className="font-serif text-lg font-semibold text-primary tracking-wide">
+            ШефДом
           </h1>
-          <p className="text-xs text-ink-muted mt-0.5">Кухня под контролем</p>
         </div>
-        <nav className="flex-1 flex flex-col gap-0.5">
+
+        {/* Navigation */}
+        <nav className="flex-1 flex flex-col gap-px">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                   isActive
-                    ? "bg-primary text-paper shadow-md"
-                    : "text-ink-soft hover:bg-cream hover:text-ink hover:translate-x-0.5"
+                    ? "text-primary bg-primary-light"
+                    : "text-ink-muted hover:text-ink-soft hover:bg-surface-elevated"
                 }`
               }
             >
-              <Icon size={18} strokeWidth={2} />
+              <Icon size={15} strokeWidth={1.5} />
               {label}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line pt-3 mt-3">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-muted hover:text-alert hover:bg-alert/5 transition-all w-full"
-          >
-            <LogOut size={18} strokeWidth={2} />
-            Выйти
-          </button>
-        </div>
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-ink-muted hover:text-alert transition-colors mt-4"
+        >
+          <LogOut size={15} strokeWidth={1.5} />
+          Выйти
+        </button>
       </aside>
 
-      {/* Контент */}
-      <main className="lg:pl-64 pb-20 lg:pb-0 min-h-screen">{children}</main>
+      {/* ═══ Main Content ═══ */}
+      <main className="lg:pl-52 pb-20 lg:pb-0 min-h-screen">{children}</main>
 
-      {/* Нижняя навигация — мобильная (до lg) */}
-      <nav className="fixed bottom-0 inset-x-0 glass border-t border-line/50 lg:hidden flex safe-bottom shadow-lg">
+      {/* ═══ Mobile Bottom Nav ═══ */}
+      <nav className="fixed bottom-0 inset-x-0 bg-paper border-t border-line lg:hidden flex safe-bottom">
         {navItems.slice(0, 5).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === "/"}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-[11px] font-medium min-h-[60px] transition-all duration-200 ${
-                isActive
-                  ? "text-primary scale-105"
-                  : "text-ink-muted hover:text-ink"
+              `flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-[10px] font-medium min-h-[54px] ${
+                isActive ? "text-primary" : "text-ink-muted"
               }`
             }
           >
-            <Icon size={22} strokeWidth={2} />
+            <Icon size={19} strokeWidth={1.5} />
             {label}
           </NavLink>
         ))}
