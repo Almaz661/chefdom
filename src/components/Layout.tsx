@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ChefHat,
 } from "lucide-react";
 import { clearAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -29,15 +30,15 @@ const navItems: NavItem[] = [
   { to: "/shopping", label: "Покупки", icon: ShoppingCart },
   { to: "/inventory", label: "Инвентарь", icon: Refrigerator },
   { to: "/preserves", label: "Заготовки", icon: Snowflake },
-  { to: "/products", label: "Продукты", icon: Package },
   { to: "/receipts", label: "Чеки", icon: Receipt },
   { to: "/analytics", label: "Аналитика", icon: BarChart3 },
+  { to: "/what-to-cook", label: "Что готовить", icon: ChefHat },
+  { to: "/products", label: "Продукты", icon: Package },
   { to: "/settings", label: "Настройки", icon: Settings },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-
   const logoutMutation = trpc.auth.logout.useMutation();
 
   const logout = () => {
@@ -50,14 +51,13 @@ export function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Сайдбар — десктоп (lg+) */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:bg-paper lg:border-r lg:border-line lg:px-4 lg:py-6 lg:shadow-sm">
+    <div className="min-h-screen bg-cream flex">
+      {/* Sidebar — desktop */}
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-56 lg:flex-col bg-surface border-r border-line px-3 py-6">
         <div className="px-3 mb-10">
-          <h1 className="font-serif text-2xl font-bold text-primary tracking-tight">
-            ШефДом!
+          <h1 className="font-serif text-xl font-semibold text-primary tracking-wide">
+            ШефДом
           </h1>
-          <p className="text-xs text-ink-muted mt-0.5">Кухня под контролем</p>
         </div>
         <nav className="flex-1 flex flex-col gap-0.5">
           {navItems.map(({ to, label, icon: Icon }) => (
@@ -66,48 +66,44 @@ export function Layout({ children }: { children: ReactNode }) {
               to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                   isActive
-                    ? "bg-primary text-paper shadow-md"
-                    : "text-ink-soft hover:bg-cream hover:text-ink hover:translate-x-0.5"
+                    ? "text-primary bg-primary-light"
+                    : "text-ink-muted hover:text-ink-soft hover:bg-surface-hover"
                 }`
               }
             >
-              <Icon size={18} strokeWidth={2} />
+              <Icon size={16} strokeWidth={1.5} />
               {label}
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line pt-3 mt-3">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-ink-muted hover:text-alert hover:bg-alert/5 transition-all w-full"
-          >
-            <LogOut size={18} strokeWidth={2} />
-            Выйти
-          </button>
-        </div>
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-ink-muted hover:text-alert transition-colors"
+        >
+          <LogOut size={16} strokeWidth={1.5} />
+          Выйти
+        </button>
       </aside>
 
-      {/* Контент */}
-      <main className="lg:pl-64 pb-20 lg:pb-0 min-h-screen">{children}</main>
+      {/* Content */}
+      <main className="lg:pl-56 flex-1 pb-20 lg:pb-0 min-h-screen">{children}</main>
 
-      {/* Нижняя навигация — мобильная (до lg) */}
-      <nav className="fixed bottom-0 inset-x-0 glass border-t border-line/50 lg:hidden flex safe-bottom shadow-lg">
+      {/* Mobile nav */}
+      <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-line lg:hidden flex">
         {navItems.slice(0, 5).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === "/"}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-[11px] font-medium min-h-[60px] transition-all duration-200 ${
-                isActive
-                  ? "text-primary scale-105"
-                  : "text-ink-muted hover:text-ink"
+              `flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-medium min-h-[56px] ${
+                isActive ? "text-primary" : "text-ink-muted"
               }`
             }
           >
-            <Icon size={22} strokeWidth={2} />
+            <Icon size={20} strokeWidth={1.5} />
             {label}
           </NavLink>
         ))}

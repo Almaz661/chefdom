@@ -3,16 +3,15 @@ import {
   ChefHat,
   ShoppingCart,
   ArrowRight,
-  BookOpen,
-  CalendarDays,
   AlertTriangle,
   Clock,
   Snowflake,
+  CalendarDays,
+  Users,
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
 
-// Приветствие меняется по времени суток
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h >= 5 && h < 11) return "Доброе утро";
@@ -21,7 +20,6 @@ function getGreeting(): string {
   return "Доброй ночи";
 }
 
-// «Вторник, 19 мая» — российский формат, заглавная буква в начале
 function formatToday(): string {
   const formatted = new Intl.DateTimeFormat("ru-RU", {
     weekday: "long",
@@ -31,466 +29,197 @@ function formatToday(): string {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
-const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-
 function mealTypeLabel(type: string): string {
   if (type === "breakfast") return "Завтрак";
   if (type === "lunch") return "Обед";
   return "Ужин";
 }
 
+const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
 export function Dashboard() {
   const auth = getAuth();
   const name = auth?.name || "Семья";
   const todayIdx = (new Date().getDay() + 6) % 7;
 
-  // B.1 — продукты истекающие в ближайшие 3 дня
   const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 3 });
-  // Заготовки тоже считаются — заморозка/консервация/открытые с истекающим
-  // сроком должны попадать в общий алерт «истекает скоро» вместе с инвентарём.
   const { data: allPreserves = [] } = trpc.preserves.list.useQuery();
-  // Объединяем имена для шапки и счётчика. Берём <=3 дней (или просрочено).
   const expiringPreserves = allPreserves.filter((p) => {
     if (!p.expiryDate) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const d = new Date(p.expiryDate + "T00:00:00");
-    const days = Math.floor((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return days <= 3;
+    return Math.floor((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) <= 3;
   });
   const expiringTotal = expiring.length + expiringPreserves.length;
-  const expiringNames = [
-    ...expiring.map((e) => e.productName),
-    ...expiringPreserves.map((p) => p.name + " (заготовка)"),
-  ];
-  // B.2 — продукты которые лежат давно (>30 дней)
+  const expiringNames = [...expiring.map((e) => e.productName), ...expiringPreserves.map((p) => p.name)];
+
   const { data: stale = [] } = trpc.inventory.getStale.useQuery({ days: 30 });
-  // Продукты ниже минимума — нужно докупить
-  const { data: allInventory = [] } = trpc.inventory.list.useQuery();
-  const belowMinimum = allInventory.filter(item => {
-    if (!item.minQuantity) return false;
-    const qty = item.quantity ? parseFloat(item.quantity) : 0;
-    const min = parseFloat(item.minQuantity);
-    return !isNaN(min) && min > 0 && qty < min;
-  });
-  // Список покупок — для счётчика
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
-  // «Недавно готовила» — последние 5 (раздел 6.4 макета)
   const { data: recentCooks = [] } = trpc.cooking.recent.useQuery({ limit: 5 });
-  // C.2 — «Любимое в этом месяце»
   const { data: topRecipe } = trpc.cooking.topThisMonth.useQuery();
-  // Блюдо дня — рецепт из меню на сегодня по времени суток
   const { data: todayMeal } = trpc.menu.getTodayMeal.useQuery();
-  // Меню недели — для виджета с днями
+
   const weekStart = (() => {
     const d = new Date();
     const day = d.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dd}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   })();
   const { data: weekMenu } = trpc.menu.getWeek.useQuery({ weekStart });
+  const shoppingCount = shopping.filter((s) => s.isChecked === 0).length;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-6">
-      {/* Приветствие */}
+    <div className="max-w-4xl mx-auto px-6 py-10 lg:py-14 space-y-10">
+
+      {/* GREETING */}
       <header>
-        <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink mb-1">
+        <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink tracking-tight">
           {getGreeting()}, {name}
         </h1>
-        <p className="text-ink-soft">{formatToday()}</p>
+        <p className="text-ink-muted text-sm mt-2 tracking-wide uppercase">{formatToday()}</p>
       </header>
 
-      {/* B.1 — Алерт истекающих продуктов (инвентарь + заготовки) */}
-      {expiringTotal > 0 && (
-        <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="text-warning mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink mb-1">
-                {expiringTotal} {expiringTotal === 1 ? "продукт истекает" : "продукта истекают"} в ближайшие 3 дня
-              </p>
-              <p className="text-sm text-ink-soft truncate">
-                {expiringNames.join(" · ")}
-              </p>
+      {/* ALERTS */}
+      {(expiringTotal > 0 || stale.length > 0) && (
+        <section className="grid sm:grid-cols-2 gap-4">
+          {expiringTotal > 0 && (
+            <div className="bg-surface-elevated rounded-xl p-5 border border-line">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={14} className="text-warning" />
+                <span className="text-xs font-medium text-warning uppercase tracking-wider">Истекает</span>
+              </div>
+              <p className="text-sm text-ink mb-1">{expiringTotal} {expiringTotal === 1 ? "продукт" : "продукта"} — ближайшие 3 дня</p>
+              <p className="text-xs text-ink-muted truncate mb-3">{expiringNames.slice(0, 3).join(", ")}</p>
+              <Link to="/what-to-cook" className="text-xs font-medium text-primary hover:text-primary-dark">Что приготовить? →</Link>
             </div>
-            <Link
-              to={
-                expiringPreserves.length > 0 && expiring.length === 0
-                  ? "/preserves"
-                  : "/what-to-cook"
-              }
-              className="text-xs font-medium text-warning hover:text-amber-700 shrink-0"
-            >
-              {expiringPreserves.length > 0 && expiring.length === 0
-                ? "Открыть"
-                : "Что приготовить?"}
-            </Link>
-          </div>
+          )}
+          {stale.length > 0 && (
+            <div className="bg-surface-elevated rounded-xl p-5 border border-line">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock size={14} className="text-ink-muted" />
+                <span className="text-xs font-medium text-ink-muted uppercase tracking-wider">Залежались</span>
+              </div>
+              <p className="text-sm text-ink mb-1">{stale.length} {stale.length === 1 ? "продукт" : "продукта"} — больше 30 дней</p>
+              <p className="text-xs text-ink-muted truncate mb-3">{stale.slice(0, 3).map((s) => s.productName).join(", ")}</p>
+              <Link to="/inventory" className="text-xs font-medium text-ink-soft hover:text-ink">Открыть инвентарь →</Link>
+            </div>
+          )}
         </section>
       )}
 
-      {/* B.2 — Алерт «давно не используется» (>30 дней в инвентаре) */}
-      {stale.length > 0 && (
-        <section className="bg-cream border border-line rounded-2xl p-4">
-          <div className="flex items-start gap-3">
-            <Clock size={20} className="text-ink-muted mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink mb-1">
-                {stale.length} {stale.length === 1 ? "продукт лежит" : "продукта лежат"} больше 30 дней
-              </p>
-              <p className="text-sm text-ink-soft truncate">
-                {stale.map(s => s.productName).join(" · ")}
-              </p>
-            </div>
-            <Link
-              to="/inventory"
-              className="text-xs font-medium text-ink-soft hover:text-ink shrink-0"
-            >
-              Открыть инвентарь
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Алерт «ниже минимума» — нужно докупить */}
-      {belowMinimum.length > 0 && (
-        <section className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-          <div className="flex items-start gap-3">
-            <ShoppingCart size={20} className="text-primary mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink mb-1">
-                {belowMinimum.length} {belowMinimum.length === 1 ? "продукт ниже" : "продукта ниже"} минимума — пора докупить
-              </p>
-              <p className="text-sm text-ink-soft truncate">
-                {belowMinimum.map(i => i.productName).join(" · ")}
-              </p>
-            </div>
-            <Link
-              to="/shopping"
-              className="text-xs font-medium text-primary hover:text-primary-dark shrink-0"
-            >
-              К покупкам
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/*
-        Алерт сроков годности появится здесь когда:
-        — есть инвентарь (появится в Блоке 10)
-        — в инвентаре есть позиции, истекающие в ближайшие 2 дня (этап B.1)
-        Пока скрыт — не показываем пустой алерт «у вас всё хорошо», это шум.
-      */}
-
-      {/* Блюдо дня */}
-      <section className="bg-paper rounded-2xl border border-line overflow-hidden">
+      {/* DISH OF THE DAY */}
+      <section>
         {todayMeal ? (
-          <>
-            <div className="aspect-[16/9] bg-cream flex items-center justify-center border-b border-line overflow-hidden">
+          <Link to={`/recipes/${todayMeal.recipe.id}`} className="block rounded-2xl overflow-hidden bg-surface-elevated border border-line hover:border-primary/30 transition-colors">
+            <div className="aspect-[21/9] bg-surface flex items-center justify-center overflow-hidden relative">
               {todayMeal.recipe.imageUrl ? (
-                <img
-                  src={todayMeal.recipe.imageUrl}
-                  alt={todayMeal.recipe.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                    (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                      '<div class="flex items-center justify-center w-full h-full"><svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-line-strong"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg></div>';
-                  }}
-                />
+                <img src={todayMeal.recipe.imageUrl} alt={todayMeal.recipe.title} className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               ) : (
-                <ChefHat size={56} className="text-line-strong" strokeWidth={1.5} />
+                <ChefHat size={48} className="text-ink-muted" strokeWidth={1} />
               )}
-            </div>
-            <div className="p-6">
-              <p className="text-xs text-ink-muted font-medium uppercase tracking-wider mb-2">
-                {mealTypeLabel(todayMeal.mealType)}
-              </p>
-              <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
-                {todayMeal.recipe.title}
-              </h2>
-              {todayMeal.recipe.totalTime && (
-                <p className="text-ink-soft text-sm mb-4 inline-flex items-center gap-1">
-                  <Clock size={14} /> {todayMeal.recipe.totalTime} мин
-                </p>
-              )}
-              <div>
-                <Link
-                  to={`/recipes/${todayMeal.recipe.id}`}
-                  className="inline-flex items-center gap-2 text-primary font-medium hover:text-primary-dark transition-colors"
-                >
-                  Готовить сейчас
-                  <ArrowRight size={18} />
-                </Link>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 inset-x-0 p-6">
+                <p className="text-primary text-xs font-medium uppercase tracking-widest mb-2">{mealTypeLabel(todayMeal.mealType)} · Блюдо дня</p>
+                <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-white leading-tight">{todayMeal.recipe.title}</h2>
+                <div className="flex items-center gap-4 mt-3 text-white/60 text-sm">
+                  {todayMeal.recipe.totalTime && <span className="flex items-center gap-1"><Clock size={13} /> {todayMeal.recipe.totalTime} мин</span>}
+                  <span className="flex items-center gap-1"><Users size={13} /> {todayMeal.recipe.servings || 4} порц.</span>
+                </div>
               </div>
             </div>
-          </>
+          </Link>
         ) : (
-          <>
-            <div className="aspect-[16/9] bg-cream flex items-center justify-center border-b border-line">
-              <ChefHat size={56} className="text-line-strong" strokeWidth={1.5} />
-            </div>
-            <div className="p-6">
-              <p className="text-xs text-ink-muted font-medium uppercase tracking-wider mb-2">
-                Сегодня в меню
-              </p>
-              <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
-                На сегодня меню ещё не запланировано
-              </h2>
-              <p className="text-ink-soft mb-4 max-w-md">
-                Добавь рецепты в меню недели, и здесь появится блюдо дня с фото и
-                кнопкой «Готовить сейчас».
-              </p>
-              <Link
-                to="/menu"
-                className="inline-flex items-center gap-2 text-primary font-medium hover:text-primary-dark transition-colors"
-              >
-                Открыть меню недели
-                <ArrowRight size={18} />
-              </Link>
-            </div>
-          </>
+          <Link to="/menu" className="block rounded-2xl border border-dashed border-line p-12 text-center hover:border-primary/30 transition-colors">
+            <ChefHat size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
+            <p className="font-serif text-lg text-ink mb-1">Блюдо дня</p>
+            <p className="text-sm text-ink-muted">Запланируйте меню</p>
+          </Link>
         )}
       </section>
 
-      {/* Две главные карточки */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Link
-          to="/what-to-cook"
-          className="bg-paper rounded-2xl border border-line p-6 hover:border-primary hover:shadow-sm transition-all group"
-        >
-          <ChefHat
-            size={32}
-            className="text-primary mb-3"
-            strokeWidth={1.5}
-          />
-          <h3 className="font-serif text-xl font-semibold text-ink mb-1">
-            Что приготовить?
-          </h3>
-          <p className="text-ink-soft text-sm mb-3">Из того, что есть дома</p>
-          <span className="inline-flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
-            Подобрать рецепт
-            <ArrowRight size={16} />
-          </span>
+      {/* THREE ACTION CARDS */}
+      <section className="grid grid-cols-3 gap-4">
+        <Link to="/what-to-cook" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
+          <ChefHat size={20} className="text-primary mb-4" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-ink">Что приготовить</p>
+          <p className="text-xs text-ink-muted mt-1">Из того что есть</p>
         </Link>
-
-        <Link
-          to="/shopping"
-          className="bg-paper rounded-2xl border border-line p-6 hover:border-primary hover:shadow-sm transition-all group"
-        >
-          <ShoppingCart
-            size={32}
-            className="text-primary mb-3"
-            strokeWidth={1.5}
-          />
-          <h3 className="font-serif text-xl font-semibold text-ink mb-1">
-            Список покупок
-          </h3>
-          <p className="text-ink-soft text-sm mb-3">
-            {shopping.length > 0
-              ? `${shopping.filter(s => s.isChecked === 0).length} позиций · ${shopping.filter(s => s.isChecked === 1).length} куплено`
-              : "Список пуст"
-            }
-          </p>
-          <span className="inline-flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
-            Открыть
-            <ArrowRight size={16} />
-          </span>
+        <Link to="/shopping" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
+          <ShoppingCart size={20} className="text-primary mb-4" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-ink">Покупки</p>
+          <p className="text-xs text-ink-muted mt-1">{shoppingCount > 0 ? `${shoppingCount} позиций` : "Список пуст"}</p>
         </Link>
-      </div>
+        <Link to="/preserves" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
+          <Snowflake size={20} className="text-primary mb-4" strokeWidth={1.5} />
+          <p className="text-sm font-medium text-ink">Заготовки</p>
+          <p className="text-xs text-ink-muted mt-1">Морозилка, банки</p>
+        </Link>
+      </section>
 
-      {/* Карточка «Заготовки» — отдельная строка, чтобы быстро попасть
-          в раздел с телефона (в нижней нав-баре только 5 пунктов). */}
-      <Link
-        to="/preserves"
-        className="block bg-paper rounded-2xl border border-line p-5 hover:border-primary hover:shadow-sm transition-all group"
-      >
-        <div className="flex items-center gap-4">
-          <Snowflake
-            size={28}
-            className="text-primary shrink-0"
-            strokeWidth={1.5}
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-serif text-lg font-semibold text-ink">
-              Заготовки
-            </h3>
-            <p className="text-ink-soft text-sm">
-              Заморозка, консервация, открытые продукты
-            </p>
-          </div>
-          <ArrowRight
-            size={18}
-            className="text-primary shrink-0 group-hover:translate-x-0.5 transition-transform"
-          />
-        </div>
-      </Link>
-
-      {/* C.2 — Любимое в этом месяце */}
+      {/* FAVORITE THIS MONTH */}
       {topRecipe && topRecipe.count >= 2 && (
-        <section className="bg-paper rounded-2xl border border-line p-5">
-          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
-            Любимое в этом месяце
-          </p>
+        <section className="bg-surface-elevated rounded-xl p-5 border border-line">
+          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">Любимое в этом месяце</p>
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🏆</span>
-            <div className="flex-1 min-w-0">
+            <span className="text-xl">🏆</span>
+            <div>
               {topRecipe.recipeId ? (
-                <Link to={`/recipes/${topRecipe.recipeId}`} className="font-serif text-lg font-semibold text-ink hover:text-primary transition-colors">
-                  {topRecipe.recipeTitle}
-                </Link>
+                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-sm font-medium text-ink hover:text-primary">{topRecipe.recipeTitle}</Link>
               ) : (
-                <p className="font-serif text-lg font-semibold text-ink">
-                  {topRecipe.recipeTitle}
-                </p>
+                <p className="text-sm font-medium text-ink">{topRecipe.recipeTitle}</p>
               )}
-              <p className="text-sm text-ink-soft">
-                Готовили {topRecipe.count} {topRecipe.count >= 5 ? "раз" : topRecipe.count >= 2 ? "раза" : "раз"} в этом месяце
-              </p>
+              <p className="text-xs text-ink-muted mt-0.5">Готовили {topRecipe.count} раза</p>
             </div>
           </div>
         </section>
       )}
 
-      {/* Недавно готовила — раздел 6.4 макета: горизонтальный скролл */}
-      <section>
-        <div className="flex items-baseline justify-between mb-3">
-          <h3 className="font-serif text-lg font-semibold text-ink">
-            Недавно готовила
-          </h3>
-          {recentCooks.length > 0 && (
-            <Link
-              to="/history"
-              className="text-primary text-sm font-medium hover:text-primary-dark inline-flex items-center gap-1"
-            >
-              Вся история
-              <ArrowRight size={14} />
-            </Link>
-          )}
-        </div>
-
-        {recentCooks.length === 0 ? (
-          <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
-            <BookOpen
-              size={32}
-              className="text-line-strong mx-auto mb-3"
-              strokeWidth={1.5}
-            />
-            <p className="text-ink-soft text-sm">
-              Пока ничего не готовила.
-              <br />
-              История появится после первого приготовления.
-            </p>
+      {/* RECENTLY COOKED */}
+      {recentCooks.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-medium text-ink-muted uppercase tracking-wider">Недавно готовили</p>
+            <Link to="/history" className="text-xs text-primary hover:text-primary-dark">Вся история</Link>
           </div>
-        ) : (
-          <ul className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
             {recentCooks.map((c) => {
               const card = (
-                <div className="w-36 shrink-0 snap-start bg-paper border border-line rounded-xl overflow-hidden hover:border-primary transition-colors">
-                  <div className="aspect-square bg-cream flex items-center justify-center overflow-hidden">
-                    {c.recipeImage ? (
-                      <img
-                        src={c.recipeImage}
-                        alt={c.recipeTitle}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <ChefHat
-                        size={32}
-                        className="text-line-strong"
-                        strokeWidth={1.5}
-                      />
-                    )}
+                <div className="w-32 shrink-0 rounded-xl overflow-hidden bg-surface-elevated border border-line hover:border-primary/20 transition-colors">
+                  <div className="aspect-square bg-surface flex items-center justify-center overflow-hidden">
+                    {c.recipeImage ? <img src={c.recipeImage} alt={c.recipeTitle} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : <ChefHat size={20} className="text-ink-muted" strokeWidth={1} />}
                   </div>
-                  <div className="p-3">
-                    <p className="font-serif text-sm font-semibold text-ink line-clamp-2 leading-snug">
-                      {c.recipeTitle}
-                    </p>
-                  </div>
+                  <div className="p-2.5"><p className="text-xs font-medium text-ink line-clamp-2 leading-tight">{c.recipeTitle}</p></div>
                 </div>
               );
-              return (
-                <li key={c.id}>
-                  {c.recipeId ? (
-                    <Link to={`/recipes/${c.recipeId}`} className="block">
-                      {card}
-                    </Link>
-                  ) : (
-                    card
-                  )}
-                </li>
-              );
+              return c.recipeId ? <Link key={c.id} to={`/recipes/${c.recipeId}`}>{card}</Link> : <div key={c.id}>{card}</div>;
             })}
-          </ul>
-        )}
-      </section>
+          </div>
+        </section>
+      )}
 
-      {/* Меню недели — мини-полоса с реальными данными */}
-      <section className="bg-paper rounded-2xl border border-line p-6">
-        <div className="flex items-baseline justify-between mb-5">
-          <h3 className="font-serif text-lg font-semibold text-ink inline-flex items-center gap-2">
-            <CalendarDays
-              size={20}
-              className="text-ink-soft"
-              strokeWidth={2}
-            />
-            Меню недели
-          </h3>
-          <Link
-            to="/menu"
-            className="text-primary text-sm font-medium hover:text-primary-dark inline-flex items-center gap-1"
-          >
-            Изменить
-            <ArrowRight size={14} />
-          </Link>
+      {/* WEEKLY MENU PREVIEW */}
+      <section className="bg-surface-elevated rounded-xl p-5 border border-line">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider flex items-center gap-2"><CalendarDays size={13} /> Меню недели</p>
+          <Link to="/menu" className="text-xs text-primary hover:text-primary-dark">Открыть</Link>
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="flex justify-between">
           {WEEKDAYS.map((label, idx) => {
             const isToday = idx === todayIdx;
-            const dayMeals = weekMenu?.items.filter(i => i.dayOfWeek === idx) || [];
-            const hasRecipes = dayMeals.length > 0;
+            const dayMeals = weekMenu?.items.filter((i) => i.dayOfWeek === idx) || [];
+            const filled = dayMeals.length > 0;
             return (
-              <Link key={label} to="/menu" className="flex flex-col items-center gap-2 group">
-                <span
-                  className={`text-xs font-medium ${
-                    isToday ? "text-primary" : "text-ink-muted"
-                  }`}
-                >
-                  {label}
-                </span>
-                <div
-                  className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors group-hover:border-primary ${
-                    isToday
-                      ? "bg-primary-light border-primary text-primary"
-                      : hasRecipes
-                        ? "border-primary/50 bg-primary/10 text-primary"
-                        : "border-line bg-cream text-ink-muted"
-                  }`}
-                  title={dayMeals.map(m => m.recipeTitle).join(', ') || 'Пусто'}
-                >
-                  {hasRecipes ? dayMeals.length : ''}
+              <div key={label} className="flex flex-col items-center gap-2">
+                <span className={`text-[10px] uppercase tracking-wider ${isToday ? "text-primary" : "text-ink-muted"}`}>{label}</span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium border ${isToday ? "border-primary bg-primary/10 text-primary" : filled ? "border-ink-muted/30 text-ink-soft" : "border-line text-ink-muted"}`}>
+                  {filled ? dayMeals.length : "·"}
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
-        {weekMenu && weekMenu.items.length > 0 ? (
-          <p className="text-ink-muted text-xs text-center mt-4">
-            {weekMenu.items.length} {weekMenu.items.length === 1 ? 'блюдо' : weekMenu.items.length < 5 ? 'блюда' : 'блюд'} запланировано на неделю
-          </p>
-        ) : (
-          <p className="text-ink-muted text-xs text-center mt-4">
-            Меню пусто — добавь рецепты на неделю
-          </p>
-        )}
       </section>
     </div>
   );

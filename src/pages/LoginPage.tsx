@@ -47,21 +47,19 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-cream px-6">
       <div className="w-full max-w-xs">
-        <div className="text-center mb-12">
-          <h1 className="font-serif text-4xl font-bold text-primary tracking-tight mb-1">
-            ШефДом!
-          </h1>
-          <p className="text-ink-muted text-sm">Введите PIN-код</p>
-        </div>
+        <h1 className="font-serif text-4xl font-semibold text-primary text-center mb-2 tracking-wide">
+          ШефДом
+        </h1>
+        <p className="text-ink-muted text-center text-sm mb-10 tracking-wider uppercase">Введите PIN-код</p>
 
         {/* Точки PIN-кода */}
         <div className="flex justify-center gap-4 mb-6">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
+              className={`w-3 h-3 rounded-full transition-all duration-200 ${
                 pin.length > i
-                  ? "bg-primary scale-110 shadow-md"
+                  ? "bg-primary"
                   : "bg-line-strong"
               }`}
             />
@@ -85,7 +83,7 @@ export function LoginPage() {
               type="button"
               onClick={() => press(String(d))}
               disabled={login.isPending}
-              className="h-16 rounded-2xl bg-paper border border-line text-2xl font-serif font-medium text-ink shadow-sm hover:shadow-md hover:border-primary/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-16 rounded-xl bg-surface-elevated border border-line text-2xl font-serif font-medium text-ink hover:border-primary/40 hover:text-primary active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {d}
             </button>
