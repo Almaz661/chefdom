@@ -1,42 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  /* Обновлённая палитра — мягче, современнее, с глубиной */
-  --color-primary: #e85d04;
-  --color-primary-dark: #bc4b01;
-  --color-primary-light: #fff4ed;
+  /* Premium Dark Kitchen — Graphite + Champagne Gold */
+  --color-primary: #c9a96e;
+  --color-primary-dark: #a8874d;
+  --color-primary-light: #c9a96e1a;
 
-  --color-cream: #faf8f5;
-  --color-paper: #ffffff;
+  --color-surface: #1a1a1a;
+  --color-surface-elevated: #242424;
+  --color-surface-hover: #2a2a2a;
 
-  --color-ink: #1c1917;
-  --color-ink-soft: #57534e;
-  --color-ink-muted: #a8a29e;
+  --color-cream: #111111;
+  --color-paper: #1e1e1e;
 
-  --color-fresh: #16a34a;
-  --color-warning: #f59e0b;
-  --color-alert: #dc2626;
-  --color-cool: #0ea5e9;
+  --color-ink: #f0ece4;
+  --color-ink-soft: #a09a90;
+  --color-ink-muted: #6b6560;
 
-  --color-line: #e7e5e4;
-  --color-line-strong: #d6d3d1;
+  --color-fresh: #6b9e7a;
+  --color-warning: #d4a843;
+  --color-alert: #c45c4f;
+  --color-cool: #6a8fa0;
 
-  /* Шрифты */
-  --font-serif: "Lora", "Playfair Display", Georgia, serif;
+  --color-line: #2e2e2e;
+  --color-line-strong: #3a3a3a;
+
+  /* Fonts */
+  --font-serif: "Lora", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-
-  /* Тени */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
-
-  /* Скругления */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
 }
 
 html,
@@ -46,7 +37,7 @@ body,
 }
 
 body {
-  background-color: var(--color-cream);
+  background-color: #111111;
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-feature-settings: "tnum";
@@ -58,55 +49,21 @@ button {
   font-family: inherit;
 }
 
-/* Плавные переходы для всех интерактивных элементов */
 a, button, input, select, textarea {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
 }
 
-/* Кастомный скроллбар */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-line-strong);
-  border-radius: 3px;
+  background: #3a3a3a;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink-muted);
-}
-
-/* Анимация появления карточек */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.3s ease-out forwards;
-}
-
-/* Стеклянный эффект для навигации */
-.glass {
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  background-color: rgba(255, 255, 255, 0.85);
-}
-
-/* Gradient overlay для изображений */
-.img-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%);
-  pointer-events: none;
+  background: #555;
 }
