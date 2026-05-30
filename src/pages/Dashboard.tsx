@@ -8,6 +8,7 @@ import {
   Snowflake,
   CalendarDays,
   Users,
+  Flame,
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
@@ -71,156 +72,319 @@ export function Dashboard() {
   const shoppingCount = shopping.filter((s) => s.isChecked === 0).length;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 lg:py-14 space-y-10">
+    <div className="min-h-screen pb-24 lg:pb-12">
 
-      {/* GREETING */}
-      <header>
-        <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink tracking-tight">
-          {getGreeting()}, {name}
+      {/* ═══════════════════════════════════════════════════════
+          GREETING — editorial, magazine-style
+          Large serif, two-line. Date as subtle uppercase caption.
+          ═══════════════════════════════════════════════════════ */}
+      <header className="max-w-3xl mx-auto px-6 pt-12 lg:pt-16">
+        <p className="text-primary text-[11px] font-medium uppercase tracking-[0.2em] mb-3">
+          {formatToday()}
+        </p>
+        <h1 className="font-serif text-[2.75rem] lg:text-[3.5rem] font-semibold text-ink leading-[1.1] tracking-tight">
+          {getGreeting()},
+          <br />
+          <span className="text-primary">{name}</span>
         </h1>
-        <p className="text-ink-muted text-sm mt-2 tracking-wide uppercase">{formatToday()}</p>
       </header>
 
-      {/* ALERTS */}
+      {/* ═══════════════════════════════════════════════════════
+          ALERTS — warm accented rows with left border
+          Visually distinct but not heavy. Left colored bar = status.
+          ═══════════════════════════════════════════════════════ */}
       {(expiringTotal > 0 || stale.length > 0) && (
-        <section className="grid sm:grid-cols-2 gap-4">
-          {expiringTotal > 0 && (
-            <div className="bg-surface-elevated rounded-xl p-5 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} className="text-warning" />
-                <span className="text-xs font-medium text-warning uppercase tracking-wider">Истекает</span>
-              </div>
-              <p className="text-sm text-ink mb-1">{expiringTotal} {expiringTotal === 1 ? "продукт" : "продукта"} — ближайшие 3 дня</p>
-              <p className="text-xs text-ink-muted truncate mb-3">{expiringNames.slice(0, 3).join(", ")}</p>
-              <Link to="/what-to-cook" className="text-xs font-medium text-primary hover:text-primary-dark">Что приготовить? →</Link>
-            </div>
-          )}
-          {stale.length > 0 && (
-            <div className="bg-surface-elevated rounded-xl p-5 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock size={14} className="text-ink-muted" />
-                <span className="text-xs font-medium text-ink-muted uppercase tracking-wider">Залежались</span>
-              </div>
-              <p className="text-sm text-ink mb-1">{stale.length} {stale.length === 1 ? "продукт" : "продукта"} — больше 30 дней</p>
-              <p className="text-xs text-ink-muted truncate mb-3">{stale.slice(0, 3).map((s) => s.productName).join(", ")}</p>
-              <Link to="/inventory" className="text-xs font-medium text-ink-soft hover:text-ink">Открыть инвентарь →</Link>
-            </div>
-          )}
+        <section className="max-w-3xl mx-auto px-6 mt-10">
+          <div className="space-y-2">
+            {expiringTotal > 0 && (
+              <Link
+                to="/what-to-cook"
+                className="flex items-stretch gap-0 rounded-lg overflow-hidden bg-surface-elevated border border-line hover:border-warning/30 transition-colors group"
+              >
+                <div className="w-1 bg-warning shrink-0" />
+                <div className="flex items-center gap-3 px-4 py-3.5 flex-1">
+                  <AlertTriangle size={15} className="text-warning shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-ink">
+                      <span className="font-semibold">{expiringTotal}</span>{" "}
+                      {expiringTotal === 1 ? "продукт" : "продукта"} истекают за 3 дня
+                    </p>
+                    <p className="text-xs text-ink-muted truncate mt-0.5">
+                      {expiringNames.slice(0, 3).join(", ")}
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-medium text-warning group-hover:text-ink transition-colors shrink-0">
+                    Приготовить →
+                  </span>
+                </div>
+              </Link>
+            )}
+            {stale.length > 0 && (
+              <Link
+                to="/inventory"
+                className="flex items-stretch gap-0 rounded-lg overflow-hidden bg-surface-elevated border border-line hover:border-ink-muted/30 transition-colors group"
+              >
+                <div className="w-1 bg-ink-muted shrink-0" />
+                <div className="flex items-center gap-3 px-4 py-3.5 flex-1">
+                  <Clock size={15} className="text-ink-muted shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-ink-soft">
+                      <span className="font-semibold text-ink">{stale.length}</span>{" "}
+                      залежались больше 30 дней
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-ink-muted group-hover:text-ink-soft transition-colors shrink-0">
+                    →
+                  </span>
+                </div>
+              </Link>
+            )}
+          </div>
         </section>
       )}
 
-      {/* DISH OF THE DAY */}
-      <section>
+      {/* ═══════════════════════════════════════════════════════
+          DISH OF THE DAY — the hero
+          Full-width cinematic image with warm overlay.
+          Generous padding. Strong text hierarchy on image.
+          ═══════════════════════════════════════════════════════ */}
+      <section className="max-w-3xl mx-auto px-6 mt-12">
         {todayMeal ? (
-          <Link to={`/recipes/${todayMeal.recipe.id}`} className="block rounded-2xl overflow-hidden bg-surface-elevated border border-line hover:border-primary/30 transition-colors">
-            <div className="aspect-[21/9] bg-surface flex items-center justify-center overflow-hidden relative">
+          <Link
+            to={`/recipes/${todayMeal.recipe.id}`}
+            className="block rounded-2xl overflow-hidden relative group cursor-pointer"
+          >
+            {/* Image container */}
+            <div className="aspect-[16/8] lg:aspect-[16/7] bg-surface-elevated">
               {todayMeal.recipe.imageUrl ? (
-                <img src={todayMeal.recipe.imageUrl} alt={todayMeal.recipe.title} className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                <img
+                  src={todayMeal.recipe.imageUrl}
+                  alt={todayMeal.recipe.title}
+                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-[800ms] ease-out"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
               ) : (
-                <ChefHat size={48} className="text-ink-muted" strokeWidth={1} />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 inset-x-0 p-6">
-                <p className="text-primary text-xs font-medium uppercase tracking-widest mb-2">{mealTypeLabel(todayMeal.mealType)} · Блюдо дня</p>
-                <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-white leading-tight">{todayMeal.recipe.title}</h2>
-                <div className="flex items-center gap-4 mt-3 text-white/60 text-sm">
-                  {todayMeal.recipe.totalTime && <span className="flex items-center gap-1"><Clock size={13} /> {todayMeal.recipe.totalTime} мин</span>}
-                  <span className="flex items-center gap-1"><Users size={13} /> {todayMeal.recipe.servings || 4} порц.</span>
+                <div className="w-full h-full flex items-center justify-center">
+                  <ChefHat size={60} className="text-ink-muted/30" strokeWidth={0.7} />
                 </div>
+              )}
+            </div>
+            {/* Warm gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#140f0bee] via-[#140f0b55] to-transparent" />
+            {/* Content */}
+            <div className="absolute bottom-0 inset-x-0 p-7 lg:p-9">
+              <p className="text-primary text-[10px] font-semibold uppercase tracking-[0.3em] mb-2.5">
+                {mealTypeLabel(todayMeal.mealType)} · Блюдо дня
+              </p>
+              <h2 className="font-serif text-[1.75rem] lg:text-[2.25rem] font-semibold text-ink leading-[1.15] max-w-lg">
+                {todayMeal.recipe.title}
+              </h2>
+              <div className="flex items-center gap-5 mt-4">
+                {todayMeal.recipe.totalTime && (
+                  <span className="text-ink-soft text-xs flex items-center gap-1.5">
+                    <Clock size={12} strokeWidth={1.5} />
+                    {todayMeal.recipe.totalTime} мин
+                  </span>
+                )}
+                <span className="text-ink-soft text-xs flex items-center gap-1.5">
+                  <Users size={12} strokeWidth={1.5} />
+                  {todayMeal.recipe.servings || 4} порций
+                </span>
+              </div>
+              {/* Cook CTA */}
+              <div className="mt-5">
+                <span className="inline-flex items-center gap-2 bg-primary/90 text-cream px-4 py-2 rounded-lg text-xs font-semibold group-hover:bg-primary transition-colors">
+                  <Flame size={13} strokeWidth={2} />
+                  Готовить
+                </span>
               </div>
             </div>
           </Link>
         ) : (
-          <Link to="/menu" className="block rounded-2xl border border-dashed border-line p-12 text-center hover:border-primary/30 transition-colors">
-            <ChefHat size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
-            <p className="font-serif text-lg text-ink mb-1">Блюдо дня</p>
-            <p className="text-sm text-ink-muted">Запланируйте меню</p>
+          <Link
+            to="/menu"
+            className="block rounded-2xl bg-surface-elevated border border-dashed border-line py-20 text-center group hover:border-primary/30 transition-colors"
+          >
+            <ChefHat size={36} className="text-primary/40 mx-auto mb-4" strokeWidth={1} />
+            <p className="font-serif text-xl text-ink">Блюдо дня</p>
+            <p className="text-sm text-ink-muted mt-2 max-w-xs mx-auto">
+              Запланируйте меню на неделю — здесь появится ваш рецепт с фото
+            </p>
+            <span className="inline-flex items-center gap-1 text-primary text-xs font-medium mt-4 group-hover:gap-2 transition-all">
+              Запланировать <ArrowRight size={12} />
+            </span>
           </Link>
         )}
       </section>
 
-      {/* THREE ACTION CARDS */}
-      <section className="grid grid-cols-3 gap-4">
-        <Link to="/what-to-cook" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
-          <ChefHat size={20} className="text-primary mb-4" strokeWidth={1.5} />
-          <p className="text-sm font-medium text-ink">Что приготовить</p>
-          <p className="text-xs text-ink-muted mt-1">Из того что есть</p>
-        </Link>
-        <Link to="/shopping" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
-          <ShoppingCart size={20} className="text-primary mb-4" strokeWidth={1.5} />
-          <p className="text-sm font-medium text-ink">Покупки</p>
-          <p className="text-xs text-ink-muted mt-1">{shoppingCount > 0 ? `${shoppingCount} позиций` : "Список пуст"}</p>
-        </Link>
-        <Link to="/preserves" className="bg-surface-elevated rounded-xl p-5 border border-line hover:border-primary/30 transition-colors">
-          <Snowflake size={20} className="text-primary mb-4" strokeWidth={1.5} />
-          <p className="text-sm font-medium text-ink">Заготовки</p>
-          <p className="text-xs text-ink-muted mt-1">Морозилка, банки</p>
-        </Link>
+      {/* ═══════════════════════════════════════════════════════
+          QUICK ACTIONS — three warm cards
+          Distinct from hero (card format), but quieter.
+          Warm surface with subtle left accent.
+          ═══════════════════════════════════════════════════════ */}
+      <section className="max-w-3xl mx-auto px-6 mt-12">
+        <div className="grid grid-cols-3 gap-3">
+          <Link
+            to="/what-to-cook"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+              <ChefHat size={17} className="text-primary" strokeWidth={1.8} />
+            </div>
+            <p className="text-[13px] font-semibold text-ink leading-tight">Что приготовить</p>
+            <p className="text-[11px] text-ink-muted mt-1">Из того что есть</p>
+          </Link>
+          <Link
+            to="/shopping"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group relative"
+          >
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+              <ShoppingCart size={17} className="text-primary" strokeWidth={1.8} />
+            </div>
+            {shoppingCount > 0 && (
+              <span className="absolute top-3 right-3 min-w-[18px] h-[18px] rounded-full bg-primary text-[9px] font-bold text-cream flex items-center justify-center px-1">
+                {shoppingCount}
+              </span>
+            )}
+            <p className="text-[13px] font-semibold text-ink leading-tight">Покупки</p>
+            <p className="text-[11px] text-ink-muted mt-1">
+              {shoppingCount > 0 ? `${shoppingCount} нужно купить` : "Список пуст"}
+            </p>
+          </Link>
+          <Link
+            to="/preserves"
+            className="bg-surface-elevated rounded-xl p-4 lg:p-5 border border-line hover:border-primary/30 hover:bg-surface-hover transition-colors group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+              <Snowflake size={17} className="text-primary" strokeWidth={1.8} />
+            </div>
+            <p className="text-[13px] font-semibold text-ink leading-tight">Заготовки</p>
+            <p className="text-[11px] text-ink-muted mt-1">Морозилка, банки</p>
+          </Link>
+        </div>
       </section>
 
-      {/* FAVORITE THIS MONTH */}
+      {/* ═══════════════════════════════════════════════════════
+          FAVORITE THIS MONTH
+          Warm highlight card — single row, golden accent.
+          ═══════════════════════════════════════════════════════ */}
       {topRecipe && topRecipe.count >= 2 && (
-        <section className="bg-surface-elevated rounded-xl p-5 border border-line">
-          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">Любимое в этом месяце</p>
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🏆</span>
-            <div>
+        <section className="max-w-3xl mx-auto px-6 mt-10">
+          <div className="flex items-center gap-4 bg-surface-elevated rounded-xl px-5 py-4 border border-line">
+            <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+              <span className="text-base">🏆</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-ink-muted uppercase tracking-[0.15em]">
+                Фаворит месяца
+              </p>
               {topRecipe.recipeId ? (
-                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-sm font-medium text-ink hover:text-primary">{topRecipe.recipeTitle}</Link>
+                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-[13px] font-semibold text-ink hover:text-primary transition-colors truncate block mt-0.5">
+                  {topRecipe.recipeTitle}
+                </Link>
               ) : (
-                <p className="text-sm font-medium text-ink">{topRecipe.recipeTitle}</p>
+                <p className="text-[13px] font-semibold text-ink truncate mt-0.5">{topRecipe.recipeTitle}</p>
               )}
-              <p className="text-xs text-ink-muted mt-0.5">Готовили {topRecipe.count} раза</p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-lg font-serif font-semibold text-primary">{topRecipe.count}×</p>
             </div>
           </div>
         </section>
       )}
 
-      {/* RECENTLY COOKED */}
+      {/* ═══════════════════════════════════════════════════════
+          RECENTLY COOKED — horizontal gallery
+          Taller aspect ratio (3:4), warm rounded corners.
+          No borders — photography speaks. Subtle text below.
+          ═══════════════════════════════════════════════════════ */}
       {recentCooks.length > 0 && (
-        <section>
+        <section className="max-w-3xl mx-auto px-6 mt-12">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-medium text-ink-muted uppercase tracking-wider">Недавно готовили</p>
-            <Link to="/history" className="text-xs text-primary hover:text-primary-dark">Вся история</Link>
+            <h3 className="text-[11px] font-semibold text-ink-muted uppercase tracking-[0.15em]">
+              Недавно готовили
+            </h3>
+            <Link to="/history" className="text-[11px] text-primary font-medium hover:text-primary-dark transition-colors">
+              Всё →
+            </Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 scroll-smooth">
             {recentCooks.map((c) => {
-              const card = (
-                <div className="w-32 shrink-0 rounded-xl overflow-hidden bg-surface-elevated border border-line hover:border-primary/20 transition-colors">
-                  <div className="aspect-square bg-surface flex items-center justify-center overflow-hidden">
-                    {c.recipeImage ? <img src={c.recipeImage} alt={c.recipeTitle} loading="lazy" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : <ChefHat size={20} className="text-ink-muted" strokeWidth={1} />}
+              const inner = (
+                <div className="w-[110px] shrink-0 group">
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden bg-surface-elevated">
+                    {c.recipeImage ? (
+                      <img
+                        src={c.recipeImage}
+                        alt={c.recipeTitle}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ChefHat size={18} className="text-ink-muted/40" strokeWidth={1} />
+                      </div>
+                    )}
                   </div>
-                  <div className="p-2.5"><p className="text-xs font-medium text-ink line-clamp-2 leading-tight">{c.recipeTitle}</p></div>
+                  <p className="text-[11px] text-ink-soft mt-2 line-clamp-2 leading-snug group-hover:text-ink transition-colors">
+                    {c.recipeTitle}
+                  </p>
                 </div>
               );
-              return c.recipeId ? <Link key={c.id} to={`/recipes/${c.recipeId}`}>{card}</Link> : <div key={c.id}>{card}</div>;
+              return c.recipeId ? (
+                <Link key={c.id} to={`/recipes/${c.recipeId}`}>{inner}</Link>
+              ) : (
+                <div key={c.id}>{inner}</div>
+              );
             })}
           </div>
         </section>
       )}
 
-      {/* WEEKLY MENU PREVIEW */}
-      <section className="bg-surface-elevated rounded-xl p-5 border border-line">
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-xs font-medium text-ink-muted uppercase tracking-wider flex items-center gap-2"><CalendarDays size={13} /> Меню недели</p>
-          <Link to="/menu" className="text-xs text-primary hover:text-primary-dark">Открыть</Link>
-        </div>
-        <div className="flex justify-between">
-          {WEEKDAYS.map((label, idx) => {
-            const isToday = idx === todayIdx;
-            const dayMeals = weekMenu?.items.filter((i) => i.dayOfWeek === idx) || [];
-            const filled = dayMeals.length > 0;
-            return (
-              <div key={label} className="flex flex-col items-center gap-2">
-                <span className={`text-[10px] uppercase tracking-wider ${isToday ? "text-primary" : "text-ink-muted"}`}>{label}</span>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium border ${isToday ? "border-primary bg-primary/10 text-primary" : filled ? "border-ink-muted/30 text-ink-soft" : "border-line text-ink-muted"}`}>
-                  {filled ? dayMeals.length : "·"}
-                </div>
-              </div>
-            );
-          })}
+      {/* ═══════════════════════════════════════════════════════
+          WEEKLY MENU — minimal bottom section
+          Seven day indicators. Today = filled copper circle.
+          ═══════════════════════════════════════════════════════ */}
+      <section className="max-w-3xl mx-auto px-6 mt-12">
+        <div className="bg-surface-elevated rounded-xl px-5 py-5 border border-line">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.15em] flex items-center gap-2">
+              <CalendarDays size={11} strokeWidth={1.5} />
+              Меню недели
+            </h3>
+            <Link to="/menu" className="text-[10px] text-primary font-medium hover:text-primary-dark transition-colors">
+              Открыть →
+            </Link>
+          </div>
+          <div className="flex justify-between items-center">
+            {WEEKDAYS.map((label, idx) => {
+              const isToday = idx === todayIdx;
+              const dayMeals = weekMenu?.items.filter((i) => i.dayOfWeek === idx) || [];
+              const filled = dayMeals.length > 0;
+              return (
+                <Link to="/menu" key={label} className="flex flex-col items-center gap-2 group">
+                  <span className={`text-[9px] font-medium uppercase tracking-wider transition-colors ${
+                    isToday ? "text-primary" : "text-ink-muted group-hover:text-ink-soft"
+                  }`}>
+                    {label}
+                  </span>
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${
+                    isToday
+                      ? "bg-primary text-cream shadow-[0_0_12px_rgba(212,135,77,0.3)]"
+                      : filled
+                        ? "bg-primary/15 text-primary border border-primary/20"
+                        : "border border-line text-ink-muted group-hover:border-line-strong"
+                  }`}>
+                    {isToday ? dayMeals.length || "•" : filled ? dayMeals.length : ""}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
+
     </div>
   );
 }
