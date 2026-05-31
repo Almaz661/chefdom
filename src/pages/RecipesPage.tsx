@@ -8,7 +8,7 @@ import { SectionImportDialog } from "../components/SectionImportDialog";
 // Пустое состояние когда в БД ровно 0 рецептов.
 function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: () => void }) {
   return (
-    <div className="bg-paper border border-line border-dashed rounded-2xl p-10 text-center">
+    <div className="bg-surface-elevated border border-line border-dashed rounded-2xl p-10 text-center">
       <BookOpen
         size={48}
         className="text-line-strong mx-auto mb-4"
@@ -66,9 +66,9 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
   return (
     <Link
       to={`/recipes/${r.id}`}
-      className="block bg-paper rounded-xl border border-line overflow-hidden hover:border-primary hover:shadow-sm transition-all"
+      className="block bg-surface-elevated rounded-xl border border-line overflow-hidden card-lift"
     >
-      <div className="aspect-[16/10] bg-cream overflow-hidden">
+      <div className="aspect-[16/10] bg-surface-hover overflow-hidden">
         {showImage ? (
           <img
             src={r.imageUrl!}

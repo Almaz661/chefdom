@@ -50,7 +50,7 @@ export function AnalyticsPage() {
       </h1>
 
       {/* Вкладки: Готовка / Расходы */}
-      <div className="inline-flex bg-cream rounded-lg p-1">
+      <div className="inline-flex bg-surface-elevated rounded-lg p-1 border border-line">
         <button
           onClick={() => setTab("cooking")}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -80,7 +80,7 @@ export function AnalyticsPage() {
       {tab === "cooking" && (
         <>
           {/* Переключатели периода */}
-          <div className="inline-flex bg-cream rounded-lg p-1">
+          <div className="inline-flex bg-surface-elevated rounded-lg p-1 border border-line">
             {PERIOD_LABELS.map(({ key, label }) => (
               <button
                 key={key}

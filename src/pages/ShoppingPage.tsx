@@ -160,7 +160,7 @@ export function ShoppingPage() {
                 </span>
                 <span>{progress}%</span>
               </div>
-              <div className="h-2.5 bg-cream rounded-full overflow-hidden">
+              <div className="h-2.5 bg-surface-elevated rounded-full overflow-hidden border border-line">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
@@ -328,7 +328,7 @@ export function ShoppingPage() {
                   return (
                     <li
                       key={idx}
-                      className="flex items-center gap-3 bg-cream rounded-lg px-4 py-3"
+                      className="flex items-center gap-3 bg-surface-elevated rounded-lg px-4 py-3"
                     >
                       <button
                         onClick={() => cycleStorage(idx)}
@@ -354,7 +354,7 @@ export function ShoppingPage() {
             <div className="p-4 border-t border-line flex gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
               >
                 Отмена
               </button>
