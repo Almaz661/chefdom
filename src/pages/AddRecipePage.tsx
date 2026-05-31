@@ -367,7 +367,7 @@ export function AddRecipePage() {
               className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
             />
             {imageUrl && (
-              <div className="mt-3 aspect-[16/9] max-w-md bg-cream rounded-lg overflow-hidden border border-line">
+              <div className="mt-3 aspect-[16/9] max-w-md bg-surface-elevated rounded-lg overflow-hidden border border-line">
                 {imageError ? (
                   <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm">
                     Не удалось загрузить превью
@@ -531,21 +531,21 @@ export function AddRecipePage() {
                 value={ing.amount}
                 onChange={(e) => updateIngredient(idx, { amount: e.target.value })}
                 placeholder="Кол-во"
-                className="w-20 bg-cream border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                className="w-20 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
                 value={ing.unit}
                 onChange={(e) => updateIngredient(idx, { unit: e.target.value })}
                 placeholder="ед."
-                className="w-16 bg-cream border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                className="w-16 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
                 value={ing.name}
                 onChange={(e) => updateIngredient(idx, { name: e.target.value })}
                 placeholder="Название (обязательно)"
-                className="flex-1 min-w-[180px] bg-cream border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                className="flex-1 min-w-[180px] bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
@@ -554,14 +554,14 @@ export function AddRecipePage() {
                   updateIngredient(idx, { groupName: e.target.value })
                 }
                 placeholder="Группа"
-                className="w-28 bg-cream border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                className="w-28 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
               />
               <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={() => moveIngredient(idx, -1)}
                   disabled={idx === 0}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                   aria-label="Выше"
                 >
                   <ArrowUp size={16} />
@@ -570,7 +570,7 @@ export function AddRecipePage() {
                   type="button"
                   onClick={() => moveIngredient(idx, 1)}
                   disabled={idx === ingredients.length - 1}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                   aria-label="Ниже"
                 >
                   <ArrowDown size={16} />
@@ -578,7 +578,7 @@ export function AddRecipePage() {
                 <button
                   type="button"
                   onClick={() => removeIngredient(idx)}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-alert hover:bg-cream flex items-center justify-center"
+                  className="w-8 h-10 rounded-md text-ink-muted hover:text-alert hover:bg-surface-hover flex items-center justify-center"
                   aria-label="Удалить"
                 >
                   <Trash2 size={16} />
@@ -623,14 +623,14 @@ export function AddRecipePage() {
                   }
                   rows={3}
                   placeholder="Что делать на этом шаге"
-                  className="flex-1 bg-cream border border-line rounded-md px-3 py-2 text-ink text-sm focus:outline-none focus:border-primary resize-none"
+                  className="flex-1 bg-surface-elevated border border-line rounded-md px-3 py-2 text-ink text-sm focus:outline-none focus:border-primary resize-none"
                 />
                 <div className="flex flex-col gap-0.5">
                   <button
                     type="button"
                     onClick={() => moveStep(idx, -1)}
                     disabled={idx === 0}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                     aria-label="Выше"
                   >
                     <ArrowUp size={16} />
@@ -639,7 +639,7 @@ export function AddRecipePage() {
                     type="button"
                     onClick={() => moveStep(idx, 1)}
                     disabled={idx === steps.length - 1}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-cream disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                     aria-label="Ниже"
                   >
                     <ArrowDown size={16} />
@@ -647,7 +647,7 @@ export function AddRecipePage() {
                   <button
                     type="button"
                     onClick={() => removeStep(idx)}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-alert hover:bg-cream flex items-center justify-center"
+                    className="w-8 h-8 rounded-md text-ink-muted hover:text-alert hover:bg-surface-hover flex items-center justify-center"
                     aria-label="Удалить"
                   >
                     <Trash2 size={16} />
@@ -662,7 +662,7 @@ export function AddRecipePage() {
                     updateStep(idx, { imageUrl: e.target.value })
                   }
                   placeholder="Ссылка на фото шага (опционально)"
-                  className="flex-1 min-w-[200px] bg-cream border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                  className="flex-1 min-w-[200px] bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
                 />
                 <input
                   type="number"
@@ -672,7 +672,7 @@ export function AddRecipePage() {
                     updateStep(idx, { timerMinutes: e.target.value })
                   }
                   placeholder="Таймер, мин"
-                  className="w-32 bg-cream border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                  className="w-32 bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -690,7 +690,7 @@ export function AddRecipePage() {
       <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-line">
         <Link
           to={cancelTo}
-          className="px-5 h-12 inline-flex items-center justify-center rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+          className="px-5 h-12 inline-flex items-center justify-center rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
         >
           Отмена
         </Link>

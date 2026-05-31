@@ -225,7 +225,7 @@ export function ReceiptsPage() {
                 type="button"
                 onClick={() => setShowManual(false)}
                 aria-label="Закрыть"
-                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-cream flex items-center justify-center"
+                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-surface-hover flex items-center justify-center"
               >
                 <X size={18} />
               </button>
@@ -260,7 +260,7 @@ export function ReceiptsPage() {
               <legend className="block text-sm font-medium text-ink-soft mb-1">
                 Валюта
               </legend>
-              <div className="inline-flex bg-cream rounded-lg p-0.5">
+              <div className="inline-flex bg-surface-elevated rounded-lg p-0.5">
                 {(["EUR", "RUB"] as const).map((c) => (
                   <button
                     key={c}
@@ -283,7 +283,7 @@ export function ReceiptsPage() {
                 type="button"
                 onClick={() => setShowManual(false)}
                 disabled={create.isPending}
-                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>

@@ -214,7 +214,7 @@ export function ProductsPage() {
       </div>
 
       {/* Переключатель режимов */}
-      <div className="flex gap-1 bg-cream rounded-lg p-1 mb-6">
+      <div className="flex gap-1 bg-surface-elevated rounded-lg p-1 mb-6">
         <button
           onClick={() => setMode("search")}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-colors ${
@@ -333,7 +333,7 @@ export function ProductsPage() {
                 <div className="mt-3 space-y-3 border-t border-line pt-3">
                   <fieldset>
                     <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
-                    <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+                    <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
                       {STORAGE_OPTIONS.map(({ key, label }) => (
                         <button
                           key={key}
@@ -356,14 +356,14 @@ export function ProductsPage() {
                       type="date"
                       value={expiryDate}
                       onChange={(e) => setExpiryDate(e.target.value)}
-                      className="w-full h-10 px-3 bg-cream border border-line rounded-lg text-ink text-sm focus:outline-none focus:border-primary"
+                      className="w-full h-10 px-3 bg-surface-elevated border border-line rounded-lg text-ink text-sm focus:outline-none focus:border-primary"
                     />
                   </label>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => setShowAddToInventory(false)}
-                      className="flex-1 h-10 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-cream transition-colors"
+                      className="flex-1 h-10 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors"
                     >
                       Отмена
                     </button>

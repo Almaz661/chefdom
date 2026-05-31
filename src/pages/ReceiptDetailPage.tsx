@@ -479,7 +479,7 @@ export function ReceiptDetailPage() {
                   {copyDone ? "Скопировано" : "Скопировать"}
                 </button>
               </div>
-              <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-ink-soft bg-cream rounded-lg p-3 max-h-80 overflow-y-auto font-mono">
+              <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-ink-soft bg-surface-elevated rounded-lg p-3 max-h-80 overflow-y-auto font-mono">
                 {receipt.ocrRaw}
               </pre>
               <p className="text-xs text-ink-muted mt-2">
@@ -561,7 +561,7 @@ export function ReceiptDetailPage() {
                           onClick={() => setEditingId(null)}
                           aria-label="Отмена"
                           title="Отмена"
-                          className="w-11 h-11 rounded-lg border border-line text-ink-soft hover:bg-cream flex items-center justify-center"
+                          className="w-11 h-11 rounded-lg border border-line text-ink-soft hover:bg-surface-hover flex items-center justify-center"
                         >
                           <X size={18} />
                         </button>
@@ -602,7 +602,7 @@ export function ReceiptDetailPage() {
                     }}
                     aria-label="Редактировать"
                     title="Редактировать"
-                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-primary hover:bg-cream flex items-center justify-center shrink-0"
+                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-primary hover:bg-surface-hover flex items-center justify-center shrink-0"
                   >
                     <Pencil size={16} />
                   </button>
@@ -610,7 +610,7 @@ export function ReceiptDetailPage() {
                     type="button"
                     onClick={() => deleteItem.mutate({ id: it.id })}
                     aria-label="Удалить позицию"
-                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-alert hover:bg-cream flex items-center justify-center shrink-0"
+                    className="w-9 h-9 rounded-lg text-ink-muted hover:text-alert hover:bg-surface-hover flex items-center justify-center shrink-0"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -652,7 +652,7 @@ export function ReceiptDetailPage() {
                 type="button"
                 onClick={() => setShowAddManual(false)}
                 aria-label="Закрыть"
-                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-cream flex items-center justify-center"
+                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-surface-hover flex items-center justify-center"
               >
                 <X size={18} />
               </button>
@@ -716,7 +716,7 @@ export function ReceiptDetailPage() {
                 type="button"
                 onClick={() => setShowAddManual(false)}
                 disabled={addItem.isPending}
-                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>
@@ -761,7 +761,7 @@ export function ReceiptDetailPage() {
                 type="button"
                 onClick={() => setShowToInventory(false)}
                 aria-label="Закрыть"
-                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-cream flex items-center justify-center"
+                className="w-9 h-9 -m-1 rounded-lg text-ink-soft hover:bg-surface-hover flex items-center justify-center"
               >
                 <X size={18} />
               </button>
@@ -826,7 +826,7 @@ export function ReceiptDetailPage() {
                 type="button"
                 onClick={() => setShowToInventory(false)}
                 disabled={addBulkToInventory.isPending}
-                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>

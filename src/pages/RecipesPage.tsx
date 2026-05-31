@@ -333,7 +333,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=..."
           autoFocus
-          className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary mb-4"
+          className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary mb-4"
         />
 
         {importYt.error && (
@@ -345,7 +345,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             disabled={importYt.isPending}
-            className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
           >
             Отмена
           </button>

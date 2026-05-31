@@ -163,7 +163,7 @@ export function RecipeDetailPage() {
   return (
     <div className="pb-32">
       {/* Hero — фото на всю ширину контейнера */}
-      <div className="relative aspect-[16/9] bg-cream max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
+      <div className="relative aspect-[16/9] bg-surface-elevated max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
         {showImage ? (
           <img
             src={recipe.imageUrl!}
@@ -275,7 +275,7 @@ export function RecipeDetailPage() {
 
         {/* C.1 — КБЖУ на порцию с % дневной нормы */}
         {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
-          <div className="bg-cream rounded-xl p-4 mb-6">
+          <div className="bg-surface-elevated rounded-xl p-4 mb-6">
             <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
               На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
             </p>
@@ -376,7 +376,7 @@ export function RecipeDetailPage() {
                             onClick={() => setSubForIngredient(ing.name)}
                             aria-label={`Чем заменить ${ing.name}`}
                             title="Чем заменить"
-                            className="w-9 h-9 -my-2 rounded-lg text-ink-muted hover:text-primary hover:bg-cream flex items-center justify-center shrink-0 transition-colors"
+                            className="w-9 h-9 -my-2 rounded-lg text-ink-muted hover:text-primary hover:bg-surface-hover flex items-center justify-center shrink-0 transition-colors"
                           >
                             <Replace size={16} />
                           </button>
@@ -481,7 +481,7 @@ export function RecipeDetailPage() {
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
                 disabled={del.isPending}
-                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>

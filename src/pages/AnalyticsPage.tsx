@@ -135,7 +135,7 @@ export function AnalyticsPage() {
                     key={idx}
                     className="flex items-center gap-3 bg-paper border border-line rounded-xl px-4 py-3"
                   >
-                    <span className="w-7 h-7 rounded-full bg-cream flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-surface-elevated flex items-center justify-center text-sm font-bold text-primary shrink-0">
                       {idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -170,7 +170,7 @@ export function AnalyticsPage() {
             <button
               onClick={() => setSpendingPeriod(currentMonth)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                spendingPeriod === currentMonth ? "bg-primary text-paper" : "bg-cream text-ink-soft hover:text-ink"
+                spendingPeriod === currentMonth ? "bg-primary text-paper" : "bg-surface-elevated text-ink-soft hover:text-ink"
               }`}
             >
               Этот месяц
@@ -184,7 +184,7 @@ export function AnalyticsPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 spendingPeriod !== currentMonth && spendingPeriod !== currentYear
                   ? "bg-primary text-paper"
-                  : "bg-cream text-ink-soft hover:text-ink"
+                  : "bg-surface-elevated text-ink-soft hover:text-ink"
               }`}
             >
               Прошлый месяц
@@ -192,7 +192,7 @@ export function AnalyticsPage() {
             <button
               onClick={() => setSpendingPeriod(currentYear)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                spendingPeriod === currentYear ? "bg-primary text-paper" : "bg-cream text-ink-soft hover:text-ink"
+                spendingPeriod === currentYear ? "bg-primary text-paper" : "bg-surface-elevated text-ink-soft hover:text-ink"
               }`}
             >
               Весь {currentYear} год
@@ -252,7 +252,7 @@ export function AnalyticsPage() {
                     {spending.topProducts.map((product, idx) => (
                       <li key={idx} className="flex items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-cream flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                          <span className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {idx + 1}
                           </span>
                           <span className="text-sm font-medium text-ink">{product.name}</span>

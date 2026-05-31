@@ -658,7 +658,7 @@ function AddInventoryDialog({
             placeholder="Мин. остаток (авто-докупка)"
             step="any"
             min="0"
-            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
           />
           <p className="text-xs text-ink-muted">Когда остаток ниже — автоматически в покупки</p>
 
@@ -666,7 +666,7 @@ function AddInventoryDialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
             >
               Отмена
             </button>
@@ -790,7 +790,7 @@ function ScanResultDialog({
             </p>
             <fieldset className="mb-3">
               <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
-              <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+              <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
                 {STORAGE_OPTIONS.map(({ key, label }) => (
                   <button
                     key={key}
@@ -815,14 +815,14 @@ function ScanResultDialog({
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
               />
             </label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
               >
                 Отмена
               </button>
@@ -849,7 +849,7 @@ function ScanResultDialog({
             <div className="space-y-3">
               <fieldset>
                 <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
-                <div className="inline-flex bg-cream rounded-lg p-0.5 w-full">
+                <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
                   {STORAGE_OPTIONS.map(({ key, label }) => (
                     <button
                       key={key}
@@ -872,7 +872,7 @@ function ScanResultDialog({
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="Название продукта"
                 autoFocus
-                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
               />
               <div className="flex gap-2">
                 <input
@@ -882,21 +882,21 @@ function ScanResultDialog({
                   placeholder="Кол-во"
                   step="any"
                   min="0"
-                  className="flex-1 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                  className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
                 />
                 <input
                   type="text"
                   value={customUnit}
                   onChange={(e) => setCustomUnit(e.target.value)}
                   placeholder="Ед."
-                  className="w-24 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                  className="w-24 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
                 />
               </div>
               <input
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
               />
               <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
             </div>
@@ -904,7 +904,7 @@ function ScanResultDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
               >
                 Отмена
               </button>
