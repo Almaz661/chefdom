@@ -1,40 +1,37 @@
 name: Download Product Images
 
-# Запускается вручную через GitHub → Actions → Run workflow
 on:
   workflow_dispatch:
     inputs:
       from:
-        description: 'Начать с позиции (0 = начало)'
+        description: 'С какой позиции (0 = начало)'
         default: '0'
         required: false
       to:
-        description: 'Закончить на позиции (пусто = все)'
+        description: 'По какую позицию (пусто = все)'
         default: ''
         required: false
 
 jobs:
   download:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install dependencies
-        run: |
-          npm install --ignore-scripts
-          npm install sharp --save-dev
+      - name: Install sharp
+        run: npm install sharp
 
-      - name: Create product image directories
+      - name: Create directories
         run: |
           mkdir -p public/images/products/vegetables
           mkdir -p public/images/products/fruits
@@ -50,31 +47,29 @@ jobs:
           mkdir -p public/images/products/frozen
           mkdir -p public/images/products/greens
 
-      - name: Download product images from Pexels
+      - name: Download images
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          FROM: ${{ github.event.inputs.from || '0' }}
-          TO: ${{ github.event.inputs.to || '' }}
-        run: |
-          npx tsx scripts/download-product-images.ts
+          FROM: ${{ inputs.from || '0' }}
+          TO: ${{ inputs.to || '' }}
+        run: node scripts/download-images.mjs
 
-      - name: Show downloaded files
+      - name: Show results
         run: |
-          echo "=== Downloaded files ==="
-          find public/images/products -name "*.webp" | wc -l
-          find public/images/products -name "*.webp" | head -20
+          echo "Files downloaded:"
+          find public/images/products \( -name "*.webp" -o -name "*.jpg" \) | wc -l
+          find public/images/products \( -name "*.webp" -o -name "*.jpg" \) | head -20
 
-      - name: Commit and push images
+      - name: Commit and push
         run: |
-          git config user.name "kiro-agent[bot]"
-          git config user.email "kiro-agent[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/images/products/
-          git diff --staged --stat
           if git diff --staged --quiet; then
-            echo "Нет новых файлов для коммита"
+            echo "No new images"
           else
             COUNT=$(git diff --staged --name-only | wc -l)
-            git commit -m "feat: добавлено $COUNT фото продуктов (Product Image Library)"
-            git push origin feat/product-images-ci
-            echo "✅ Запушено $COUNT новых фото"
+            git commit -m "feat: Product Images — ${COUNT} фото [ci skip]"
+            git push origin HEAD:main
+            echo "Pushed $COUNT images"
           fi
