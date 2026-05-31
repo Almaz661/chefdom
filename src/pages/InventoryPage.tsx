@@ -1,55 +1,17 @@
 import { useState, FormEvent } from "react";
 import {
-  Refrigerator, Snowflake, Package, Plus, ScanLine, Trash2,
-  AlertTriangle, Loader2, Clock, ChefHat, TrendingUp, Lightbulb,
+  Refrigerator,
+  Snowflake,
+  Package,
+  Plus,
+  ScanLine,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
-
-// Фоновое изображение продукта по ключевым словам
-const PRODUCT_IMAGES: [string[], string][] = [
-  [["куриц", "курин", "куриное", "филе", "грудк", "kip", "chicken"], "https://images.unsplash.com/photo-1604503468506-a8da13d82571?w=300&h=200&fit=crop"],
-  [["свинин", "свиной", "свинина", "wieprzow"], "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=300&h=200&fit=crop"],
-  [["говядин", "стейк", "beef", "говяжь"], "https://images.unsplash.com/photo-1588347818036-558601350947?w=300&h=200&fit=crop"],
-  [["фарш", "котлет", "mielony"], "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=300&h=200&fit=crop"],
-  [["молоко", "молок", "mleko", "melk", "milk"], "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=200&fit=crop"],
-  [["сыр", "cheese", "kaas", "ser "], "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=300&h=200&fit=crop"],
-  [["йогурт", "jogurt", "yoghurt"], "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=300&h=200&fit=crop"],
-  [["яйц", "яйцо", "jajka", "eieren", "egg"], "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&h=200&fit=crop"],
-  [["хлеб", "батон", "bread", "chleb", "brood"], "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop"],
-  [["рыб", "лосос", "сёмг", "треск", "ryba", "vis", "fish"], "https://images.unsplash.com/photo-1510130113-6a4e8f1f9349?w=300&h=200&fit=crop"],
-  [["помидор", "томат", "pomidor"], "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=300&h=200&fit=crop"],
-  [["огурц", "ogorek", "ogorki"], "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=300&h=200&fit=crop"],
-  [["капуст", "kapusta", "kool"], "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=300&h=200&fit=crop"],
-  [["шпинат", "szpinak", "spinach"], "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&h=200&fit=crop"],
-  [["картошк", "картофел", "картош", "ziemniak", "aardappel", "potato"], "https://images.unsplash.com/photo-1508313880080-c8bef07b210d?w=300&h=200&fit=crop"],
-  [["рис", "ryż", "rijst", "rice"], "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop"],
-  [["макарон", "паста", "pasta", "makaron", "спагетт"], "https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=300&h=200&fit=crop"],
-  [["яблок", "jabłk", "appel", "apple"], "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=200&fit=crop"],
-  [["банан", "banan"], "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=200&fit=crop"],
-  [["масло", "butter", "boter", "olej"], "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=300&h=200&fit=crop"],
-  [["сок", "juice", "sok"], "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=200&fit=crop"],
-  [["лук", "cebul", "ui"], "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300&h=200&fit=crop"],
-  [["морков", "marchew", "wortel", "carrot"], "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&h=200&fit=crop"],
-  [["сметан", "śmietan"], "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop"],
-  [["кефир", "kefir"], "https://images.unsplash.com/photo-1572443490709-e57345f45939?w=300&h=200&fit=crop"],
-  [["творог", "twaróg", "quark"], "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&h=200&fit=crop"],
-  [["колбас", "сосиск", "kielbas", "worst"], "https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop"],
-  [["перец", "pieprz", "paprika", "pepper"], "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=300&h=200&fit=crop"],
-  [["чай", "herbat", "thee", "tea"], "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop"],
-  [["кофе", "kawa", "koffie", "coffee"], "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=300&h=200&fit=crop"],
-];
-
-function getProductImage(name: string): string | null {
-  const lower = name.toLowerCase();
-  for (const [keywords, url] of PRODUCT_IMAGES) {
-    for (const kw of keywords) {
-      if (lower.includes(kw)) return url;
-    }
-  }
-  return null;
-}
 
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
@@ -57,360 +19,664 @@ const TABS = [
   { key: "pantry" as const, label: "Кладовая", icon: Package },
 ];
 
-function daysUntilExpiry(d: string | null): number | null {
-  if (!d) return null;
-  const t = new Date(); t.setHours(0,0,0,0);
-  return Math.floor((new Date(d+"T00:00:00").getTime()-t.getTime())/86400000);
+/** Сколько дней до истечения срока */
+function daysUntilExpiry(expiryDate: string | null): number | null {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const exp = new Date(expiryDate + "T00:00:00");
+  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function expiryText(d: string | null): string {
-  const days = daysUntilExpiry(d);
+/** Текст срока */
+function expiryText(expiryDate: string | null): string {
+  const days = daysUntilExpiry(expiryDate);
   if (days === null) return "";
   if (days < 0) return "просрочен";
-  if (days === 0) return "сегодня";
-  if (days === 1) return "завтра";
-  if (days <= 7) return `${days} дн.`;
-  return new Date(d!+"T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  if (days === 0) return "истекает сегодня";
+  if (days === 1) return "истекает завтра";
+  if (days <= 7) return `через ${days} дн.`;
+  if (days <= 30) return `через ${days} дн.`;
+  return `ещё ${days} дн.`;
 }
 
-function expiryColor(d: string | null): string {
-  const days = daysUntilExpiry(d);
-  if (days === null) return "text-ink-muted";
-  if (days < 0) return "text-alert";
-  if (days <= 3) return "text-warning";
-  return "text-ink-muted";
-}
+const EXPIRY_PERIODS = [
+  { key: 3, label: "3 дня" },
+  { key: 7, label: "7 дней" },
+  { key: 14, label: "14 дней" },
+  { key: 30, label: "30 дней" },
+] as const;
 
-// Советы по хранению
-const STORAGE_TIPS: Record<string, string[]> = {
-  fridge: [
-    "Храните мясо на нижней полке",
-    "Овощи — в отдельном контейнере",
-    "Не ставьте горячее в холодильник",
-  ],
-  freezer: [
-    "Подпишите дату заморозки",
-    "Не замораживайте повторно",
-    "Порционируйте перед заморозкой",
-  ],
-  pantry: [
-    "Храните крупы в герметичных банках",
-    "Проверяйте сроки раз в месяц",
-    "Новые продукты — назад, старые — вперёд",
-  ],
-};
+// Кнопка «Пересчитать сроки» — проставляет сроки всем продуктам без даты
+function RecalcExpiryButton() {
+  const utils = trpc.useUtils();
+  const recalc = trpc.inventory.recalcExpiry.useMutation({
+    onSuccess: (data) => {
+      utils.inventory.list.invalidate();
+      if (data.updated > 0) {
+        alert(`Готово! Проставлено сроков: ${data.updated} из ${data.total} продуктов без даты.`);
+      } else {
+        alert('У всех продуктов уже есть сроки, или не нашлось совпадений в справочнике.');
+      }
+    },
+  });
+
+  return (
+    <button
+      onClick={() => {
+        if (confirm('Проставить сроки годности всем продуктам без даты?')) {
+          recalc.mutate();
+        }
+      }}
+      disabled={recalc.isPending}
+      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-xs font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      title="Пересчитать сроки годности из справочника"
+    >
+      {recalc.isPending ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <span>📅</span>
+      )}
+      <span className="hidden sm:inline">{recalc.isPending ? 'Считаю…' : 'Сроки'}</span>
+    </button>
+  );
+}
 
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
-  const [scanResult, setScanResult] = useState<{ barcode: string } | null>(null);
+  const [expiryPeriod, setExpiryPeriod] = useState<number>(3);
+  const [showAllExpiry, setShowAllExpiry] = useState(false);
+  const [scanResult, setScanResult] = useState<{
+    found: boolean;
+    name?: string;
+    brand?: string;
+    packageQuantity?: string | null;
+    packageUnit?: string | null;
+    barcode: string;
+  } | null>(null);
 
   const utils = trpc.useUtils();
   const { data: allItems = [], isLoading } = trpc.inventory.list.useQuery();
+  // Заготовки frozen физически лежат в морозилке — показываем их во
+  // вкладке «Морозилка» вместе с обычными продуктами. Остальные типы
+  // заготовок (preserved, opened) остаются только на странице /preserves.
   const { data: allPreserves = [] } = trpc.preserves.list.useQuery();
 
-  const remove = trpc.inventory.remove.useMutation({ onSuccess: () => utils.inventory.list.invalidate() });
-  const removePreserve = trpc.preserves.remove.useMutation({ onSuccess: () => utils.preserves.list.invalidate() });
-  const toggleBasic = trpc.inventory.update.useMutation({ onSuccess: () => utils.inventory.list.invalidate() });
-  const recalc = trpc.inventory.recalcExpiry.useMutation({
-    onSuccess: (data) => { utils.inventory.list.invalidate(); alert(data.updated > 0 ? `Проставлено: ${data.updated}` : "Совпадений нет"); },
+  const remove = trpc.inventory.remove.useMutation({
+    onSuccess: () => utils.inventory.list.invalidate(),
+  });
+  const removePreserve = trpc.preserves.remove.useMutation({
+    onSuccess: () => utils.preserves.list.invalidate(),
+  });
+  const toggleBasic = trpc.inventory.update.useMutation({
+    onSuccess: () => utils.inventory.list.invalidate(),
   });
 
+  // Универсальный тип карточки в списке. source различает обычный
+  // инвентарь и заготовку — кнопка «Удалить» использует разный мутатор.
   type ViewItem = {
-    id: number; source: "inventory" | "preserve"; productName: string;
-    quantity: string | null; unit: string | null; expiryDate: string | null;
-    category: string | null; minQuantity: string | null; isBasic: boolean;
+    id: number;
+    source: "inventory" | "preserve";
+    productName: string;
+    quantity: string | null;
+    unit: string | null;
+    expiryDate: string | null;
+    category: string | null;
+    minQuantity: string | null;
+    isBasic: boolean;
   };
 
-  const inventoryView: ViewItem[] = allItems.filter(i => i.storageType === tab).map(i => ({
-    id: i.id, source: "inventory" as const, productName: i.productName,
-    quantity: i.quantity, unit: i.unit, expiryDate: i.expiryDate,
-    category: i.category, minQuantity: i.minQuantity ?? null, isBasic: (i as any).isBasic === 1,
-  }));
+  // Преобразуем оба источника к общему виду.
+  const inventoryView: ViewItem[] = allItems
+    .filter((i) => i.storageType === tab)
+    .map((i) => ({
+      id: i.id,
+      source: "inventory" as const,
+      productName: i.productName,
+      quantity: i.quantity,
+      unit: i.unit,
+      expiryDate: i.expiryDate,
+      category: i.category,
+      minQuantity: i.minQuantity ?? null,
+      isBasic: (i as any).isBasic === 1,
+    }));
 
-  const preservesView: ViewItem[] = tab === "freezer"
-    ? allPreserves.filter(p => p.preserveType === "frozen").map(p => ({
-        id: p.id, source: "preserve" as const, productName: p.name,
-        quantity: p.quantity, unit: p.unit, expiryDate: p.expiryDate,
-        category: "Заготовки", minQuantity: null, isBasic: false,
-      }))
-    : [];
+  // Заготовки frozen добавляем только во вкладке «Морозилка».
+  const preservesView: ViewItem[] =
+    tab === "freezer"
+      ? allPreserves
+          .filter((p) => p.preserveType === "frozen")
+          .map((p) => ({
+            id: p.id,
+            source: "preserve" as const,
+            productName: p.name,
+            quantity: p.quantity,
+            unit: p.unit,
+            expiryDate: p.expiryDate,
+            category: "Заготовки",
+            minQuantity: null,
+            isBasic: false,
+          }))
+      : [];
 
   const items: ViewItem[] = [...inventoryView, ...preservesView];
-  const handleRemove = (it: ViewItem) => it.source === "preserve" ? removePreserve.mutate({ id: it.id }) : remove.mutate({ id: it.id });
 
-  // Статистика
-  const totalCount = items.length;
-  const expiringCount = items.filter(i => { const d = daysUntilExpiry(i.expiryDate); return d !== null && d <= 3; }).length;
-  const freshCount = items.filter(i => { const d = daysUntilExpiry(i.expiryDate); return d === null || d > 7; }).length;
+  // Удаление зависит от источника — выбираем нужный мутатор.
+  const handleRemove = (it: ViewItem) => {
+    if (it.source === "preserve") {
+      removePreserve.mutate({ id: it.id });
+    } else {
+      remove.mutate({ id: it.id });
+    }
+  };
+
+  // Скоро истекает (<=expiryPeriod дней) для текущего таба
+  const expiring = items.filter((i) => {
+    const days = daysUntilExpiry(i.expiryDate);
+    return days !== null && days <= expiryPeriod;
+  });
+
+  // Остальные (не истекающие)
+  const normal = items.filter((i) => {
+    const days = daysUntilExpiry(i.expiryDate);
+    return days === null || days > expiryPeriod;
+  });
+
+  // Все продукты со сроками — для вкладки «Все сроки»
+  const allWithExpiry = items
+    .filter((i) => i.expiryDate !== null)
+    .sort((a, b) => {
+      const dA = daysUntilExpiry(a.expiryDate) ?? 9999;
+      const dB = daysUntilExpiry(b.expiryDate) ?? 9999;
+      return dA - dB;
+    });
 
   // Группировка по категории
-  const grouped = items.reduce<Record<string, ViewItem[]>>((acc, item) => {
+  const grouped = normal.reduce<Record<string, typeof normal>>((acc, item) => {
     const cat = item.category || "Без категории";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
     return acc;
   }, {});
+
   const categories = Object.keys(grouped).sort((a, b) => {
-    if (a === "Заготовки") return -1; if (b === "Заготовки") return 1;
-    if (a === "Без категории") return 1; if (b === "Без категории") return -1;
+    // «Заготовки» всегда наверху, «Без категории» — внизу.
+    if (a === "Заготовки") return -1;
+    if (b === "Заготовки") return 1;
+    if (a === "Без категории") return 1;
+    if (b === "Без категории") return -1;
     return a.localeCompare(b, "ru");
   });
 
-  // Истекающие для правой колонки
-  const expiringItems = items
-    .filter(i => { const d = daysUntilExpiry(i.expiryDate); return d !== null && d <= 3; })
-    .slice(0, 5);
-
-  const atmosphereClass = tab === "freezer" ? "atmosphere-freezer" : tab === "pantry" ? "atmosphere-pantry" : "atmosphere-fridge";
-
   return (
-    <div className={`min-h-screen ${atmosphereClass}`}>
-      <div className="max-w-7xl mx-auto px-5 py-8 lg:py-10">
-
-        {/* ═══ HEADER ═══ */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">Инвентарь</h1>
-            <p className="text-ink-muted text-xs mt-1">{TABS.find(t => t.key === tab)?.label} · {totalCount} продуктов</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => recalc.mutate()} disabled={recalc.isPending}
-              className="w-9 h-9 rounded-lg border border-line flex items-center justify-center text-ink-muted hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50">
-              {recalc.isPending ? <Loader2 size={14} className="animate-spin" /> : <span className="text-xs">📅</span>}
-            </button>
-            <button onClick={() => setShowScanner(!showScanner)}
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${showScanner ? "border-primary text-primary" : "border-line text-ink-muted hover:text-primary hover:border-primary/40"}`}>
-              <ScanLine size={16} />
-            </button>
-            <button onClick={() => setShowAdd(true)}
-              className="w-9 h-9 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors">
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* ═══ TABS ═══ */}
-        <div className="flex gap-0 border-b border-line mb-8">
-          {TABS.map(({ key, label, icon: Icon }) => (
-            <button key={key} onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === key ? "text-primary border-primary" : "text-ink-muted border-transparent hover:text-ink-soft"
-              }`}>
-              <Icon size={16} /> {label}
-            </button>
-          ))}
-        </div>
-
-        {/* ═══ STATISTICS ROW ═══ */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className="text-2xl font-bold text-primary">{totalCount}</p>
-            <p className="text-[11px] text-ink-muted mt-1">Всего</p>
-          </div>
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className={`text-2xl font-bold ${expiringCount > 0 ? "text-warning" : "text-fresh"}`}>{expiringCount}</p>
-            <p className="text-[11px] text-ink-muted mt-1">Истекает</p>
-          </div>
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className="text-2xl font-bold text-fresh">{Math.round(totalCount > 0 ? (freshCount / totalCount) * 100 : 100)}%</p>
-            <p className="text-[11px] text-ink-muted mt-1">Свежесть</p>
-          </div>
-        </div>
-
-        {/* Scanner */}
-        {showScanner && (
-          <div className="mb-6 rounded-xl border border-line p-4 bg-surface-elevated">
-            <BarcodeScanner onDetected={(code) => { setScanResult({ barcode: code }); setShowScanner(false); }} />
-          </div>
-        )}
-
-        {/* ═══ MAIN LAYOUT: content + sidebar ═══ */}
-        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-6">
-
-          {/* LEFT: Product categories as cards */}
-          <div>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 size={24} className="animate-spin text-ink-muted" />
-              </div>
-            ) : items.length === 0 ? (
-              <div className="bg-surface-elevated border border-dashed border-line rounded-2xl py-16 text-center">
-                <Refrigerator size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
-                <p className="text-ink-muted text-sm">Пусто. Добавьте продукты кнопкой [+]</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {categories.map((cat) => (
-                  <section key={cat} className="animate-reveal">
-                    {/* Category label */}
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">{cat}</h3>
-                      <span className="text-[11px] text-ink-muted">{grouped[cat].length}</span>
-                    </div>
-                    {/* Products grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {grouped[cat].map((item) => {
-                        const bgImage = getProductImage(item.productName);
-                        return (
-                        <div key={`${item.source}-${item.id}`}
-                          className="item-card rounded-[16px] p-4 group relative animate-reveal overflow-hidden min-h-[120px] flex flex-col justify-between"
-                          style={bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
-                          {/* Dark overlay for readability */}
-                          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,14,39,0.82)] via-[rgba(10,14,39,0.75)] to-[rgba(10,14,39,0.88)] rounded-[16px]" />
-                          {/* Inner vignette */}
-                          <div className="absolute inset-0 rounded-[16px]" style={{ boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4)' }} />
-                          {/* Content */}
-                          <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-1">
-                              <p className="text-sm font-semibold text-ink leading-tight line-clamp-2 flex-1">
-                                {item.isBasic && <span className="text-primary text-xs mr-1">📌</span>}
-                                {item.productName}
-                              </p>
-                              <button onClick={() => handleRemove(item)}
-                                className="w-6 h-6 flex items-center justify-center text-transparent group-hover:text-ink-muted hover:!text-alert transition-colors shrink-0 ml-1">
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                            {item.quantity && (
-                              <p className="text-xs text-ink-soft">{item.quantity}{item.unit ? ` ${item.unit}` : ""}</p>
-                            )}
-                          </div>
-                          {/* Expiry at bottom */}
-                          <div className="relative z-10 mt-auto pt-2">
-                            {item.expiryDate && (
-                              <p className={`text-[11px] font-medium ${expiryColor(item.expiryDate)}`}>
-                                {expiryText(item.expiryDate)}
-                              </p>
-                            )}
-                          </div>
-                          {/* Basic pin */}
-                          {item.source === "inventory" && (
-                            <button onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                              className={`absolute top-2 right-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-10 ${item.isBasic ? "opacity-100" : ""}`}
-                              title={item.isBasic ? "Убрать из базовых" : "Базовый"}>
-                              📌
-                            </button>
-                          )}
-                        </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT SIDEBAR — info panel */}
-          <aside className="hidden lg:block space-y-5 mt-0">
-            {/* Expiring soon */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} className="text-warning" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Истекает скоро</h4>
-              </div>
-              {expiringItems.length === 0 ? (
-                <p className="text-xs text-ink-muted">Всё свежее!</p>
-              ) : (
-                <ul className="space-y-2">
-                  {expiringItems.map(item => (
-                    <li key={`exp-${item.source}-${item.id}`} className="flex items-center justify-between">
-                      <span className="text-xs text-ink truncate flex-1">{item.productName}</span>
-                      <span className={`text-[11px] font-medium shrink-0 ml-2 ${expiryColor(item.expiryDate)}`}>
-                        {expiryText(item.expiryDate)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Storage tips */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb size={14} className="text-primary" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Советы</h4>
-              </div>
-              <ul className="space-y-2">
-                {STORAGE_TIPS[tab].map((tip, i) => (
-                  <li key={i} className="text-xs text-ink-muted flex items-start gap-2">
-                    <span className="text-primary/60 mt-0.5">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Recipe ideas */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <ChefHat size={14} className="text-primary" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Идеи</h4>
-              </div>
-              <Link to="/what-to-cook" className="flex items-center gap-2 text-xs text-primary hover:text-primary-dark transition-colors">
-                <span>Что приготовить из имеющегося →</span>
-              </Link>
-            </div>
-
-            {/* Freshness indicator */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-fresh" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Свежесть</h4>
-              </div>
-              <div className="h-2 bg-line rounded-full overflow-hidden">
-                <div className="h-full bg-fresh rounded-full transition-all duration-500"
-                  style={{ width: `${totalCount > 0 ? (freshCount / totalCount) * 100 : 100}%` }} />
-              </div>
-              <p className="text-[11px] text-ink-muted mt-2">
-                {freshCount} из {totalCount} продуктов в порядке
-              </p>
-            </div>
-          </aside>
+    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-serif text-2xl font-semibold text-ink">
+          Инвентарь
+        </h1>
+        <div className="flex gap-1.5">
+          <RecalcExpiryButton />
+          <button
+            onClick={() => setShowScanner(!showScanner)}
+            className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${
+              showScanner ? "border-primary text-primary" : "border-line text-ink-muted hover:border-primary/40 hover:text-primary"
+            }`}
+            aria-label="Сканировать штрих-код"
+          >
+            <ScanLine size={16} />
+          </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="w-9 h-9 rounded-lg bg-primary text-cream flex items-center justify-center hover:bg-primary-dark transition-colors"
+            aria-label="Добавить продукт"
+          >
+            <Plus size={16} />
+          </button>
         </div>
       </div>
 
-      {/* Add dialog */}
-      {showAdd && <AddDialog storageType={tab} onClose={() => setShowAdd(false)} />}
-      {scanResult && <ScanDialog barcode={scanResult.barcode} storageType={tab} onClose={() => setScanResult(null)} />}
+      {/* Сканер (показывается по нажатию кнопки ScanLine) */}
+      {showScanner && (
+        <div className="mb-4 bg-paper border border-line rounded-xl p-4">
+          <BarcodeScanner onDetected={(code) => {
+            setScanResult({ found: false, barcode: code });
+            setShowScanner(false);
+          }} />
+        </div>
+      )}
+
+      {/* Табы */}
+      <div className="flex gap-px mb-8">
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+              tab === key
+                ? "bg-surface-elevated text-primary border border-line"
+                : "text-ink-muted hover:text-ink-soft"
+            }`}
+          >
+            <Icon size={15} strokeWidth={1.5} />
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={32} className="animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          {/* Скоро истекает — с переключателем периода */}
+          {expiring.length > 0 && (
+            <section className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-medium text-warning uppercase tracking-wider flex items-center gap-1">
+                  <AlertTriangle size={14} />
+                  Истекает в ближайшие
+                </h3>
+                <div className="flex gap-1">
+                  {EXPIRY_PERIODS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setExpiryPeriod(key)}
+                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        expiryPeriod === key
+                          ? "bg-warning text-paper"
+                          : "bg-surface-elevated text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <ul className="space-y-1">
+                {expiring.map((item) => {
+                  const days = daysUntilExpiry(item.expiryDate);
+                  const isExpired = days !== null && days < 0;
+                  return (
+                    <li
+                      key={`${item.source}-${item.id}`}
+                      className={`flex items-center gap-3 rounded-lg px-4 py-3 border ${
+                        isExpired
+                          ? "bg-alert/5 border-alert/30"
+                          : "bg-warning/5 border-warning/30"
+                      }`}
+                    >
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          isExpired ? "bg-alert" : "bg-warning"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink truncate">
+                          {item.source === "preserve" && (
+                            <Snowflake
+                              size={12}
+                              className="inline-block mr-1 text-cool align-text-bottom"
+                            />
+                          )}
+                          {item.productName}
+                          {item.quantity && (
+                            <span className="text-ink-muted ml-1">
+                              {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                            </span>
+                          )}
+                          {item.minQuantity && (
+                            <span className="text-xs text-primary/70 ml-1.5" title="Мин. остаток для авто-докупки">
+                              (мин: {item.minQuantity})
+                            </span>
+                          )}
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            isExpired ? "text-alert" : "text-warning"
+                          }`}
+                        >
+                          {expiryText(item.expiryDate)}
+                          {item.expiryDate && (
+                            <span className="text-ink-muted ml-1">
+                              ({new Date(item.expiryDate).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })})
+                            </span>
+                          )}
+                          {item.source === "preserve" && (
+                            <span className="text-ink-muted"> · из заготовок</span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleRemove(item)}
+                        className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                        aria-label="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* Кнопка «Все сроки» */}
+          {allWithExpiry.length > 0 && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowAllExpiry(!showAllExpiry)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
+                  showAllExpiry
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-line bg-paper text-ink-soft hover:border-primary hover:text-primary"
+                }`}
+              >
+                <span className="text-sm font-medium">
+                  📋 Все сроки годности ({allWithExpiry.length})
+                </span>
+                <span className="text-xs">
+                  {showAllExpiry ? "свернуть" : "показать"}
+                </span>
+              </button>
+
+              {showAllExpiry && (
+                <ul className="space-y-1 mt-2">
+                  {allWithExpiry.map((item) => {
+                    const days = daysUntilExpiry(item.expiryDate);
+                    const isExpired = days !== null && days < 0;
+                    const isSoon = days !== null && days <= expiryPeriod;
+                    return (
+                      <li
+                        key={`exp-${item.source}-${item.id}`}
+                        className={`flex items-center gap-3 rounded-lg px-4 py-2.5 border ${
+                          isExpired
+                            ? "bg-alert/5 border-alert/30"
+                            : isSoon
+                            ? "bg-warning/5 border-warning/30"
+                            : "bg-paper border-line"
+                        }`}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            isExpired
+                              ? "bg-alert"
+                              : isSoon
+                              ? "bg-warning"
+                              : "bg-primary/40"
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-ink truncate">
+                            {item.productName}
+                            {item.quantity && (
+                              <span className="text-ink-muted ml-1 text-xs">
+                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-xs font-medium ${
+                            isExpired ? "text-alert" : isSoon ? "text-warning" : "text-ink-muted"
+                          }`}>
+                            {item.expiryDate && new Date(item.expiryDate).toLocaleDateString("ru-RU", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                          <p className={`text-xs ${
+                            isExpired ? "text-alert" : isSoon ? "text-warning" : "text-ink-muted"
+                          }`}>
+                            {expiryText(item.expiryDate)}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Основной список */}
+          {items.length === 0 ? (
+            <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
+              <Refrigerator
+                size={32}
+                className="text-line-strong mx-auto mb-3"
+                strokeWidth={1.5}
+              />
+              <p className="text-ink-soft text-sm">
+                Пусто. Добавьте продукты кнопкой [+] сверху.
+              </p>
+              {tab === "freezer" && (
+                <p className="text-ink-soft text-xs mt-2">
+                  Котлеты, фарш, ягоды и другие заморозки удобнее заводить
+                  через раздел{" "}
+                  <Link
+                    to="/preserves"
+                    className="text-primary underline"
+                  >
+                    Заготовки
+                  </Link>
+                  {" "}— срок хранения подставится автоматически.
+                </p>
+              )}
+            </div>
+          ) : normal.length > 0 ? (
+            <div className="space-y-5">
+              {categories.map((cat) => (
+                <section key={cat}>
+                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+                    {cat === "Заготовки" && (
+                      <Snowflake size={12} className="text-cool" />
+                    )}
+                    {cat}
+                    {cat === "Заготовки" && (
+                      <Link
+                        to="/preserves"
+                        className="ml-auto text-primary normal-case font-normal tracking-normal"
+                      >
+                        в раздел →
+                      </Link>
+                    )}
+                  </h3>
+                  <ul className="space-y-1">
+                    {grouped[cat].map((item) => (
+                      <li
+                        key={`${item.source}-${item.id}`}
+                        className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-ink truncate">
+                            {item.isBasic && (
+                              <span className="text-xs text-primary/70 mr-1" title="Базовый продукт — не попадает в покупки">📌</span>
+                            )}
+                            {item.productName}
+                            {item.quantity && (
+                              <span className="text-ink-muted ml-1">
+                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                              </span>
+                            )}
+                          </p>
+                          {item.expiryDate && (
+                            <p className="text-xs text-ink-muted">
+                              {expiryText(item.expiryDate)}
+                            </p>
+                          )}
+                        </div>
+                        {item.source === "inventory" && (
+                          <button
+                            onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
+                              item.isBasic
+                                ? "text-primary bg-primary/10"
+                                : "text-ink-muted hover:text-primary hover:bg-primary/5"
+                            }`}
+                            title={item.isBasic ? "Убрать из базовых" : "Пометить как базовый (не попадает в покупки)"}
+                            aria-label="Базовый продукт"
+                          >
+                            📌
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRemove(item)}
+                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                          aria-label="Удалить"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
+
+      {/* Диалог добавления */}
+      {showAdd && (
+        <AddInventoryDialog
+          storageType={tab}
+          onClose={() => setShowAdd(false)}
+        />
+      )}
+
+      {/* Ошибка сканирования */}
+      {scanError && (
+        <p className="text-sm text-alert bg-paper border border-alert rounded-lg p-3 mx-4 -mt-4">
+          {scanError}
+        </p>
+      )}
+
+      {/* Результат сканирования */}
+      {scanResult && (
+        <ScanResultDialog
+          barcode={scanResult.barcode}
+          storageType={tab}
+          onClose={() => setScanResult(null)}
+        />
+      )}
     </div>
   );
 }
 
+// --- Диалог добавления ---
 
-
-// ═══ Add Dialog ═══
-function AddDialog({ storageType, onClose }: { storageType: "fridge" | "freezer" | "pantry"; onClose: () => void }) {
+function AddInventoryDialog({
+  storageType,
+  onClose,
+}: {
+  storageType: "fridge" | "freezer" | "pantry";
+  onClose: () => void;
+}) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [minQuantity, setMinQuantity] = useState("");
+
   const utils = trpc.useUtils();
-  const add = trpc.inventory.add.useMutation({ onSuccess: () => { utils.inventory.list.invalidate(); onClose(); } });
+
+  const add = trpc.inventory.add.useMutation({
+    onSuccess: () => {
+      utils.inventory.list.invalidate();
+      onClose();
+    },
+  });
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    add.mutate({
+      productName: name.trim(),
+      quantity: quantity ? Number(quantity) : null,
+      unit: unit.trim() || null,
+      storageType,
+      expiryDate: expiryDate || null,
+      minQuantity: minQuantity ? Number(minQuantity) : null,
+    });
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 border border-line" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-serif text-lg font-semibold text-ink mb-5">Добавить продукт</h3>
-        <form onSubmit={(e: FormEvent) => { e.preventDefault(); if (!name.trim()) return; add.mutate({ productName: name.trim(), quantity: quantity ? Number(quantity) : null, unit: unit.trim() || null, storageType, expiryDate: expiryDate || null, minQuantity: minQuantity ? Number(minQuantity) : null }); }} className="space-y-3">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Название продукта" autoFocus required
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
+    <div
+      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="font-serif text-lg font-semibold text-ink mb-4">
+          Добавить продукт
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Название продукта"
+            autoFocus
+            required
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+          />
           <div className="flex gap-2">
-            <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Кол-во" step="any" min="0"
-              className="flex-1 h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-            <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="кг, л, шт"
-              className="w-24 h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="Кол-во"
+              step="any"
+              min="0"
+              className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            />
+            <input
+              type="text"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="Ед. (кг, л, шт)"
+              className="w-28 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            />
           </div>
-          <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-          <input type="number" value={minQuantity} onChange={(e) => setMinQuantity(e.target.value)} placeholder="Мин. остаток (авто-докупка)" step="any" min="0"
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-          <div className="flex gap-3 pt-3">
-            <button type="button" onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-            <button type="submit" disabled={!name.trim() || add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+          <input
+            type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+          />
+          <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+          <input
+            type="number"
+            value={minQuantity}
+            onChange={(e) => setMinQuantity(e.target.value)}
+            placeholder="Мин. остаток (авто-докупка)"
+            step="any"
+            min="0"
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+          />
+          <p className="text-xs text-ink-muted">Когда остаток ниже — автоматически в покупки</p>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
+            >
+              Отмена
+            </button>
+            <button
+              type="submit"
+              disabled={!name.trim() || add.isPending}
+              className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            >
+              Добавить
+            </button>
           </div>
         </form>
       </div>
@@ -418,52 +684,238 @@ function AddDialog({ storageType, onClose }: { storageType: "fridge" | "freezer"
   );
 }
 
-// ═══ Scan Dialog ═══
-function ScanDialog({ barcode, storageType: defaultStorage, onClose }: { barcode: string; storageType: "fridge" | "freezer" | "pantry"; onClose: () => void }) {
-  const [storageType, setStorageType] = useState(defaultStorage);
+
+
+// --- Диалог результата сканирования штрих-кода ---
+
+const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[] = [
+  { key: "fridge", label: "Холодильник" },
+  { key: "freezer", label: "Морозилка" },
+  { key: "pantry", label: "Кладовая" },
+];
+
+function ScanResultDialog({
+  barcode,
+  storageType: defaultStorage,
+  onClose,
+}: {
+  barcode: string;
+  storageType: "fridge" | "freezer" | "pantry";
+  onClose: () => void;
+}) {
+  const [storageType, setStorageType] = useState<"fridge" | "freezer" | "pantry">(defaultStorage);
   const [expiryDate, setExpiryDate] = useState("");
   const [customName, setCustomName] = useState("");
+  const [customQty, setCustomQty] = useState("");
+  const [customUnit, setCustomUnit] = useState("");
+
   const utils = trpc.useUtils();
-  const lookup = trpc.products.getByBarcode.useQuery({ barcode }, { retry: false });
-  const add = trpc.inventory.add.useMutation({ onSuccess: () => { utils.inventory.list.invalidate(); onClose(); } });
+
+  // Ищем товар по штрих-коду в каталоге products
+  const lookup = trpc.products.getByBarcode.useQuery(
+    { barcode },
+    { retry: false },
+  );
+
+  const add = trpc.inventory.add.useMutation({
+    onSuccess: () => {
+      utils.inventory.list.invalidate();
+      onClose();
+    },
+  });
+
   const product = lookup.data;
+  const notFound = lookup.isError || (lookup.isSuccess && !product);
+  const isLoading = lookup.isLoading;
 
   const handleAdd = () => {
-    const name = product ? (product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu) : customName.trim();
-    if (!name) return;
-    add.mutate({ productName: name, quantity: product?.packageQuantity ? Number(product.packageQuantity) : null, unit: product?.packageUnit || null, storageType, expiryDate: expiryDate || null });
+    if (product) {
+      add.mutate({
+        productName: product.brand
+          ? `${product.brand} ${product.nameRu}`
+          : product.nameRu,
+        quantity: product.packageQuantity
+          ? Number(product.packageQuantity)
+          : null,
+        unit: product.packageUnit || null,
+        storageType,
+        expiryDate: expiryDate || null,
+      });
+    } else if (customName.trim()) {
+      add.mutate({
+        productName: customName.trim(),
+        quantity: customQty ? Number(customQty) : null,
+        unit: customUnit.trim() || null,
+        storageType,
+        expiryDate: expiryDate || null,
+      });
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 border border-line" onClick={(e) => e.stopPropagation()}>
-        {lookup.isLoading && <div className="py-8 text-center"><Loader2 size={24} className="animate-spin text-primary mx-auto" /></div>}
-        {product && !lookup.isLoading && (
+    <div
+      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={28} className="animate-spin text-primary" />
+            <span className="ml-3 text-ink-soft">Ищу товар…</span>
+          </div>
+        )}
+
+        {product && !isLoading && (
           <>
-            <p className="text-sm font-medium text-ink mb-3">{product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu}</p>
-            <div className="flex gap-1 mb-3">
-              {(["fridge", "freezer", "pantry"] as const).map(k => (
-                <button key={k} onClick={() => setStorageType(k)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${storageType === k ? "bg-primary text-paper" : "text-ink-muted border border-line"}`}>
-                  {k === "fridge" ? "Холодильник" : k === "freezer" ? "Морозилка" : "Кладовая"}
-                </button>
-              ))}
-            </div>
-            <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
-              className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink mb-4 focus:outline-none focus:border-primary" />
+            <h3 className="font-serif text-lg font-semibold text-ink mb-1">
+              Товар найден
+            </h3>
+            <p className="text-sm text-ink mb-1">
+              <span className="font-medium">
+                {product.brand
+                  ? `${product.brand} ${product.nameRu}`
+                  : product.nameRu}
+              </span>
+            </p>
+            {(product.packageQuantity || product.packageUnit) && (
+              <p className="text-xs text-ink-muted mb-3">
+                {product.packageQuantity} {product.packageUnit}
+              </p>
+            )}
+            <p className="text-xs text-ink-muted mb-3">
+              Штрих-код: {barcode}
+            </p>
+            <fieldset className="mb-3">
+              <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+              <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
+                {STORAGE_OPTIONS.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStorageType(key)}
+                    className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                      storageType === key
+                        ? "bg-primary text-paper"
+                        : "text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <label className="block mb-4">
+              <span className="block text-xs text-ink-soft mb-1">
+                Срок годности (необязательно)
+              </span>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+            </label>
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-              <button onClick={handleAdd} disabled={add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={add.isPending}
+                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {add.isPending ? "Добавляю…" : "В инвентарь"}
+              </button>
             </div>
           </>
         )}
-        {lookup.isError && !lookup.isLoading && (
+
+        {notFound && !isLoading && (
           <>
-            <p className="text-sm text-ink mb-3">Товар не найден. Введите название:</p>
-            <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Название" autoFocus
-              className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink mb-3 focus:outline-none focus:border-primary" />
-            <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-              <button onClick={handleAdd} disabled={!customName.trim() || add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+            <h3 className="font-serif text-lg font-semibold text-ink mb-2">
+              Товар не найден в каталоге
+            </h3>
+            <p className="text-xs text-ink-muted mb-3">
+              Штрих-код: {barcode}. Добавьте вручную:
+            </p>
+            <div className="space-y-3">
+              <fieldset>
+                <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+                <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
+                  {STORAGE_OPTIONS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setStorageType(key)}
+                      className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                        storageType === key
+                          ? "bg-primary text-paper"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <input
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="Название продукта"
+                autoFocus
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={customQty}
+                  onChange={(e) => setCustomQty(e.target.value)}
+                  placeholder="Кол-во"
+                  step="any"
+                  min="0"
+                  className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                />
+                <input
+                  type="text"
+                  value={customUnit}
+                  onChange={(e) => setCustomUnit(e.target.value)}
+                  placeholder="Ед."
+                  className="w-24 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+                />
+              </div>
+              <input
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              />
+              <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!customName.trim() || add.isPending}
+                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {add.isPending ? "Добавляю…" : "Добавить"}
+              </button>
             </div>
           </>
         )}
