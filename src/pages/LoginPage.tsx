@@ -34,7 +34,7 @@ export function LoginPage() {
         <div className="flex justify-center gap-5 mb-8">
           {[0,1,2,3].map(i => (
             <div key={i} className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              pin.length > i ? "bg-primary shadow-[0_0_8px_rgba(212,165,116,0.5)]" : "bg-line"
+              pin.length > i ? "bg-primary shadow-[0_0_8px_rgba(201,168,76,0.5)]" : "bg-line"
             }`} />
           ))}
         </div>
