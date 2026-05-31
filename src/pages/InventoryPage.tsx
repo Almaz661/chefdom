@@ -12,6 +12,7 @@ import {
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
+import { getProductImageSrc } from "../utils/productImages";
 
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
@@ -302,6 +303,7 @@ export function InventoryPage() {
                 {expiring.map((item) => {
                   const days = daysUntilExpiry(item.expiryDate);
                   const isExpired = days !== null && days < 0;
+                  const imgSrc = getProductImageSrc(item.productName);
                   return (
                     <li
                       key={`${item.source}-${item.id}`}
@@ -311,11 +313,22 @@ export function InventoryPage() {
                           : "bg-warning/5 border-warning/30"
                       }`}
                     >
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                          isExpired ? "bg-alert" : "bg-warning"
-                        }`}
-                      />
+                      {/* Фото продукта 64×64 */}
+                      {imgSrc ? (
+                        <img
+                          src={imgSrc}
+                          alt={item.productName}
+                          width={64}
+                          height={64}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0 bg-surface-elevated"
+                        />
+                      ) : (
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                            isExpired ? "bg-alert" : "bg-warning"
+                          }`}
+                        />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink truncate">
                           {item.source === "preserve" && (
@@ -488,52 +501,69 @@ export function InventoryPage() {
                     )}
                   </h3>
                   <ul className="space-y-1">
-                    {grouped[cat].map((item) => (
-                      <li
-                        key={`${item.source}-${item.id}`}
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 item-card animate-reveal"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-ink truncate">
-                            {item.isBasic && (
-                              <span className="text-xs text-primary/70 mr-1" title="Базовый продукт — не попадает в покупки">📌</span>
-                            )}
-                            {item.productName}
-                            {item.quantity && (
-                              <span className="text-ink-muted ml-1">
-                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
-                              </span>
-                            )}
-                          </p>
-                          {item.expiryDate && (
-                            <p className="text-xs text-ink-muted">
-                              {expiryText(item.expiryDate)}
-                            </p>
-                          )}
-                        </div>
-                        {item.source === "inventory" && (
-                          <button
-                            onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
-                              item.isBasic
-                                ? "text-primary bg-primary/10"
-                                : "text-ink-muted hover:text-primary hover:bg-primary/5"
-                            }`}
-                            title={item.isBasic ? "Убрать из базовых" : "Пометить как базовый (не попадает в покупки)"}
-                            aria-label="Базовый продукт"
-                          >
-                            📌
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleRemove(item)}
-                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
-                          aria-label="Удалить"
+                    {grouped[cat].map((item) => {
+                      const imgSrc = getProductImageSrc(item.productName);
+                      return (
+                        <li
+                          key={`${item.source}-${item.id}`}
+                          className="flex items-center gap-3 rounded-lg px-4 py-3 item-card animate-reveal"
                         >
-                          <Trash2 size={16} />
-                        </button>
-                      </li>
-                    ))}
+                          {/* Фото продукта 64×64 */}
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt={item.productName}
+                              width={64}
+                              height={64}
+                              className="w-12 h-12 rounded-lg object-cover shrink-0 bg-surface-elevated"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-surface-elevated shrink-0 flex items-center justify-center text-ink-muted text-xl select-none">
+                              🛒
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-ink truncate">
+                              {item.isBasic && (
+                                <span className="text-xs text-primary/70 mr-1" title="Базовый продукт — не попадает в покупки">📌</span>
+                              )}
+                              {item.productName}
+                              {item.quantity && (
+                                <span className="text-ink-muted ml-1">
+                                  {item.quantity}{item.unit ? ` ${item.unit}` : ""}
+                                </span>
+                              )}
+                            </p>
+                            {item.expiryDate && (
+                              <p className="text-xs text-ink-muted">
+                                {expiryText(item.expiryDate)}
+                              </p>
+                            )}
+                          </div>
+                          {item.source === "inventory" && (
+                            <button
+                              onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
+                                item.isBasic
+                                  ? "text-primary bg-primary/10"
+                                  : "text-ink-muted hover:text-primary hover:bg-primary/5"
+                              }`}
+                              title={item.isBasic ? "Убрать из базовых" : "Пометить как базовый (не попадает в покупки)"}
+                              aria-label="Базовый продукт"
+                            >
+                              📌
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleRemove(item)}
+                            className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                            aria-label="Удалить"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </section>
               ))}
