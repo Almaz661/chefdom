@@ -7,48 +7,51 @@ import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
-// Фоновое изображение продукта по ключевым словам
-const PRODUCT_IMAGES: [string[], string][] = [
-  [["куриц", "курин", "куриное", "филе", "грудк", "kip", "chicken"], "https://images.unsplash.com/photo-1604503468506-a8da13d82571?w=300&h=200&fit=crop"],
-  [["свинин", "свиной", "свинина", "wieprzow"], "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=300&h=200&fit=crop"],
-  [["говядин", "стейк", "beef", "говяжь"], "https://images.unsplash.com/photo-1588347818036-558601350947?w=300&h=200&fit=crop"],
-  [["фарш", "котлет", "mielony"], "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=300&h=200&fit=crop"],
-  [["молоко", "молок", "mleko", "melk", "milk"], "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=200&fit=crop"],
-  [["сыр", "cheese", "kaas", "ser "], "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=300&h=200&fit=crop"],
-  [["йогурт", "jogurt", "yoghurt"], "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=300&h=200&fit=crop"],
-  [["яйц", "яйцо", "jajka", "eieren", "egg"], "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&h=200&fit=crop"],
-  [["хлеб", "батон", "bread", "chleb", "brood"], "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop"],
-  [["рыб", "лосос", "сёмг", "треск", "ryba", "vis", "fish"], "https://images.unsplash.com/photo-1510130113-6a4e8f1f9349?w=300&h=200&fit=crop"],
-  [["помидор", "томат", "pomidor"], "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=300&h=200&fit=crop"],
-  [["огурц", "ogorek", "ogorki"], "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=300&h=200&fit=crop"],
-  [["капуст", "kapusta", "kool"], "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=300&h=200&fit=crop"],
-  [["шпинат", "szpinak", "spinach"], "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&h=200&fit=crop"],
-  [["картошк", "картофел", "картош", "ziemniak", "aardappel", "potato"], "https://images.unsplash.com/photo-1508313880080-c8bef07b210d?w=300&h=200&fit=crop"],
-  [["рис", "ryż", "rijst", "rice"], "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop"],
-  [["макарон", "паста", "pasta", "makaron", "спагетт"], "https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=300&h=200&fit=crop"],
-  [["яблок", "jabłk", "appel", "apple"], "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=200&fit=crop"],
-  [["банан", "banan"], "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=200&fit=crop"],
-  [["масло", "butter", "boter", "olej"], "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=300&h=200&fit=crop"],
-  [["сок", "juice", "sok"], "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=200&fit=crop"],
-  [["лук", "cebul", "ui"], "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300&h=200&fit=crop"],
-  [["морков", "marchew", "wortel", "carrot"], "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&h=200&fit=crop"],
-  [["сметан", "śmietan"], "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop"],
-  [["кефир", "kefir"], "https://images.unsplash.com/photo-1572443490709-e57345f45939?w=300&h=200&fit=crop"],
-  [["творог", "twaróg", "quark"], "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&h=200&fit=crop"],
-  [["колбас", "сосиск", "kielbas", "worst"], "https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop"],
-  [["перец", "pieprz", "paprika", "pepper"], "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=300&h=200&fit=crop"],
-  [["чай", "herbat", "thee", "tea"], "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop"],
-  [["кофе", "kawa", "koffie", "coffee"], "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=300&h=200&fit=crop"],
+// Цвета карточек — работают без интернета, не зависят от внешних серверов
+const PRODUCT_STYLES: [string[], string, string, string][] = [
+  // [ключевые слова, gradient-from, gradient-to, emoji]
+  [["куриц", "курин", "куриное", "филе", "грудк", "kip", "chicken"],    "#1a2a1a", "#2d3d1e", "🍗"],
+  [["свинин", "свиной", "свинина", "wieprzow"],                         "#2a1a1a", "#3d1e1e", "🥩"],
+  [["говядин", "стейк", "beef", "говяжь"],                              "#2a1515", "#3d1a1a", "🥩"],
+  [["фарш", "котлет", "mielony"],                                       "#251515", "#3a1f1f", "🫕"],
+  [["молоко", "молок", "mleko", "melk", "milk"],                        "#1a1f2a", "#252d3d", "🥛"],
+  [["сыр", "cheese", "kaas"],                                           "#2a2415", "#3d3520", "🧀"],
+  [["йогурт", "jogurt", "yoghurt"],                                     "#1e1a2a", "#2d2540", "🍶"],
+  [["яйц", "яйцо", "jajka", "egg"],                                     "#2a2215", "#3d3220", "🥚"],
+  [["хлеб", "батон", "bread", "chleb"],                                 "#251e10", "#3d2e18", "🍞"],
+  [["рыб", "лосос", "сёмг", "треск", "ryba", "fish"],                   "#101e2a", "#183040", "🐟"],
+  [["помидор", "томат", "pomidor"],                                      "#2a1010", "#3d1818", "🍅"],
+  [["огурц", "ogorek", "ogorki"],                                       "#102a10", "#183818", "🥒"],
+  [["капуст", "kapusta"],                                               "#152a10", "#203818", "🥬"],
+  [["шпинат", "spinach"],                                               "#0f2a10", "#183818", "🥬"],
+  [["картошк", "картофел", "картош", "potato"],                         "#201a10", "#302818", "🥔"],
+  [["рис", "rice"],                                                     "#1e1e1e", "#2a2a2a", "🍚"],
+  [["макарон", "паста", "pasta", "спагетт"],                            "#201810", "#302518", "🍝"],
+  [["яблок", "apple", "appel"],                                         "#1a2a10", "#253d18", "🍎"],
+  [["банан", "banan"],                                                  "#252008", "#3d3010", "🍌"],
+  [["масло", "butter", "boter"],                                        "#28210a", "#3d3212", "🧈"],
+  [["сок", "juice"],                                                    "#1e2810", "#2d3818", "🧃"],
+  [["лук", "cebul"],                                                    "#2a2015", "#3a2e20", "🧅"],
+  [["морков", "carrot", "wortel"],                                      "#2a1808", "#3d2810", "🥕"],
+  [["сметан"],                                                          "#1a1e2a", "#25283d", "🥄"],
+  [["кефир", "kefir"],                                                  "#151e2a", "#1e2d3d", "🥛"],
+  [["творог", "quark"],                                                 "#1e1e2a", "#2a2a3d", "🧁"],
+  [["колбас", "сосиск", "kielbas"],                                     "#251010", "#3a1818", "🌭"],
+  [["перец", "pepper", "paprika"],                                      "#2a1010", "#3d1515", "🫑"],
+  [["чай", "herbat", "tea"],                                            "#151e15", "#202e20", "🍵"],
+  [["кофе", "coffee", "kawa"],                                          "#150f08", "#251810", "☕"],
+  [["свёкл", "свекл", "biet", "beet"],                                  "#2a0a1a", "#3d1025", "🫀"],
+  [["вода", "water", "mineraal"],                                       "#0a1a2a", "#102535", "💧"],
 ];
 
-function getProductImage(name: string): string | null {
+function getProductStyle(name: string): { from: string; to: string; emoji: string } {
   const lower = name.toLowerCase();
-  for (const [keywords, url] of PRODUCT_IMAGES) {
+  for (const [keywords, from, to, emoji] of PRODUCT_STYLES) {
     for (const kw of keywords) {
-      if (lower.includes(kw)) return url;
+      if (lower.includes(kw)) return { from, to, emoji };
     }
   }
-  return null;
+  return { from: "#1a1f3a", to: "#252d4a", emoji: "📦" };
 }
 
 const TABS = [
@@ -252,15 +255,17 @@ export function InventoryPage() {
                     {/* Products grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {grouped[cat].map((item) => {
-                        const bgImage = getProductImage(item.productName);
+                        const style = getProductStyle(item.productName);
                         return (
                         <div key={`${item.source}-${item.id}`}
-                          className="item-card rounded-[16px] p-4 group relative animate-reveal overflow-hidden min-h-[120px] flex flex-col justify-between"
-                          style={bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
-                          {/* Dark overlay for readability */}
-                          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,14,39,0.82)] via-[rgba(10,14,39,0.75)] to-[rgba(10,14,39,0.88)] rounded-[16px]" />
+                          className="rounded-[16px] p-4 group relative animate-reveal overflow-hidden min-h-[120px] flex flex-col justify-between"
+                          style={{ background: `linear-gradient(135deg, ${style.from} 0%, ${style.to} 100%)`, boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3)' }}>
+                          {/* Large emoji watermark */}
+                          <div className="absolute right-2 bottom-2 text-5xl opacity-15 pointer-events-none select-none leading-none">
+                            {style.emoji}
+                          </div>
                           {/* Inner vignette */}
-                          <div className="absolute inset-0 rounded-[16px]" style={{ boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4)' }} />
+                          <div className="absolute inset-0 rounded-[16px]" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 100%)' }} />
                           {/* Content */}
                           <div className="relative z-10">
                             <div className="flex items-start justify-between mb-1">
@@ -269,12 +274,12 @@ export function InventoryPage() {
                                 {item.productName}
                               </p>
                               <button onClick={() => handleRemove(item)}
-                                className="w-6 h-6 flex items-center justify-center text-transparent group-hover:text-ink-muted hover:!text-alert transition-colors shrink-0 ml-1">
+                                className="w-6 h-6 flex items-center justify-center text-transparent group-hover:text-white/50 hover:!text-alert transition-colors shrink-0 ml-1">
                                 <Trash2 size={12} />
                               </button>
                             </div>
                             {item.quantity && (
-                              <p className="text-xs text-ink-soft">{item.quantity}{item.unit ? ` ${item.unit}` : ""}</p>
+                              <p className="text-xs text-white/60">{item.quantity}{item.unit ? ` ${item.unit}` : ""}</p>
                             )}
                           </div>
                           {/* Expiry at bottom */}
