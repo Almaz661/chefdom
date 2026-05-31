@@ -288,7 +288,7 @@ export function InventoryPage() {
                       className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                         expiryPeriod === key
                           ? "bg-warning text-paper"
-                          : "bg-cream text-ink-muted hover:text-ink"
+                          : "bg-surface-elevated text-ink-muted hover:text-ink"
                       }`}
                     >
                       {label}
@@ -624,7 +624,7 @@ function AddInventoryDialog({
             placeholder="Название продукта"
             autoFocus
             required
-            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
           />
           <div className="flex gap-2">
             <input
@@ -634,21 +634,21 @@ function AddInventoryDialog({
               placeholder="Кол-во"
               step="any"
               min="0"
-              className="flex-1 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Ед. (кг, л, шт)"
-              className="w-28 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-28 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </div>
           <input
             type="date"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
           />
           <p className="text-xs text-ink-muted">Срок годности (необязательно)</p>
           <input
