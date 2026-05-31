@@ -58,7 +58,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-cream flex">
       {/* Sidebar — desktop */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-56 lg:flex-col bg-surface border-r border-line px-3 py-6">
+      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-[227px] lg:flex-col bg-paper border-r border-line px-3 py-6">
         <div className="px-3 mb-10">
           <h1 className="font-serif text-xl font-semibold text-primary tracking-wide">
             ШефДом
@@ -71,10 +71,10 @@ export function Layout({ children }: { children: ReactNode }) {
               to={to}
               end={to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                `flex items-center gap-3 px-4 py-3 rounded-lg text-[14px] font-medium transition-all ${
                   isActive
-                    ? "text-primary bg-primary-light"
-                    : "text-ink-muted hover:text-ink-soft hover:bg-surface-hover"
+                    ? "text-primary bg-surface-hover border-l-[3px] border-primary pl-[13px]"
+                    : "text-ink-soft hover:text-primary hover:bg-surface-hover"
                 }`
               }
             >
@@ -93,7 +93,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Content */}
-      <main className="lg:pl-56 flex-1 pb-20 lg:pb-0 min-h-screen">
+      <main className="lg:pl-[227px] flex-1 pb-20 lg:pb-0 min-h-screen">
         {/* Кнопка «Назад» — мобильная, на всех страницах кроме главной */}
         {!isHome && (
           <div className="lg:hidden px-4 pt-4">
