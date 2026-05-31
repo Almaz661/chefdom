@@ -7,32 +7,6 @@ import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
-// ═══ Фото по категориям (Unsplash) ═══
-const CATEGORY_PHOTOS: Record<string, string> = {
-  "Мясо": "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=200&fit=crop",
-  "Птица": "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=200&fit=crop",
-  "Рыба": "https://images.unsplash.com/photo-1510130113-6a4e8f1f9349?w=400&h=200&fit=crop",
-  "Молочное": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=200&fit=crop",
-  "Овощи": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=200&fit=crop",
-  "Фрукты": "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=200&fit=crop",
-  "Крупы": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=200&fit=crop",
-  "Напитки": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=200&fit=crop",
-  "Заготовки": "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=400&h=200&fit=crop",
-  "Специи": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=200&fit=crop",
-  "Хлеб": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=200&fit=crop",
-  "Сладости": "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&h=200&fit=crop",
-  "Соусы": "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400&h=200&fit=crop",
-  "Без категории": "https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=400&h=200&fit=crop",
-};
-
-function getCategoryPhoto(category: string | null): string {
-  if (!category) return CATEGORY_PHOTOS["Без категории"];
-  for (const [key, url] of Object.entries(CATEGORY_PHOTOS)) {
-    if (category.toLowerCase().includes(key.toLowerCase())) return url;
-  }
-  return CATEGORY_PHOTOS["Без категории"];
-}
-
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
   { key: "freezer" as const, label: "Морозилка", icon: Snowflake },
@@ -226,14 +200,10 @@ export function InventoryPage() {
               <div className="space-y-6">
                 {categories.map((cat) => (
                   <section key={cat} className="animate-reveal">
-                    {/* Category header with photo */}
-                    <div className="relative rounded-xl overflow-hidden h-[100px] mb-3">
-                      <img src={getCategoryPhoto(cat)} alt={cat} className="w-full h-full object-cover photo-cinematic" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-                      <div className="absolute bottom-0 left-0 p-4">
-                        <h3 className="text-sm font-semibold text-white">{cat}</h3>
-                        <p className="text-[11px] text-white/60">{grouped[cat].length} продуктов</p>
-                      </div>
+                    {/* Category label */}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">{cat}</h3>
+                      <span className="text-[11px] text-ink-muted">{grouped[cat].length}</span>
                     </div>
                     {/* Products grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
