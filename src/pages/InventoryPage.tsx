@@ -12,6 +12,7 @@ import {
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
+import { getProductImageSrc } from "../utils/productImages";
 
 const TABS = [
   { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
@@ -493,6 +494,18 @@ export function InventoryPage() {
                         key={`${item.source}-${item.id}`}
                         className="flex items-center gap-3 rounded-lg px-4 py-3 item-card animate-reveal"
                       >
+                        {/* Фото продукта 48×48 */}
+                        {(() => {
+                          const imgSrc = getProductImageSrc(item.productName);
+                          return imgSrc ? (
+                            <img src={imgSrc} alt={item.productName} width={48} height={48}
+                              className="w-12 h-12 rounded-lg object-cover shrink-0 bg-surface-elevated" loading="lazy" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-surface-elevated shrink-0 flex items-center justify-center">
+                              <span className="text-ink-muted text-xs font-medium">{item.productName.charAt(0).toUpperCase()}</span>
+                            </div>
+                          );
+                        })()}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink truncate">
                             {item.isBasic && (
