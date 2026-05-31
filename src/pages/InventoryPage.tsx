@@ -9,9 +9,9 @@ import { BarcodeScanner } from "../components/BarcodeScanner";
 
 // Фоновое изображение продукта по ключевым словам
 const PRODUCT_IMAGES: [string[], string][] = [
-  [["куриц", "курин", "филе кур", "грудк", "kip", "chicken"], "https://images.unsplash.com/photo-1604503468506-a8da13d82571?w=300&h=200&fit=crop"],
-  [["свинин", "свиной", "wieprzow"], "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=300&h=200&fit=crop"],
-  [["говядин", "стейк", "beef"], "https://images.unsplash.com/photo-1588347818036-558601350947?w=300&h=200&fit=crop"],
+  [["куриц", "курин", "куриное", "филе", "грудк", "kip", "chicken"], "https://images.unsplash.com/photo-1604503468506-a8da13d82571?w=300&h=200&fit=crop"],
+  [["свинин", "свиной", "свинина", "wieprzow"], "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=300&h=200&fit=crop"],
+  [["говядин", "стейк", "beef", "говяжь"], "https://images.unsplash.com/photo-1588347818036-558601350947?w=300&h=200&fit=crop"],
   [["фарш", "котлет", "mielony"], "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=300&h=200&fit=crop"],
   [["молоко", "молок", "mleko", "melk", "milk"], "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=200&fit=crop"],
   [["сыр", "cheese", "kaas", "ser "], "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=300&h=200&fit=crop"],
@@ -23,12 +23,22 @@ const PRODUCT_IMAGES: [string[], string][] = [
   [["огурц", "ogorek", "ogorki"], "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=300&h=200&fit=crop"],
   [["капуст", "kapusta", "kool"], "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=300&h=200&fit=crop"],
   [["шпинат", "szpinak", "spinach"], "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&h=200&fit=crop"],
+  [["картошк", "картофел", "картош", "ziemniak", "aardappel", "potato"], "https://images.unsplash.com/photo-1508313880080-c8bef07b210d?w=300&h=200&fit=crop"],
   [["рис", "ryż", "rijst", "rice"], "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop"],
-  [["макарон", "паста", "pasta", "makaron"], "https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=300&h=200&fit=crop"],
+  [["макарон", "паста", "pasta", "makaron", "спагетт"], "https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=300&h=200&fit=crop"],
   [["яблок", "jabłk", "appel", "apple"], "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=200&fit=crop"],
   [["банан", "banan"], "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=200&fit=crop"],
   [["масло", "butter", "boter", "olej"], "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=300&h=200&fit=crop"],
   [["сок", "juice", "sok"], "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=200&fit=crop"],
+  [["лук", "cebul", "ui"], "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300&h=200&fit=crop"],
+  [["морков", "marchew", "wortel", "carrot"], "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&h=200&fit=crop"],
+  [["сметан", "śmietan"], "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop"],
+  [["кефир", "kefir"], "https://images.unsplash.com/photo-1572443490709-e57345f45939?w=300&h=200&fit=crop"],
+  [["творог", "twaróg", "quark"], "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&h=200&fit=crop"],
+  [["колбас", "сосиск", "kielbas", "worst"], "https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop"],
+  [["перец", "pieprz", "paprika", "pepper"], "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=300&h=200&fit=crop"],
+  [["чай", "herbat", "thee", "tea"], "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop"],
+  [["кофе", "kawa", "koffie", "coffee"], "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=300&h=200&fit=crop"],
 ];
 
 function getProductImage(name: string): string | null {
