@@ -1,69 +1,83 @@
 @import "tailwindcss";
 
 @theme {
-  /* Premium Dark Kitchen — Graphite + Champagne Gold */
-  --color-primary: #c9a96e;
-  --color-primary-dark: #a8874d;
-  --color-primary-light: #c9a96e1a;
+  /* CHEF'S KITCHEN — midnight navy + warm gold */
+  --color-primary: #d4a574;
+  --color-primary-dark: #b8925c;
+  --color-primary-light: rgba(212, 165, 116, 0.08);
 
-  --color-surface: #1a1a1a;
-  --color-surface-elevated: #242424;
-  --color-surface-hover: #2a2a2a;
+  --color-cream: #0a0e27;
+  --color-paper: #0f1428;
+  --color-surface: #1a1f3a;
+  --color-surface-elevated: #1a1f3a;
+  --color-surface-hover: #252d4a;
 
-  --color-cream: #111111;
-  --color-paper: #1e1e1e;
+  --color-ink: #ffffff;
+  --color-ink-soft: #a0a8c0;
+  --color-ink-muted: #6b7280;
 
-  --color-ink: #f0ece4;
-  --color-ink-soft: #a09a90;
-  --color-ink-muted: #6b6560;
+  --color-fresh: #10b981;
+  --color-warning: #f59e0b;
+  --color-alert: #ef4444;
+  --color-cool: #7aafc4;
 
-  --color-fresh: #6b9e7a;
-  --color-warning: #d4a843;
-  --color-alert: #c45c4f;
-  --color-cool: #6a8fa0;
+  --color-line: #2d3548;
+  --color-line-strong: #3d4560;
 
-  --color-line: #2e2e2e;
-  --color-line-strong: #3a3a3a;
-
-  /* Fonts */
   --font-serif: "Lora", Georgia, serif;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-html,
-body,
-#root {
-  height: 100%;
-}
+html, body, #root { height: 100%; }
 
 body {
-  background-color: #111111;
-  color: var(--color-ink);
+  background-color: #0a0e27;
+  color: #ffffff;
   font-family: var(--font-sans);
-  font-feature-settings: "tnum";
+  font-size: 14px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-button {
-  font-family: inherit;
-}
+button { font-family: inherit; }
 
 a, button, input, select, textarea {
-  transition: all 0.15s ease;
+  transition: all 0.3s ease;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 3px; }
+
+::selection { background: rgba(212, 165, 116, 0.25); color: #fff; }
+:focus-visible { outline: 2px solid #d4a574; outline-offset: 2px; }
+
+/* Card hover lift */
+.card-lift {
+  transition: all 0.3s ease;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+.card-lift:hover {
+  border-color: #d4a574 !important;
+  box-shadow: 0 8px 24px rgba(212, 165, 116, 0.15);
+  transform: translateY(-4px);
 }
-::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
-  border-radius: 2px;
+
+/* Stagger animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.animate-in {
+  opacity: 0;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+.animate-in:nth-child(1) { animation-delay: 0ms; }
+.animate-in:nth-child(2) { animation-delay: 80ms; }
+.animate-in:nth-child(3) { animation-delay: 160ms; }
+.animate-in:nth-child(4) { animation-delay: 240ms; }
+.animate-in:nth-child(5) { animation-delay: 320ms; }
+.animate-in:nth-child(6) { animation-delay: 400ms; }
+.animate-in:nth-child(7) { animation-delay: 480ms; }
+
+/* Page transition */
+main { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
