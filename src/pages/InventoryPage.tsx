@@ -1,110 +1,51 @@
 import { useState, FormEvent } from "react";
-import {
-  Refrigerator, Snowflake, Package, Plus, ScanLine, Trash2,
-  AlertTriangle, Loader2, Clock, ChefHat, TrendingUp, Lightbulb,
-} from "lucide-react";
+import { Plus, Trash2, Pencil, AlertTriangle, Loader2, ScanLine, Snowflake } from "lucide-react";
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
-// Фоновое изображение продукта по ключевым словам
-const PRODUCT_IMAGES: [string[], string][] = [
-  [["куриц", "курин", "куриное", "филе", "грудк", "kip", "chicken"], "https://images.unsplash.com/photo-1604503468506-a8da13d82571?w=300&h=200&fit=crop"],
-  [["свинин", "свиной", "свинина", "wieprzow"], "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=300&h=200&fit=crop"],
-  [["говядин", "стейк", "beef", "говяжь"], "https://images.unsplash.com/photo-1588347818036-558601350947?w=300&h=200&fit=crop"],
-  [["фарш", "котлет", "mielony"], "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=300&h=200&fit=crop"],
-  [["молоко", "молок", "mleko", "melk", "milk"], "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=200&fit=crop"],
-  [["сыр", "cheese", "kaas", "ser "], "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=300&h=200&fit=crop"],
-  [["йогурт", "jogurt", "yoghurt"], "https://images.unsplash.com/photo-1571212515416-fef01fc43637?w=300&h=200&fit=crop"],
-  [["яйц", "яйцо", "jajka", "eieren", "egg"], "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=300&h=200&fit=crop"],
-  [["хлеб", "батон", "bread", "chleb", "brood"], "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&h=200&fit=crop"],
-  [["рыб", "лосос", "сёмг", "треск", "ryba", "vis", "fish"], "https://images.unsplash.com/photo-1510130113-6a4e8f1f9349?w=300&h=200&fit=crop"],
-  [["помидор", "томат", "pomidor"], "https://images.unsplash.com/photo-1546470427-e26264be0b11?w=300&h=200&fit=crop"],
-  [["огурц", "ogorek", "ogorki"], "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=300&h=200&fit=crop"],
-  [["капуст", "kapusta", "kool"], "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=300&h=200&fit=crop"],
-  [["шпинат", "szpinak", "spinach"], "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&h=200&fit=crop"],
-  [["картошк", "картофел", "картош", "ziemniak", "aardappel", "potato"], "https://images.unsplash.com/photo-1508313880080-c8bef07b210d?w=300&h=200&fit=crop"],
-  [["рис", "ryż", "rijst", "rice"], "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop"],
-  [["макарон", "паста", "pasta", "makaron", "спагетт"], "https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=300&h=200&fit=crop"],
-  [["яблок", "jabłk", "appel", "apple"], "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=200&fit=crop"],
-  [["банан", "banan"], "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300&h=200&fit=crop"],
-  [["масло", "butter", "boter", "olej"], "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=300&h=200&fit=crop"],
-  [["сок", "juice", "sok"], "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=300&h=200&fit=crop"],
-  [["лук", "cebul", "ui"], "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=300&h=200&fit=crop"],
-  [["морков", "marchew", "wortel", "carrot"], "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&h=200&fit=crop"],
-  [["сметан", "śmietan"], "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=300&h=200&fit=crop"],
-  [["кефир", "kefir"], "https://images.unsplash.com/photo-1572443490709-e57345f45939?w=300&h=200&fit=crop"],
-  [["творог", "twaróg", "quark"], "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&h=200&fit=crop"],
-  [["колбас", "сосиск", "kielbas", "worst"], "https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop"],
-  [["перец", "pieprz", "paprika", "pepper"], "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=300&h=200&fit=crop"],
-  [["чай", "herbat", "thee", "tea"], "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=300&h=200&fit=crop"],
-  [["кофе", "kawa", "koffie", "coffee"], "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=300&h=200&fit=crop"],
-];
+// ═══ Цвета (точно по брифу) ═══
+// Фон страницы:    #1a1f2e
+// Фон карточек:    #232b3b
+// Hover:           #2a3548
+// Золотистый:      #d4a574
+// Бордер:          #3a4558
+// Текст серый:     #a0a9b8
+// Зелёный:         #4ade80 (15+ дней)
+// Жёлтый:         #f59e0b (2-7 дней)
+// Красный:         #ef4444 (≤1 дня / просрочен)
 
-function getProductImage(name: string): string | null {
-  const lower = name.toLowerCase();
-  for (const [keywords, url] of PRODUCT_IMAGES) {
-    for (const kw of keywords) {
-      if (lower.includes(kw)) return url;
-    }
-  }
-  return null;
-}
-
+// ═══ Табы ═══
 const TABS = [
-  { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
-  { key: "freezer" as const, label: "Морозилка", icon: Snowflake },
-  { key: "pantry" as const, label: "Кладовая", icon: Package },
+  { key: "fridge" as const, label: "Холодильник", emoji: "🧊" },
+  { key: "freezer" as const, label: "Морозилка", emoji: "❄️" },
+  { key: "pantry" as const, label: "Кладовая", emoji: "📦" },
 ];
 
+// ═══ Срок годности ═══
 function daysUntilExpiry(d: string | null): number | null {
   if (!d) return null;
-  const t = new Date(); t.setHours(0,0,0,0);
-  return Math.floor((new Date(d+"T00:00:00").getTime()-t.getTime())/86400000);
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  return Math.floor((new Date(d + "T00:00:00").getTime() - t.getTime()) / 86400000);
 }
 
-function expiryText(d: string | null): string {
+function expiryStatus(d: string | null): { text: string; color: string; weight: string } {
   const days = daysUntilExpiry(d);
-  if (days === null) return "";
-  if (days < 0) return "просрочен";
-  if (days === 0) return "сегодня";
-  if (days === 1) return "завтра";
-  if (days <= 7) return `${days} дн.`;
-  return new Date(d!+"T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+  if (days === null) return { text: "Срок не указан", color: "#a0a9b8", weight: "400" };
+  if (days < 0) return { text: "Просрочен", color: "#ef4444", weight: "600" };
+  if (days === 0) return { text: "Истекает сегодня", color: "#ef4444", weight: "600" };
+  if (days === 1) return { text: "Истекает завтра", color: "#ef4444", weight: "600" };
+  if (days <= 3) return { text: `Истекает через ${days} дн.`, color: "#f59e0b", weight: "600" };
+  if (days <= 7) return { text: `Истекает через ${days} дн.`, color: "#f59e0b", weight: "400" };
+  return { text: `Истекает через ${days} дн.`, color: "#4ade80", weight: "400" };
 }
-
-function expiryColor(d: string | null): string {
-  const days = daysUntilExpiry(d);
-  if (days === null) return "text-ink-muted";
-  if (days < 0) return "text-alert";
-  if (days <= 3) return "text-warning";
-  return "text-ink-muted";
-}
-
-// Советы по хранению
-const STORAGE_TIPS: Record<string, string[]> = {
-  fridge: [
-    "Храните мясо на нижней полке",
-    "Овощи — в отдельном контейнере",
-    "Не ставьте горячее в холодильник",
-  ],
-  freezer: [
-    "Подпишите дату заморозки",
-    "Не замораживайте повторно",
-    "Порционируйте перед заморозкой",
-  ],
-  pantry: [
-    "Храните крупы в герметичных банках",
-    "Проверяйте сроки раз в месяц",
-    "Новые продукты — назад, старые — вперёд",
-  ],
-};
 
 export function InventoryPage() {
   const [tab, setTab] = useState<"fridge" | "freezer" | "pantry">("fridge");
   const [showAdd, setShowAdd] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState<{ barcode: string } | null>(null);
+  const [editingItem, setEditingItem] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
   const { data: allItems = [], isLoading } = trpc.inventory.list.useQuery();
@@ -112,276 +53,247 @@ export function InventoryPage() {
 
   const remove = trpc.inventory.remove.useMutation({ onSuccess: () => utils.inventory.list.invalidate() });
   const removePreserve = trpc.preserves.remove.useMutation({ onSuccess: () => utils.preserves.list.invalidate() });
-  const toggleBasic = trpc.inventory.update.useMutation({ onSuccess: () => utils.inventory.list.invalidate() });
   const recalc = trpc.inventory.recalcExpiry.useMutation({
-    onSuccess: (data) => { utils.inventory.list.invalidate(); alert(data.updated > 0 ? `Проставлено: ${data.updated}` : "Совпадений нет"); },
+    onSuccess: (d) => { utils.inventory.list.invalidate(); alert(d.updated > 0 ? `Проставлено: ${d.updated}` : "Совпадений не найдено"); },
   });
 
-  type ViewItem = {
-    id: number; source: "inventory" | "preserve"; productName: string;
-    quantity: string | null; unit: string | null; expiryDate: string | null;
-    category: string | null; minQuantity: string | null; isBasic: boolean;
-  };
+  // Текущие продукты для выбранного хранилища
+  const tabItems = allItems.filter(i => i.storageType === tab);
 
-  const inventoryView: ViewItem[] = allItems.filter(i => i.storageType === tab).map(i => ({
-    id: i.id, source: "inventory" as const, productName: i.productName,
-    quantity: i.quantity, unit: i.unit, expiryDate: i.expiryDate,
-    category: i.category, minQuantity: i.minQuantity ?? null, isBasic: (i as any).isBasic === 1,
-  }));
+  // Заготовки frozen для Морозилки
+  const frozenPreserves = allPreserves.filter(p => p.preserveType === "frozen");
 
-  const preservesView: ViewItem[] = tab === "freezer"
-    ? allPreserves.filter(p => p.preserveType === "frozen").map(p => ({
-        id: p.id, source: "preserve" as const, productName: p.name,
-        quantity: p.quantity, unit: p.unit, expiryDate: p.expiryDate,
-        category: "Заготовки", minQuantity: null, isBasic: false,
-      }))
-    : [];
-
-  const items: ViewItem[] = [...inventoryView, ...preservesView];
-  const handleRemove = (it: ViewItem) => it.source === "preserve" ? removePreserve.mutate({ id: it.id }) : remove.mutate({ id: it.id });
-
-  // Статистика
-  const totalCount = items.length;
-  const expiringCount = items.filter(i => { const d = daysUntilExpiry(i.expiryDate); return d !== null && d <= 3; }).length;
-  const freshCount = items.filter(i => { const d = daysUntilExpiry(i.expiryDate); return d === null || d > 7; }).length;
-
-  // Группировка по категории
-  const grouped = items.reduce<Record<string, ViewItem[]>>((acc, item) => {
-    const cat = item.category || "Без категории";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
-  const categories = Object.keys(grouped).sort((a, b) => {
-    if (a === "Заготовки") return -1; if (b === "Заготовки") return 1;
-    if (a === "Без категории") return 1; if (b === "Без категории") return -1;
-    return a.localeCompare(b, "ru");
+  // Алерт: все продукты с ≤3 днями
+  const urgentItems = allItems.filter(i => {
+    const d = daysUntilExpiry(i.expiryDate);
+    return d !== null && d <= 3;
   });
 
-  // Истекающие для правой колонки
-  const expiringItems = items
-    .filter(i => { const d = daysUntilExpiry(i.expiryDate); return d !== null && d <= 3; })
-    .slice(0, 5);
-
-  const atmosphereClass = tab === "freezer" ? "atmosphere-freezer" : tab === "pantry" ? "atmosphere-pantry" : "atmosphere-fridge";
+  const tabLabel = TABS.find(t => t.key === tab)?.label ?? "";
+  const tabCount = tabItems.length;
 
   return (
-    <div className={`min-h-screen ${atmosphereClass}`}>
-      <div className="max-w-7xl mx-auto px-5 py-8 lg:py-10">
+    <div className="min-h-screen" style={{ background: "#0a0e27" }}>
+      <div className="max-w-2xl mx-auto px-4 py-8">
 
-        {/* ═══ HEADER ═══ */}
-        <div className="flex items-center justify-between mb-8">
+        {/* ═══ 1. ЗАГОЛОВОК + ПОДТЕКСТ ═══ */}
+        <div className="flex items-start justify-between mb-1">
           <div>
-            <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">Инвентарь</h1>
-            <p className="text-ink-muted text-xs mt-1">{TABS.find(t => t.key === tab)?.label} · {totalCount} продуктов</p>
+            <h1 className="font-serif text-3xl font-bold text-white">Инвентарь</h1>
+            {/* ИЗМЕНЕНИЕ 6: подтекст */}
+            <p style={{ color: "#a0a9b8", fontSize: "14px", marginTop: "4px" }}>
+              {tabLabel} • {tabCount} {tabCount === 1 ? "продукт" : tabCount < 5 ? "продукта" : "продуктов"}
+            </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-1">
             <button onClick={() => recalc.mutate()} disabled={recalc.isPending}
-              className="w-9 h-9 rounded-lg border border-line flex items-center justify-center text-ink-muted hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50">
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+              style={{ background: "#232b3b", border: "1px solid #3a4558", color: "#a0a9b8" }}
+              title="Пересчитать сроки">
               {recalc.isPending ? <Loader2 size={14} className="animate-spin" /> : <span className="text-xs">📅</span>}
             </button>
             <button onClick={() => setShowScanner(!showScanner)}
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors ${showScanner ? "border-primary text-primary" : "border-line text-ink-muted hover:text-primary hover:border-primary/40"}`}>
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+              style={{ background: "#232b3b", border: `1px solid ${showScanner ? "#d4a574" : "#3a4558"}`, color: showScanner ? "#d4a574" : "#a0a9b8" }}>
               <ScanLine size={16} />
-            </button>
-            <button onClick={() => setShowAdd(true)}
-              className="w-9 h-9 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark transition-colors">
-              <Plus size={16} />
             </button>
           </div>
         </div>
 
-        {/* ═══ TABS ═══ */}
-        <div className="flex gap-0 border-b border-line mb-8">
-          {TABS.map(({ key, label, icon: Icon }) => (
+        {/* ═══ 2. ВКЛАДКИ с золотым подчёркиванием ═══ */}
+        <div className="flex mb-6 mt-5" style={{ borderBottom: "1px solid #3a4558" }}>
+          {TABS.map(({ key, label, emoji }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === key ? "text-primary border-primary" : "text-ink-muted border-transparent hover:text-ink-soft"
-              }`}>
-              <Icon size={16} /> {label}
+              className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-all"
+              style={{
+                color: tab === key ? "#ffffff" : "#a0a9b8",
+                borderBottom: tab === key ? "3px solid #d4a574" : "3px solid transparent",
+                marginBottom: "-1px",
+              }}
+              onMouseEnter={e => { if (tab !== key) (e.currentTarget as HTMLButtonElement).style.color = "#d4a574"; }}
+              onMouseLeave={e => { if (tab !== key) (e.currentTarget as HTMLButtonElement).style.color = "#a0a9b8"; }}>
+              <span>{emoji}</span>
+              {label}
             </button>
           ))}
         </div>
 
-        {/* ═══ STATISTICS ROW ═══ */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className="text-2xl font-bold text-primary">{totalCount}</p>
-            <p className="text-[11px] text-ink-muted mt-1">Всего</p>
-          </div>
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className={`text-2xl font-bold ${expiringCount > 0 ? "text-warning" : "text-fresh"}`}>{expiringCount}</p>
-            <p className="text-[11px] text-ink-muted mt-1">Истекает</p>
-          </div>
-          <div className="bg-surface-elevated rounded-xl p-4 border border-line text-center">
-            <p className="text-2xl font-bold text-fresh">{Math.round(totalCount > 0 ? (freshCount / totalCount) * 100 : 100)}%</p>
-            <p className="text-[11px] text-ink-muted mt-1">Свежесть</p>
-          </div>
-        </div>
-
         {/* Scanner */}
         {showScanner && (
-          <div className="mb-6 rounded-xl border border-line p-4 bg-surface-elevated">
+          <div className="mb-4 rounded-xl p-4" style={{ background: "#232b3b", border: "1px solid #3a4558" }}>
             <BarcodeScanner onDetected={(code) => { setScanResult({ barcode: code }); setShowScanner(false); }} />
           </div>
         )}
 
-        {/* ═══ MAIN LAYOUT: content + sidebar ═══ */}
-        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-6">
+        {/* ═══ 4. АЛЕРТ — истекает ≤3 дня ═══ */}
+        {urgentItems.length > 0 && (
+          <div className="mb-5 rounded-lg p-4"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)" }}>
+            <p className="text-xs font-semibold uppercase mb-3 flex items-center gap-2"
+              style={{ color: "#ef4444", letterSpacing: "0.05em" }}>
+              <AlertTriangle size={13} /> Использовать в ближайшие 3 дня
+            </p>
+            <div className="space-y-2">
+              {urgentItems.map((item, idx) => (
+                <div key={item.id}>
+                  {idx > 0 && <div style={{ height: "1px", background: "rgba(239,68,68,0.2)" }} className="mb-2" />}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-white">
+                      {item.productName}{item.quantity ? `, ${item.quantity}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                    </span>
+                    <span className="text-xs font-medium" style={{ color: "#ef4444" }}>
+                      {expiryStatus(item.expiryDate).text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {/* LEFT: Product categories as cards */}
-          <div>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 size={24} className="animate-spin text-ink-muted" />
-              </div>
-            ) : items.length === 0 ? (
-              <div className="bg-surface-elevated border border-dashed border-line rounded-2xl py-16 text-center">
-                <Refrigerator size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
-                <p className="text-ink-muted text-sm">Пусто. Добавьте продукты кнопкой [+]</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {categories.map((cat) => (
-                  <section key={cat} className="animate-reveal">
-                    {/* Category label */}
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">{cat}</h3>
-                      <span className="text-[11px] text-ink-muted">{grouped[cat].length}</span>
-                    </div>
-                    {/* Products grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {grouped[cat].map((item) => {
-                        const bgImage = getProductImage(item.productName);
-                        return (
-                        <div key={`${item.source}-${item.id}`}
-                          className="item-card rounded-[16px] p-4 group relative animate-reveal overflow-hidden min-h-[120px] flex flex-col justify-between"
-                          style={bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
-                          {/* Dark overlay for readability */}
-                          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,14,39,0.82)] via-[rgba(10,14,39,0.75)] to-[rgba(10,14,39,0.88)] rounded-[16px]" />
-                          {/* Inner vignette */}
-                          <div className="absolute inset-0 rounded-[16px]" style={{ boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4)' }} />
-                          {/* Content */}
-                          <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-1">
-                              <p className="text-sm font-semibold text-ink leading-tight line-clamp-2 flex-1">
-                                {item.isBasic && <span className="text-primary text-xs mr-1">📌</span>}
-                                {item.productName}
-                              </p>
-                              <button onClick={() => handleRemove(item)}
-                                className="w-6 h-6 flex items-center justify-center text-transparent group-hover:text-ink-muted hover:!text-alert transition-colors shrink-0 ml-1">
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                            {item.quantity && (
-                              <p className="text-xs text-ink-soft">{item.quantity}{item.unit ? ` ${item.unit}` : ""}</p>
-                            )}
-                          </div>
-                          {/* Expiry at bottom */}
-                          <div className="relative z-10 mt-auto pt-2">
-                            {item.expiryDate && (
-                              <p className={`text-[11px] font-medium ${expiryColor(item.expiryDate)}`}>
-                                {expiryText(item.expiryDate)}
-                              </p>
-                            )}
-                          </div>
-                          {/* Basic pin */}
-                          {item.source === "inventory" && (
-                            <button onClick={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                              className={`absolute top-2 right-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity z-10 ${item.isBasic ? "opacity-100" : ""}`}
-                              title={item.isBasic ? "Убрать из базовых" : "Базовый"}>
-                              📌
-                            </button>
-                          )}
-                        </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
+        {/* ═══ 5. КНОПКА ДОБАВИТЬ — 100% ширина, золотая ═══ */}
+        <button onClick={() => setShowAdd(true)}
+          className="w-full flex items-center justify-center gap-2 font-semibold transition-all mb-6"
+          style={{ height: "48px", background: "#d4a574", color: "#ffffff", borderRadius: "8px", fontSize: "14px" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#c99d63"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 12px rgba(212,165,116,0.3)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#d4a574"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}>
+          <Plus size={18} />
+          Добавить продукт
+        </button>
+
+        {/* ═══ ОСНОВНОЙ СПИСОК ═══ */}
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin" style={{ color: "#a0a9b8" }} /></div>
+        ) : tabItems.length === 0 && (tab !== "freezer" || frozenPreserves.length === 0) ? (
+          /* ═══ 8. ПУСТОЕ СОСТОЯНИЕ ═══ */
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-5xl mb-4">
+              {tab === "fridge" ? "🧊" : tab === "freezer" ? "❄️" : "📦"}
+            </div>
+            <p className="text-lg font-semibold text-white mb-2">
+              {tab === "fridge" ? "Холодильник пуст" : tab === "freezer" ? "Морозилка пуста" : "Кладовая пуста"}
+            </p>
+            <p className="text-sm mb-6" style={{ color: "#a0a9b8" }}>Добавьте первый продукт</p>
+            <button onClick={() => setShowAdd(true)}
+              className="flex items-center gap-2 font-semibold px-6 transition-all"
+              style={{ height: "48px", background: "#d4a574", color: "#ffffff", borderRadius: "8px", fontSize: "14px" }}>
+              <Plus size={18} /> Добавить продукт
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {/* Обычные продукты */}
+            {tabItems.map(item => {
+              const status = expiryStatus(item.expiryDate);
+              return (
+                <ProductCard
+                  key={item.id}
+                  name={item.productName}
+                  quantity={item.quantity}
+                  unit={item.unit}
+                  status={status}
+                  storageEmoji={TABS.find(t => t.key === tab)?.emoji ?? ""}
+                  onDelete={() => remove.mutate({ id: item.id })}
+                />
+              );
+            })}
+
+            {/* ═══ 7. ЗАГОТОВКИ в Морозилке ═══ */}
+            {tab === "freezer" && frozenPreserves.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3" style={{ borderTop: "1px solid #3a4558", paddingTop: "20px", marginTop: "20px" }}>
+                  <Snowflake size={13} style={{ color: "#ffffff" }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-white">Заготовки</span>
+                </div>
+                <div className="space-y-2">
+                  {frozenPreserves.map(item => {
+                    const status = expiryStatus(item.expiryDate);
+                    return (
+                      <ProductCard
+                        key={`preserve-${item.id}`}
+                        name={item.name}
+                        quantity={item.quantity}
+                        unit={item.unit}
+                        status={status}
+                        storageEmoji="❄️"
+                        onDelete={() => removePreserve.mutate({ id: item.id })}
+                        isPreserve
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
-
-          {/* RIGHT SIDEBAR — info panel */}
-          <aside className="hidden lg:block space-y-5 mt-0">
-            {/* Expiring soon */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={14} className="text-warning" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Истекает скоро</h4>
-              </div>
-              {expiringItems.length === 0 ? (
-                <p className="text-xs text-ink-muted">Всё свежее!</p>
-              ) : (
-                <ul className="space-y-2">
-                  {expiringItems.map(item => (
-                    <li key={`exp-${item.source}-${item.id}`} className="flex items-center justify-between">
-                      <span className="text-xs text-ink truncate flex-1">{item.productName}</span>
-                      <span className={`text-[11px] font-medium shrink-0 ml-2 ${expiryColor(item.expiryDate)}`}>
-                        {expiryText(item.expiryDate)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Storage tips */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb size={14} className="text-primary" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Советы</h4>
-              </div>
-              <ul className="space-y-2">
-                {STORAGE_TIPS[tab].map((tip, i) => (
-                  <li key={i} className="text-xs text-ink-muted flex items-start gap-2">
-                    <span className="text-primary/60 mt-0.5">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Recipe ideas */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <ChefHat size={14} className="text-primary" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Идеи</h4>
-              </div>
-              <Link to="/what-to-cook" className="flex items-center gap-2 text-xs text-primary hover:text-primary-dark transition-colors">
-                <span>Что приготовить из имеющегося →</span>
-              </Link>
-            </div>
-
-            {/* Freshness indicator */}
-            <div className="bg-surface-elevated rounded-xl p-4 border border-line">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={14} className="text-fresh" />
-                <h4 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">Свежесть</h4>
-              </div>
-              <div className="h-2 bg-line rounded-full overflow-hidden">
-                <div className="h-full bg-fresh rounded-full transition-all duration-500"
-                  style={{ width: `${totalCount > 0 ? (freshCount / totalCount) * 100 : 100}%` }} />
-              </div>
-              <p className="text-[11px] text-ink-muted mt-2">
-                {freshCount} из {totalCount} продуктов в порядке
-              </p>
-            </div>
-          </aside>
-        </div>
+        )}
       </div>
 
-      {/* Add dialog */}
+      {/* Диалоги */}
       {showAdd && <AddDialog storageType={tab} onClose={() => setShowAdd(false)} />}
       {scanResult && <ScanDialog barcode={scanResult.barcode} storageType={tab} onClose={() => setScanResult(null)} />}
     </div>
   );
 }
 
+// ═══ 2+3. КАРТОЧКА ПРОДУКТА ═══
+function ProductCard({
+  name, quantity, unit, status, storageEmoji, onDelete, isPreserve,
+}: {
+  name: string;
+  quantity: string | null;
+  unit: string | null;
+  status: { text: string; color: string; weight: string };
+  storageEmoji: string;
+  onDelete: () => void;
+  isPreserve?: boolean;
+}) {
+  return (
+    <div className="group"
+      style={{ background: "#232b3b", border: "1px solid #3a4558", borderRadius: "8px", padding: "16px", minHeight: "80px" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#4a5568"; (e.currentTarget as HTMLDivElement).style.background = "#2a3548"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#3a4558"; (e.currentTarget as HTMLDivElement).style.background = "#232b3b"; }}>
+      {/* Шапка: иконка + название + кнопки */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-base shrink-0">{storageEmoji}</span>
+          <span className="text-sm font-semibold text-white truncate">{name}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          <button
+            className="transition-colors"
+            style={{ color: "#a0a9b8" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#d4a574"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#a0a9b8"; }}
+            title="Редактировать">
+            <Pencil size={14} />
+          </button>
+          <button onClick={onDelete}
+            className="transition-colors"
+            style={{ color: "#a0a9b8" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#a0a9b8"; }}
+            title="Удалить">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+      {/* Количество */}
+      {quantity ? (
+        <p className="text-xs mb-1" style={{ color: "#a0a9b8" }}>
+          {quantity}{unit ? ` ${unit}` : ""}
+        </p>
+      ) : (
+        <p className="text-xs mb-1" style={{ color: "#a0a9b8" }}>Количество не указано</p>
+      )}
+      {/* Статус срока */}
+      <p className="text-xs" style={{ color: status.color, fontWeight: status.weight }}>
+        {status.text}
+      </p>
+    </div>
+  );
+}
 
-
-// ═══ Add Dialog ═══
+// ═══ Диалог добавления ═══
 function AddDialog({ storageType, onClose }: { storageType: "fridge" | "freezer" | "pantry"; onClose: () => void }) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -391,26 +303,38 @@ function AddDialog({ storageType, onClose }: { storageType: "fridge" | "freezer"
   const utils = trpc.useUtils();
   const add = trpc.inventory.add.useMutation({ onSuccess: () => { utils.inventory.list.invalidate(); onClose(); } });
 
+  const inputStyle = { background: "#232b3b", border: "1px solid #3a4558", borderRadius: "8px", color: "#ffffff", width: "100%", height: "44px", padding: "0 14px", fontSize: "14px", outline: "none" };
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 border border-line" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-serif text-lg font-semibold text-ink mb-5">Добавить продукт</h3>
-        <form onSubmit={(e: FormEvent) => { e.preventDefault(); if (!name.trim()) return; add.mutate({ productName: name.trim(), quantity: quantity ? Number(quantity) : null, unit: unit.trim() || null, storageType, expiryDate: expiryDate || null, minQuantity: minQuantity ? Number(minQuantity) : null }); }} className="space-y-3">
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Название продукта" autoFocus required
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
+    <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50"
+      style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
+      <div className="w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        style={{ background: "#1a1f2e", border: "1px solid #3a4558" }}
+        onClick={e => e.stopPropagation()}>
+        <h3 className="font-serif text-lg font-semibold text-white mb-5">Добавить продукт</h3>
+        <form onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          if (!name.trim()) return;
+          add.mutate({ productName: name.trim(), quantity: quantity ? Number(quantity) : null, unit: unit.trim() || null, storageType, expiryDate: expiryDate || null, minQuantity: minQuantity ? Number(minQuantity) : null });
+        }} className="space-y-3">
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Название продукта" autoFocus required style={inputStyle} onFocus={e => (e.target as HTMLInputElement).style.borderColor = "#d4a574"} onBlur={e => (e.target as HTMLInputElement).style.borderColor = "#3a4558"} />
           <div className="flex gap-2">
-            <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Кол-во" step="any" min="0"
-              className="flex-1 h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-            <input type="text" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="кг, л, шт"
-              className="w-24 h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
+            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="Кол-во" step="any" min="0" style={{ ...inputStyle, flex: 1 }} onFocus={e => (e.target as HTMLInputElement).style.borderColor = "#d4a574"} onBlur={e => (e.target as HTMLInputElement).style.borderColor = "#3a4558"} />
+            <input type="text" value={unit} onChange={e => setUnit(e.target.value)} placeholder="кг, л, шт" style={{ ...inputStyle, width: "90px" }} onFocus={e => (e.target as HTMLInputElement).style.borderColor = "#d4a574"} onBlur={e => (e.target as HTMLInputElement).style.borderColor = "#3a4558"} />
           </div>
-          <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-          <input type="number" value={minQuantity} onChange={(e) => setMinQuantity(e.target.value)} placeholder="Мин. остаток (авто-докупка)" step="any" min="0"
-            className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink focus:outline-none focus:border-primary" />
-          <div className="flex gap-3 pt-3">
-            <button type="button" onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-            <button type="submit" disabled={!name.trim() || add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+          <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={inputStyle} onFocus={e => (e.target as HTMLInputElement).style.borderColor = "#d4a574"} onBlur={e => (e.target as HTMLInputElement).style.borderColor = "#3a4558"} />
+          <input type="number" value={minQuantity} onChange={e => setMinQuantity(e.target.value)} placeholder="Мин. остаток (авто-докупка)" step="any" min="0" style={inputStyle} onFocus={e => (e.target as HTMLInputElement).style.borderColor = "#d4a574"} onBlur={e => (e.target as HTMLInputElement).style.borderColor = "#3a4558"} />
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 font-medium transition-colors"
+              style={{ height: "44px", borderRadius: "8px", border: "1px solid #3a4558", color: "#a0a9b8", fontSize: "14px", background: "transparent" }}>
+              Отмена
+            </button>
+            <button type="submit" disabled={!name.trim() || add.isPending}
+              className="flex-1 font-semibold transition-all"
+              style={{ height: "44px", borderRadius: "8px", background: name.trim() ? "#d4a574" : "#3a4558", color: "#ffffff", fontSize: "14px", cursor: name.trim() ? "pointer" : "not-allowed" }}>
+              {add.isPending ? "Добавляю..." : "Добавить"}
+            </button>
           </div>
         </form>
       </div>
@@ -418,7 +342,7 @@ function AddDialog({ storageType, onClose }: { storageType: "fridge" | "freezer"
   );
 }
 
-// ═══ Scan Dialog ═══
+// ═══ Диалог сканирования ═══
 function ScanDialog({ barcode, storageType: defaultStorage, onClose }: { barcode: string; storageType: "fridge" | "freezer" | "pantry"; onClose: () => void }) {
   const [storageType, setStorageType] = useState(defaultStorage);
   const [expiryDate, setExpiryDate] = useState("");
@@ -427,6 +351,7 @@ function ScanDialog({ barcode, storageType: defaultStorage, onClose }: { barcode
   const lookup = trpc.products.getByBarcode.useQuery({ barcode }, { retry: false });
   const add = trpc.inventory.add.useMutation({ onSuccess: () => { utils.inventory.list.invalidate(); onClose(); } });
   const product = lookup.data;
+  const inputStyle = { background: "#232b3b", border: "1px solid #3a4558", borderRadius: "8px", color: "#ffffff", width: "100%", height: "44px", padding: "0 14px", fontSize: "14px", outline: "none" };
 
   const handleAdd = () => {
     const name = product ? (product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu) : customName.trim();
@@ -435,35 +360,38 @@ function ScanDialog({ barcode, storageType: defaultStorage, onClose }: { barcode
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 border border-line" onClick={(e) => e.stopPropagation()}>
-        {lookup.isLoading && <div className="py-8 text-center"><Loader2 size={24} className="animate-spin text-primary mx-auto" /></div>}
+    <div className="fixed inset-0 flex items-end sm:items-center justify-center z-50"
+      style={{ background: "rgba(0,0,0,0.7)" }} onClick={onClose}>
+      <div className="w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        style={{ background: "#1a1f2e", border: "1px solid #3a4558" }}
+        onClick={e => e.stopPropagation()}>
+        {lookup.isLoading && <div className="py-8 text-center"><Loader2 size={24} className="animate-spin mx-auto" style={{ color: "#d4a574" }} /></div>}
         {product && !lookup.isLoading && (
           <>
-            <p className="text-sm font-medium text-ink mb-3">{product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu}</p>
+            <p className="text-sm font-semibold text-white mb-4">{product.brand ? `${product.brand} ${product.nameRu}` : product.nameRu}</p>
             <div className="flex gap-1 mb-3">
-              {(["fridge", "freezer", "pantry"] as const).map(k => (
-                <button key={k} onClick={() => setStorageType(k)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${storageType === k ? "bg-primary text-paper" : "text-ink-muted border border-line"}`}>
-                  {k === "fridge" ? "Холодильник" : k === "freezer" ? "Морозилка" : "Кладовая"}
+              {(["fridge", "freezer", "pantry"] as const).map((k, i) => (
+                <button key={k} onClick={() => setStorageType(k)}
+                  className="flex-1 py-2 text-xs font-medium transition-all"
+                  style={{ borderRadius: "8px", background: storageType === k ? "#d4a574" : "#232b3b", color: storageType === k ? "#ffffff" : "#a0a9b8", border: "1px solid #3a4558" }}>
+                  {["Холодильник", "Морозилка", "Кладовая"][i]}
                 </button>
               ))}
             </div>
-            <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)}
-              className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink mb-4 focus:outline-none focus:border-primary" />
+            <input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} style={{ ...inputStyle, marginBottom: "16px" }} />
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-              <button onClick={handleAdd} disabled={add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+              <button onClick={onClose} className="flex-1 font-medium" style={{ height: "44px", borderRadius: "8px", border: "1px solid #3a4558", color: "#a0a9b8", background: "transparent", fontSize: "14px" }}>Отмена</button>
+              <button onClick={handleAdd} disabled={add.isPending} className="flex-1 font-semibold" style={{ height: "44px", borderRadius: "8px", background: "#d4a574", color: "#ffffff", fontSize: "14px" }}>{add.isPending ? "..." : "Добавить"}</button>
             </div>
           </>
         )}
         {lookup.isError && !lookup.isLoading && (
           <>
-            <p className="text-sm text-ink mb-3">Товар не найден. Введите название:</p>
-            <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Название" autoFocus
-              className="w-full h-11 px-4 bg-surface-elevated border border-line rounded-lg text-sm text-ink mb-3 focus:outline-none focus:border-primary" />
+            <p className="text-sm text-white mb-3">Товар не найден. Введите название:</p>
+            <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Название" autoFocus style={{ ...inputStyle, marginBottom: "12px" }} />
             <div className="flex gap-3">
-              <button onClick={onClose} className="flex-1 h-11 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors">Отмена</button>
-              <button onClick={handleAdd} disabled={!customName.trim() || add.isPending} className="flex-1 h-11 rounded-lg bg-primary text-paper text-sm font-medium disabled:opacity-50 hover:bg-primary-dark transition-colors">Добавить</button>
+              <button onClick={onClose} className="flex-1 font-medium" style={{ height: "44px", borderRadius: "8px", border: "1px solid #3a4558", color: "#a0a9b8", background: "transparent", fontSize: "14px" }}>Отмена</button>
+              <button onClick={handleAdd} disabled={!customName.trim() || add.isPending} className="flex-1 font-semibold" style={{ height: "44px", borderRadius: "8px", background: customName.trim() ? "#d4a574" : "#3a4558", color: "#ffffff", fontSize: "14px" }}>{add.isPending ? "..." : "Добавить"}</button>
             </div>
           </>
         )}
