@@ -211,9 +211,11 @@ export function InventoryPage() {
     return a.localeCompare(b, "ru");
   });
 
+  const atmosphereClass = tab === "freezer" ? "atmosphere-freezer" : tab === "pantry" ? "atmosphere-pantry" : "atmosphere-fridge";
+
   return (
-    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
-      <div className="flex items-center justify-between mb-8">
+    <div className={`max-w-2xl mx-auto px-5 py-8 lg:py-12 min-h-screen ${atmosphereClass}`}>
+      <div className="flex items-center justify-between mb-8 depth-front">
         <h1 className="font-serif text-2xl font-semibold text-ink">
           Инвентарь
         </h1>
@@ -303,7 +305,7 @@ export function InventoryPage() {
                   return (
                     <li
                       key={`${item.source}-${item.id}`}
-                      className={`flex items-center gap-3 rounded-lg px-4 py-3 border ${
+                      className={`flex items-center gap-3 rounded-lg px-4 py-3 border item-card animate-reveal ${
                         isExpired
                           ? "bg-alert/5 border-alert/30"
                           : "bg-warning/5 border-warning/30"
@@ -489,7 +491,7 @@ export function InventoryPage() {
                     {grouped[cat].map((item) => (
                       <li
                         key={`${item.source}-${item.id}`}
-                        className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
+                        className="flex items-center gap-3 rounded-lg px-4 py-3 item-card animate-reveal"
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink truncate">
