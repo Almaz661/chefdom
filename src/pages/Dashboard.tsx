@@ -71,7 +71,7 @@ export function Dashboard() {
   const shoppingCount = shopping.filter((s) => s.isChecked === 0).length;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen atmosphere-home">
 
       {/* ════════════════════════════════════════════════════════════
           SECTION 1: GREETING + ALERTS
@@ -135,7 +135,7 @@ export function Dashboard() {
                 <img
                   src={todayMeal.recipe.imageUrl}
                   alt={todayMeal.recipe.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+                  className="w-full h-full object-cover photo-cinematic group-hover:scale-[1.02] transition-transform duration-700"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (

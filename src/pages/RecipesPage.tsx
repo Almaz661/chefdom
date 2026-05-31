@@ -75,7 +75,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
             alt={r.title}
             loading="lazy"
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover photo-cinematic"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
