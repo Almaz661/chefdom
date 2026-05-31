@@ -226,14 +226,10 @@ export function InventoryPage() {
               <div className="space-y-6">
                 {categories.map((cat) => (
                   <section key={cat} className="animate-reveal">
-                    {/* Category header with photo */}
-                    <div className="relative rounded-xl overflow-hidden h-[100px] mb-3">
-                      <img src={getCategoryPhoto(cat)} alt={cat} className="w-full h-full object-cover photo-cinematic" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-                      <div className="absolute bottom-0 left-0 p-4">
-                        <h3 className="text-sm font-semibold text-white">{cat}</h3>
-                        <p className="text-[11px] text-white/60">{grouped[cat].length} продуктов</p>
-                      </div>
+                    {/* Category label */}
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xs font-semibold text-ink-soft uppercase tracking-wider">{cat}</h3>
+                      <span className="text-[11px] text-ink-muted">{grouped[cat].length}</span>
                     </div>
                     {/* Products grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
