@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* CHEF'S KITCHEN — #0a0e27 midnight navy + #d4a574 warm gold */
-  --color-primary: #d4a574;
-  --color-primary-dark: #b8925c;
-  --color-primary-light: rgba(212, 165, 116, 0.08);
+  /* CHEF'S KITCHEN — #0a0e27 midnight navy + #c9a84c true gold */
+  --color-primary: #c9a84c;
+  --color-primary-dark: #a8893a;
+  --color-primary-light: rgba(201, 168, 76, 0.08);
 
   --color-cream: #0a0e27;
   --color-paper: #0f1428;
@@ -49,13 +49,13 @@ a, button, input, select, textarea {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 3px; }
 
-::selection { background: rgba(212, 165, 116, 0.25); color: #fff; }
-:focus-visible { outline: 2px solid #d4a574; outline-offset: 2px; }
+::selection { background: rgba(201, 168, 76, 0.25); color: #fff; }
+:focus-visible { outline: 2px solid #c9a84c; outline-offset: 2px; }
 
 .card-lift { transition: all 0.3s ease; }
 .card-lift:hover {
-  border-color: #d4a574 !important;
-  box-shadow: 0 8px 24px rgba(212, 165, 116, 0.15);
+  border-color: #c9a84c !important;
+  box-shadow: 0 8px 24px rgba(201, 168, 76, 0.15);
   transform: translateY(-4px);
 }
 
