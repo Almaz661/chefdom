@@ -121,7 +121,7 @@ export function WhatToCookPage() {
                 className="flex gap-4 bg-paper border border-line rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
               >
                 {/* Фото */}
-                <div className="w-20 h-20 rounded-xl bg-cream overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-xl bg-surface-elevated overflow-hidden shrink-0 flex items-center justify-center">
                   {r.imageUrl ? (
                     <img
                       src={r.imageUrl}
@@ -164,8 +164,8 @@ export function WhatToCookPage() {
                           allHave
                             ? "bg-green-50 text-green-700"
                             : r.haveCount > 0
-                              ? "bg-cream text-ink-soft"
-                              : "bg-cream text-ink-muted"
+                              ? "bg-surface-elevated text-ink-soft"
+                              : "bg-surface-elevated text-ink-muted"
                         }`}
                       >
                         {allHave && <CheckCircle2 size={11} />}

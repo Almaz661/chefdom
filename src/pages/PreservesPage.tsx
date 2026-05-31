@@ -121,7 +121,7 @@ export function PreservesPage() {
       </div>
 
       {/* Табы */}
-      <div className="flex gap-1 bg-cream rounded-lg p-1 mb-6">
+      <div className="flex gap-1 bg-surface-elevated rounded-lg p-1 mb-6">
         {TABS.map(({ key, shortLabel, icon: Icon }) => (
           <button
             key={key}
@@ -448,7 +448,7 @@ function AddPreserveDialog({
             placeholder={namePlaceholder}
             autoFocus
             required
-            className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
           />
           <div className="flex gap-2">
             <input
@@ -458,14 +458,14 @@ function AddPreserveDialog({
               placeholder="Кол-во"
               step="any"
               min="0"
-              className="flex-1 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Ед. (кг, г, шт)"
-              className="w-28 h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-28 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </div>
           {(preserveType === "frozen" || preserveType === "cooked") && (
@@ -476,7 +476,7 @@ function AddPreserveDialog({
               placeholder="Порций (необязательно)"
               step="1"
               min="1"
-              className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           )}
           <label className="block">
@@ -487,7 +487,7 @@ function AddPreserveDialog({
               type="date"
               value={preparedAt}
               onChange={(e) => setPreparedAt(e.target.value)}
-              className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -501,7 +501,7 @@ function AddPreserveDialog({
                 setExpiryDate(e.target.value);
                 setExpiryDirty(true);
               }}
-              className="w-full h-12 px-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
             {/* Шеф-подсказка: показываем только для frozen и если справочник
                 нашёл совпадение. Если пользователь сам ввёл дату — мягко
@@ -535,7 +535,7 @@ function AddPreserveDialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-cream transition-colors"
+              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
             >
               Отмена
             </button>

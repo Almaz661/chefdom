@@ -346,7 +346,7 @@ function MenuSlotCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="group relative bg-cream rounded-lg p-2 text-xs">
+    <div className="group relative bg-surface-elevated rounded-lg p-2 text-xs">
       <Link
         to={`/recipes/${item.recipeId}`}
         className="block hover:text-primary transition-colors"
@@ -456,7 +456,7 @@ function RecipePickerDialog({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск рецепта..."
               autoFocus
-              className="w-full h-11 pl-10 pr-4 bg-cream border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-11 pl-10 pr-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
             />
           </div>
         </div>
@@ -488,7 +488,7 @@ function RecipePickerDialog({
                       <button
                         onClick={() => onSelect(s.recipe.id)}
                         disabled={loading}
-                        className="w-full flex items-center gap-3 p-2 rounded-lg bg-cream/50 hover:bg-cream transition-colors text-left disabled:opacity-50 border border-line/50"
+                        className="w-full flex items-center gap-3 p-2 rounded-lg bg-surface-elevated/50 hover:bg-surface-hover transition-colors text-left disabled:opacity-50 border border-line/50"
                       >
                         {s.recipe.imageUrl ? (
                           <img
@@ -498,7 +498,7 @@ function RecipePickerDialog({
                             className="w-12 h-12 rounded-lg object-cover shrink-0"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-lg bg-cream border border-line shrink-0 flex items-center justify-center text-lg">
+                          <div className="w-12 h-12 rounded-lg bg-surface-elevated border border-line shrink-0 flex items-center justify-center text-lg">
                             {getReasonIcon(s.reasonType)}
                           </div>
                         )}
@@ -559,7 +559,7 @@ function RecipePickerDialog({
                   <button
                     onClick={() => onSelect(r.id)}
                     disabled={loading}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-cream transition-colors text-left disabled:opacity-50"
+                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover transition-colors text-left disabled:opacity-50"
                   >
                     {r.imageUrl ? (
                       <img
@@ -569,7 +569,7 @@ function RecipePickerDialog({
                         className="w-12 h-12 rounded-lg object-cover shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-cream border border-line shrink-0" />
+                      <div className="w-12 h-12 rounded-lg bg-surface-elevated border border-line shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-ink truncate">
