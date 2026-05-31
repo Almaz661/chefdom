@@ -10,7 +10,7 @@ type ImageEntry = { keywords: string[]; src: string };
 
 const IMAGE_MAP: ImageEntry[] = [
   // ── Молочные ──────────────────────────────────────────────
-  { keywords: ["молоко", "milk"], src: "/images/products/dairy/milk.webp" },
+  { keywords: ["молоко", "молок", "milk", "mleko", "melk", "volle melk"], src: "/images/products/dairy/milk.webp" },
   { keywords: ["кефир", "kefir"], src: "/images/products/dairy/kefir.webp" },
   { keywords: ["йогурт", "yogurt", "йогурт"], src: "/images/products/dairy/yogurt.webp" },
   { keywords: ["сметана", "sour cream"], src: "/images/products/dairy/sour-cream.webp" },
@@ -27,7 +27,7 @@ const IMAGE_MAP: ImageEntry[] = [
   { keywords: ["куриное бедро", "бедро куриное", "chicken thigh"], src: "/images/products/meat/chicken-thigh.webp" },
   { keywords: ["куриные крылья", "крылья", "chicken wing"], src: "/images/products/meat/chicken-wings.webp" },
   { keywords: ["курица целая", "целая курица", "whole chicken"], src: "/images/products/meat/chicken-whole.webp" },
-  { keywords: ["куриц", "курятина", "chicken"], src: "/images/products/meat/chicken-breast.webp" },
+  { keywords: ["куриное", "куриной", "куриную", "куриных", "куриц", "курин", "курятина", "chicken", "kip", "kipfilet"], src: "/images/products/meat/chicken-breast.webp" },
   { keywords: ["говяжий фарш", "фарш говяжий", "beef mince"], src: "/images/products/meat/beef-mince.webp" },
   { keywords: ["стейк", "beef steak"], src: "/images/products/meat/beef-steak.webp" },
   { keywords: ["говядин", "beef"], src: "/images/products/meat/beef-steak.webp" },
@@ -54,8 +54,8 @@ const IMAGE_MAP: ImageEntry[] = [
   { keywords: ["огурец", "огурц", "cucumber"], src: "/images/products/vegetables/cucumber.webp" },
   { keywords: ["перец болгарский", "болгарский перец", "bell pepper"], src: "/images/products/vegetables/bell-pepper.webp" },
   { keywords: ["морков", "carrot"], src: "/images/products/vegetables/carrot.webp" },
-  { keywords: ["картофел", "картошк", "potato"], src: "/images/products/vegetables/potato.webp" },
-  { keywords: ["лук репчатый", "репчатый лук", "onion"], src: "/images/products/vegetables/onion.webp" },
+  { keywords: ["картофел", "картошк", "картоф", "potato", "ziemniak", "aardappel"], src: "/images/products/vegetables/potato.webp" },
+  { keywords: ["лук репчатый", "репчатый лук", "лук", "onion", "cebula", "ui", "cebul"], src: "/images/products/vegetables/onion.webp" },
   { keywords: ["чеснок", "garlic"], src: "/images/products/vegetables/garlic.webp" },
   { keywords: ["капуста белокочанная", "белокочанная капуста", "cabbage"], src: "/images/products/vegetables/cabbage.webp" },
   { keywords: ["брокколи", "broccoli"], src: "/images/products/vegetables/broccoli.webp" },
