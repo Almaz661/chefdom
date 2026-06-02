@@ -13,12 +13,14 @@ import {
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
+import { StorageBanner } from "../components/StorageBanner";
 import { getProductImageSrc } from "../utils/productImages";
+import { getPlaceholderColor, getPlaceholderLetter } from "../utils/productPlaceholder";
 
 const TABS = [
-  { key: "fridge" as const, label: "Холодильник", emoji: "\u{1F9CA}", icon: Refrigerator },
-  { key: "freezer" as const, label: "Морозилка", emoji: "\u2744\uFE0F", icon: Snowflake },
-  { key: "pantry" as const, label: "Кладовая", emoji: "\u{1F4E6}", icon: Package },
+  { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
+  { key: "freezer" as const, label: "Морозилка", icon: Snowflake },
+  { key: "pantry" as const, label: "Кладовая", icon: Package },
 ];
 
 /** Сколько дней до истечения срока */
@@ -93,7 +95,7 @@ function RecalcExpiryButton() {
       {recalc.isPending ? (
         <Loader2 size={14} className="animate-spin" />
       ) : (
-        <span>📅</span>
+        <span className="text-xs">📅</span>
       )}
       <span className="hidden sm:inline">{recalc.isPending ? 'Считаю…' : 'Сроки'}</span>
     </button>
@@ -252,11 +254,10 @@ export function InventoryPage() {
             </button>
           </div>
         </div>
-        {/* Изменение 6: Подтекст */}
-        <p className="text-sm text-[#a0a9b8]">
-          {currentTab.label} • {pluralProducts(items.length)}
-        </p>
       </div>
+
+      {/* Баннер хранилища */}
+      <StorageBanner storageType={tab} itemCount={items.length} />
 
       {/* Сканер */}
       {showScanner && (
@@ -268,9 +269,9 @@ export function InventoryPage() {
         </div>
       )}
 
-      {/* Изменение 1: Вкладки с иконками + золотистое подчеркивание */}
+      {/* Вкладки с иконками + золотистое подчеркивание */}
       <div className="flex border-b border-[#3a4558] mb-6">
-        {TABS.map(({ key, label, emoji }) => (
+        {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -280,11 +281,10 @@ export function InventoryPage() {
                 : "text-[#a0a9b8] hover:text-[#d4a574]"
             }`}
           >
-            <span className="text-base">{emoji}</span>
-            <span className="hidden sm:inline">{label}</span>
-            {/* Золотистая линия 3px для активной вкладки */}
+            <Icon size={16} strokeWidth={1.5} />
+            <span>{label}</span>
             {tab === key && (
-              <span className="absolute bottom-0 left-2 right-2 h-[3px] bg-[#d4a574] rounded-t-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d4a574]" />
             )}
           </button>
         ))}
@@ -332,88 +332,12 @@ export function InventoryPage() {
             Добавить продукт
           </button>
 
-          {/* Кнопка «Все сроки» */}
-          {allWithExpiry.length > 0 && (
-            <div className="mb-6">
-              <button
-                onClick={() => setShowAllExpiry(!showAllExpiry)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
-                  showAllExpiry
-                    ? "border-[#d4a574] bg-[#d4a574]/5 text-[#d4a574]"
-                    : "border-[#3a4558] bg-[#232b3b] text-[#a0a9b8] hover:border-[#d4a574] hover:text-[#d4a574]"
-                }`}
-              >
-                <span className="text-sm font-medium">
-                  📋 Все сроки годности ({allWithExpiry.length})
-                </span>
-                <span className="text-xs">
-                  {showAllExpiry ? "свернуть" : "показать"}
-                </span>
-              </button>
-
-              {showAllExpiry && (
-                <ul className="space-y-1 mt-2">
-                  {allWithExpiry.map((item) => {
-                    const days = daysUntilExpiry(item.expiryDate);
-                    const isExpired = days !== null && days < 0;
-                    const isSoon = days !== null && days <= expiryPeriod;
-                    return (
-                      <li
-                        key={`exp-${item.source}-${item.id}`}
-                        className={`flex items-center gap-3 rounded-lg px-4 py-2.5 border ${
-                          isExpired
-                            ? "bg-[#ef4444]/5 border-[#ef4444]/30"
-                            : isSoon
-                            ? "bg-[#f59e0b]/5 border-[#f59e0b]/30"
-                            : "bg-[#232b3b] border-[#3a4558]"
-                        }`}
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${
-                            isExpired
-                              ? "bg-[#ef4444]"
-                              : isSoon
-                              ? "bg-[#f59e0b]"
-                              : "bg-[#d4a574]/40"
-                          }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">
-                            {item.productName}
-                            {item.quantity && (
-                              <span className="text-[#a0a9b8] ml-1 text-xs">
-                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className={`text-xs font-medium ${
-                            isExpired ? "text-[#ef4444]" : isSoon ? "text-[#f59e0b]" : "text-[#a0a9b8]"
-                          }`}>
-                            {item.expiryDate && new Date(item.expiryDate).toLocaleDateString("ru-RU", {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </p>
-                          <p className={`text-xs ${
-                            isExpired ? "text-[#ef4444]" : isSoon ? "text-[#f59e0b]" : "text-[#a0a9b8]"
-                          }`}>
-                            {expiryText(item.expiryDate)}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Изменение 8: Пустое состояние */}
+          {/* Пустое состояние */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <span className="text-5xl mb-4">{currentTab.emoji}</span>
+              <div className="w-16 h-16 rounded-full bg-[#3a4558] flex items-center justify-center mb-4">
+                {(() => { const Icon = currentTab.icon; return <Icon size={28} className="text-[#a0a9b8]" strokeWidth={1.5} />; })()}
+              </div>
               <p className="text-lg font-semibold text-white mb-1">
                 {currentTab.label} пуст{tab === "pantry" ? "а" : tab === "freezer" ? "а" : ""}
               </p>
@@ -451,7 +375,6 @@ export function InventoryPage() {
                       <InventoryCard
                         key={`${item.source}-${item.id}`}
                         item={item}
-                        tabEmoji={currentTab.emoji}
                         onRemove={() => handleRemove(item)}
                         onEdit={() => setEditItem(item.id)}
                         onToggleBasic={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
@@ -465,7 +388,7 @@ export function InventoryPage() {
               {tab === "freezer" && preserveItems.length > 0 && (
                 <section className="pt-6 border-t border-[#3a4558]">
                   <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span>❄️</span> Заготовки
+                    <Snowflake size={14} className="text-[#38bdf8]" /> Заготовки
                     <Link
                       to="/preserves"
                       className="ml-auto text-xs text-[#d4a574] normal-case font-normal tracking-normal"
@@ -478,7 +401,6 @@ export function InventoryPage() {
                       <InventoryCard
                         key={`${item.source}-${item.id}`}
                         item={item}
-                        tabEmoji="❄️"
                         onRemove={() => handleRemove(item)}
                         onEdit={() => {}}
                         onToggleBasic={() => {}}
@@ -524,7 +446,6 @@ export function InventoryPage() {
 
 function InventoryCard({
   item,
-  tabEmoji,
   onRemove,
   onEdit,
   onToggleBasic,
@@ -540,7 +461,6 @@ function InventoryCard({
     minQuantity: string | null;
     isBasic: boolean;
   };
-  tabEmoji: string;
   onRemove: () => void;
   onEdit: () => void;
   onToggleBasic: () => void;
@@ -562,12 +482,19 @@ function InventoryCard({
               className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#1a1f2e]"
             />
           ) : (
-            <span className="text-lg shrink-0">{tabEmoji}</span>
+            <div
+              className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: getPlaceholderColor(item.productName) }}
+            >
+              <span className="text-white text-sm font-bold">
+                {getPlaceholderLetter(item.productName)}
+              </span>
+            </div>
           )}
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">
               {item.isBasic && (
-                <span className="text-xs text-[#d4a574] mr-1" title="Базовый продукт">📌</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d4a574] mr-1.5 align-middle" title="Базовый продукт" />
               )}
               {item.productName}
             </p>
@@ -584,7 +511,7 @@ function InventoryCard({
               }`}
               title={item.isBasic ? "Убрать из базовых" : "Базовый (не в покупки)"}
             >
-              📌
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-current" />
             </button>
           )}
           {item.source === "inventory" && !isPreserve && (
