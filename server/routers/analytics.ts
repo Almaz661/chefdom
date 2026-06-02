@@ -60,25 +60,23 @@ export const analyticsRouter = router({
       // COALESCE: если purchase_date пустая (OCR не распознал дату или
       // чек создан вручную без даты), используем created_at как фоллбэк.
       // Без этого чеки с purchase_date = NULL "исчезали" из аналитики.
-      const effectiveDate = sql<string>`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD'))`;
-
       const periodReceipts = await db
         .select({
           id: receipts.id,
           storeName: receipts.storeName,
           totalAmount: receipts.totalAmount,
-          purchaseDate: effectiveDate.as('effective_date'),
+          purchaseDate: sql<string>`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD'))`.as('effective_date'),
           currency: receipts.currency,
         })
         .from(receipts)
         .where(
           and(
             eq(receipts.userId, ctx.userId),
-            gte(effectiveDate, dateFrom),
-            lte(effectiveDate, dateTo),
+            sql`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD')) >= ${dateFrom}`,
+            sql`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD')) <= ${dateTo}`,
           ),
         )
-        .orderBy(desc(effectiveDate));
+        .orderBy(desc(sql`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD'))`));
 
       if (periodReceipts.length === 0) {
         return {
