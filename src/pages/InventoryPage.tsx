@@ -282,9 +282,8 @@ export function InventoryPage() {
           >
             <span className="text-base">{emoji}</span>
             <span className="hidden sm:inline">{label}</span>
-            {/* Золотистая линия 3px для активной вкладки */}
             {tab === key && (
-              <span className="absolute bottom-0 left-2 right-2 h-[3px] bg-[#d4a574] rounded-t-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d4a574]" />
             )}
           </button>
         ))}
@@ -332,85 +331,7 @@ export function InventoryPage() {
             Добавить продукт
           </button>
 
-          {/* Кнопка «Все сроки» */}
-          {allWithExpiry.length > 0 && (
-            <div className="mb-6">
-              <button
-                onClick={() => setShowAllExpiry(!showAllExpiry)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${
-                  showAllExpiry
-                    ? "border-[#d4a574] bg-[#d4a574]/5 text-[#d4a574]"
-                    : "border-[#3a4558] bg-[#232b3b] text-[#a0a9b8] hover:border-[#d4a574] hover:text-[#d4a574]"
-                }`}
-              >
-                <span className="text-sm font-medium">
-                  📋 Все сроки годности ({allWithExpiry.length})
-                </span>
-                <span className="text-xs">
-                  {showAllExpiry ? "свернуть" : "показать"}
-                </span>
-              </button>
-
-              {showAllExpiry && (
-                <ul className="space-y-1 mt-2">
-                  {allWithExpiry.map((item) => {
-                    const days = daysUntilExpiry(item.expiryDate);
-                    const isExpired = days !== null && days < 0;
-                    const isSoon = days !== null && days <= expiryPeriod;
-                    return (
-                      <li
-                        key={`exp-${item.source}-${item.id}`}
-                        className={`flex items-center gap-3 rounded-lg px-4 py-2.5 border ${
-                          isExpired
-                            ? "bg-[#ef4444]/5 border-[#ef4444]/30"
-                            : isSoon
-                            ? "bg-[#f59e0b]/5 border-[#f59e0b]/30"
-                            : "bg-[#232b3b] border-[#3a4558]"
-                        }`}
-                      >
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 ${
-                            isExpired
-                              ? "bg-[#ef4444]"
-                              : isSoon
-                              ? "bg-[#f59e0b]"
-                              : "bg-[#d4a574]/40"
-                          }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">
-                            {item.productName}
-                            {item.quantity && (
-                              <span className="text-[#a0a9b8] ml-1 text-xs">
-                                {item.quantity}{item.unit ? ` ${item.unit}` : ""}
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className={`text-xs font-medium ${
-                            isExpired ? "text-[#ef4444]" : isSoon ? "text-[#f59e0b]" : "text-[#a0a9b8]"
-                          }`}>
-                            {item.expiryDate && new Date(item.expiryDate).toLocaleDateString("ru-RU", {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </p>
-                          <p className={`text-xs ${
-                            isExpired ? "text-[#ef4444]" : isSoon ? "text-[#f59e0b]" : "text-[#a0a9b8]"
-                          }`}>
-                            {expiryText(item.expiryDate)}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Изменение 8: Пустое состояние */}
+          {/* Пустое состояние */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <span className="text-5xl mb-4">{currentTab.emoji}</span>
@@ -440,54 +361,75 @@ export function InventoryPage() {
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Основные карточки по категориям */}
-              {categories.map((cat) => (
-                <section key={cat}>
-                  <h3 className="text-xs font-medium text-[#a0a9b8] uppercase tracking-wider mb-2">
-                    {cat}
-                  </h3>
-                  <ul className="space-y-2">
-                    {grouped[cat].map((item) => (
-                      <InventoryCard
-                        key={`${item.source}-${item.id}`}
-                        item={item}
-                        tabEmoji={currentTab.emoji}
-                        onRemove={() => handleRemove(item)}
-                        onEdit={() => setEditItem(item.id)}
-                        onToggleBasic={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
+              {/* Все карточки по категориям — показываем ВСЕ продукты */}
+              {(() => {
+                // Группируем ВСЕ items (не только normal) кроме заготовок
+                const allWithoutPreserves = items.filter(i => i.category !== "Заготовки");
+                const allPreserveItems = items.filter(i => i.category === "Заготовки");
+                const allGrouped = allWithoutPreserves.reduce<Record<string, ViewItem[]>>((acc, item) => {
+                  const cat = item.category || "Без категории";
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(item);
+                  return acc;
+                }, {});
+                const allCategories = Object.keys(allGrouped).sort((a, b) => {
+                  if (a === "Без категории") return 1;
+                  if (b === "Без категории") return -1;
+                  return a.localeCompare(b, "ru");
+                });
 
-              {/* Изменение 7: Группа «Заготовки» в Морозилке — отдельная секция */}
-              {tab === "freezer" && preserveItems.length > 0 && (
-                <section className="pt-6 border-t border-[#3a4558]">
-                  <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span>❄️</span> Заготовки
-                    <Link
-                      to="/preserves"
-                      className="ml-auto text-xs text-[#d4a574] normal-case font-normal tracking-normal"
-                    >
-                      в раздел →
-                    </Link>
-                  </h3>
-                  <ul className="space-y-2">
-                    {preserveItems.map((item) => (
-                      <InventoryCard
-                        key={`${item.source}-${item.id}`}
-                        item={item}
-                        tabEmoji="❄️"
-                        onRemove={() => handleRemove(item)}
-                        onEdit={() => {}}
-                        onToggleBasic={() => {}}
-                        isPreserve
-                      />
+                return (
+                  <>
+                    {allCategories.map((cat) => (
+                      <section key={cat}>
+                        <h3 className="text-xs font-medium text-[#a0a9b8] uppercase tracking-wider mb-2">
+                          {cat}
+                        </h3>
+                        <ul className="space-y-3">
+                          {allGrouped[cat].map((item) => (
+                            <InventoryCard
+                              key={`${item.source}-${item.id}`}
+                              item={item}
+                              tabEmoji={currentTab.emoji}
+                              onRemove={() => handleRemove(item)}
+                              onEdit={() => setEditItem(item.id)}
+                              onToggleBasic={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
+                            />
+                          ))}
+                        </ul>
+                      </section>
                     ))}
-                  </ul>
-                </section>
-              )}
+
+                    {/* Группа «Заготовки» в Морозилке — отдельная секция */}
+                    {tab === "freezer" && allPreserveItems.length > 0 && (
+                      <section className="pt-6 border-t border-[#3a4558]">
+                        <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <span>❄️</span> Заготовки
+                          <Link
+                            to="/preserves"
+                            className="ml-auto text-xs text-[#d4a574] normal-case font-normal tracking-normal"
+                          >
+                            в раздел →
+                          </Link>
+                        </h3>
+                        <ul className="space-y-3">
+                          {allPreserveItems.map((item) => (
+                            <InventoryCard
+                              key={`${item.source}-${item.id}`}
+                              item={item}
+                              tabEmoji="❄️"
+                              onRemove={() => handleRemove(item)}
+                              onEdit={() => {}}
+                              onToggleBasic={() => {}}
+                              isPreserve
+                            />
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </>
