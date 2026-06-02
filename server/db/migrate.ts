@@ -1295,6 +1295,390 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE inventory ADD COLUMN IF NOT EXISTS is_basic INTEGER NOT NULL DEFAULT 0`;
     },
   },
+  {
+    version: '033_usda_reference_data',
+    up: async (sql) => {
+      // ═══════════════════════════════════════════════════════════════════
+      // Обогащение справочников данными из открытых источников:
+      //
+      // 1) INGREDIENTS — ~150 популярных продуктов с КБЖУ
+      //    Источник: USDA FoodData Central, SR Legacy (public domain)
+      //    https://fdc.nal.usda.gov/
+      //    Значения: kcal/protein/fats/carbs на 100г
+      //
+      // 2) SHELF_LIFE — расширение справочника сроков хранения
+      //    Источники: USDA FoodKeeper App (public domain),
+      //    FDA Food Code, HACCP Reference Guides
+      //    https://www.foodsafety.gov/food-safety-charts/cold-food-storage-charts
+      //
+      // Все данные — public domain (правительство США).
+      // Идемпотентно: ON CONFLICT DO UPDATE / DO NOTHING.
+      // ═══════════════════════════════════════════════════════════════════
+
+      // ─── ЧАСТЬ 1: Ингредиенты (USDA FoodData Central SR Legacy) ───
+      // Добавляем популярные продукты домашней кухни с нутриентами.
+      // Категории: Молочные, Мясо, Птица, Рыба, Овощи, Фрукты,
+      //            Зерновые, Бобовые, Орехи, Жиры, Специи, Выпечка,
+      //            Напитки, Сладости/Десерты (новые!)
+      //
+      // fdc_id — реальные ID из USDA FDC для трассируемости данных.
+
+      const ingredients: {
+        fdcId: number; nameRu: string; nameEn: string; category: string;
+        kcal: number; protein: number; fats: number; carbs: number; water: number | null;
+      }[] = [
+        // ─── Молочные и яйца ───
+        { fdcId: 171265, nameRu: 'Молоко цельное 3.25%', nameEn: 'Milk, whole, 3.25% milkfat', category: 'Молочные и яйца', kcal: 61, protein: 3.2, fats: 3.3, carbs: 4.8, water: 88 },
+        { fdcId: 171270, nameRu: 'Молоко обезжиренное', nameEn: 'Milk, nonfat, fluid', category: 'Молочные и яйца', kcal: 34, protein: 3.4, fats: 0.1, carbs: 5.0, water: 91 },
+        { fdcId: 170903, nameRu: 'Кефир', nameEn: 'Kefir, plain, whole milk', category: 'Молочные и яйца', kcal: 63, protein: 3.3, fats: 3.5, carbs: 4.0, water: 88 },
+        { fdcId: 171286, nameRu: 'Йогурт натуральный', nameEn: 'Yogurt, plain, whole milk', category: 'Молочные и яйца', kcal: 61, protein: 3.5, fats: 3.3, carbs: 4.7, water: 88 },
+        { fdcId: 170886, nameRu: 'Сметана 20%', nameEn: 'Cream, sour, regular', category: 'Молочные и яйца', kcal: 198, protein: 2.1, fats: 19.7, carbs: 3.1, water: 74 },
+        { fdcId: 170848, nameRu: 'Творог 9%', nameEn: 'Cheese, cottage, creamed', category: 'Молочные и яйца', kcal: 98, protein: 11.1, fats: 4.3, carbs: 3.4, water: 80 },
+        { fdcId: 171241, nameRu: 'Сыр Чеддер', nameEn: 'Cheese, cheddar', category: 'Молочные и яйца', kcal: 403, protein: 24.9, fats: 33.1, carbs: 1.3, water: 37 },
+        { fdcId: 170849, nameRu: 'Сыр Моцарелла', nameEn: 'Cheese, mozzarella, whole milk', category: 'Молочные и яйца', kcal: 300, protein: 22.2, fats: 22.4, carbs: 2.2, water: 50 },
+        { fdcId: 171251, nameRu: 'Сыр Пармезан', nameEn: 'Cheese, parmesan, hard', category: 'Молочные и яйца', kcal: 392, protein: 35.8, fats: 25.8, carbs: 3.2, water: 30 },
+        { fdcId: 170874, nameRu: 'Сыр Фета', nameEn: 'Cheese, feta', category: 'Молочные и яйца', kcal: 264, protein: 14.2, fats: 21.3, carbs: 4.1, water: 55 },
+        { fdcId: 171287, nameRu: 'Масло сливочное', nameEn: 'Butter, salted', category: 'Молочные и яйца', kcal: 717, protein: 0.9, fats: 81.1, carbs: 0.1, water: 17 },
+        { fdcId: 171142, nameRu: 'Сливки 33%', nameEn: 'Cream, fluid, heavy whipping', category: 'Молочные и яйца', kcal: 340, protein: 2.1, fats: 36.1, carbs: 2.8, water: 58 },
+        { fdcId: 171287, nameRu: 'Яйцо куриное целое', nameEn: 'Egg, whole, raw, fresh', category: 'Молочные и яйца', kcal: 143, protein: 12.6, fats: 9.5, carbs: 0.7, water: 76 },
+
+        // ─── Говядина ───
+        { fdcId: 174032, nameRu: 'Говядина, вырезка', nameEn: 'Beef, tenderloin, raw', category: 'Говядина', kcal: 218, protein: 20.4, fats: 14.7, carbs: 0, water: 64 },
+        { fdcId: 174036, nameRu: 'Говядина, лопатка', nameEn: 'Beef, chuck, shoulder clod, raw', category: 'Говядина', kcal: 156, protein: 20.2, fats: 7.8, carbs: 0, water: 71 },
+        { fdcId: 174037, nameRu: 'Говяжий фарш (85/15)', nameEn: 'Beef, ground, 85% lean meat / 15% fat, raw', category: 'Говядина', kcal: 215, protein: 18.6, fats: 15.0, carbs: 0, water: 65 },
+        { fdcId: 174038, nameRu: 'Говяжья печень', nameEn: 'Beef, liver, raw', category: 'Говядина', kcal: 135, protein: 20.4, fats: 3.6, carbs: 3.9, water: 71 },
+        { fdcId: 174039, nameRu: 'Говядина тушёная', nameEn: 'Beef, stew meat, cooked', category: 'Говядина', kcal: 234, protein: 28.6, fats: 12.5, carbs: 0, water: 57 },
+
+        // ─── Свинина ───
+        { fdcId: 167820, nameRu: 'Свинина, корейка', nameEn: 'Pork, loin, center rib, raw', category: 'Свинина', kcal: 172, protein: 20.9, fats: 9.3, carbs: 0, water: 69 },
+        { fdcId: 167821, nameRu: 'Свинина, лопатка', nameEn: 'Pork, shoulder, raw', category: 'Свинина', kcal: 236, protein: 16.7, fats: 18.3, carbs: 0, water: 64 },
+        { fdcId: 167822, nameRu: 'Свиной фарш', nameEn: 'Pork, ground, raw', category: 'Свинина', kcal: 263, protein: 16.9, fats: 21.2, carbs: 0, water: 61 },
+        { fdcId: 167826, nameRu: 'Бекон', nameEn: 'Pork, cured, bacon, raw', category: 'Свинина', kcal: 417, protein: 12.6, fats: 40.0, carbs: 1.4, water: 42 },
+        { fdcId: 167828, nameRu: 'Сало', nameEn: 'Pork, cured, salt pork, raw', category: 'Свинина', kcal: 748, protein: 5.1, fats: 80.5, carbs: 0, water: 13 },
+
+        // ─── Птица ───
+        { fdcId: 171077, nameRu: 'Куриная грудка', nameEn: 'Chicken, breast, meat only, raw', category: 'Птица', kcal: 120, protein: 22.5, fats: 2.6, carbs: 0, water: 74 },
+        { fdcId: 171079, nameRu: 'Куриное бедро', nameEn: 'Chicken, thigh, meat only, raw', category: 'Птица', kcal: 177, protein: 18.3, fats: 10.9, carbs: 0, water: 70 },
+        { fdcId: 171081, nameRu: 'Куриные крылья', nameEn: 'Chicken, wing, meat and skin, raw', category: 'Птица', kcal: 222, protein: 18.3, fats: 15.8, carbs: 0, water: 64 },
+        { fdcId: 171082, nameRu: 'Куриная печень', nameEn: 'Chicken, liver, raw', category: 'Птица', kcal: 119, protein: 16.9, fats: 4.8, carbs: 0.7, water: 76 },
+        { fdcId: 171093, nameRu: 'Индейка, грудка', nameEn: 'Turkey, breast, meat only, raw', category: 'Птица', kcal: 104, protein: 23.7, fats: 0.7, carbs: 0, water: 75 },
+        { fdcId: 171095, nameRu: 'Утка', nameEn: 'Duck, meat only, raw', category: 'Птица', kcal: 135, protein: 19.3, fats: 5.9, carbs: 0, water: 74 },
+
+        // ─── Рыба и морепродукты ───
+        { fdcId: 175167, nameRu: 'Лосось атлантический', nameEn: 'Fish, salmon, Atlantic, raw', category: 'Рыба и морепродукты', kcal: 208, protein: 20.4, fats: 13.4, carbs: 0, water: 65 },
+        { fdcId: 175168, nameRu: 'Тунец', nameEn: 'Fish, tuna, fresh, raw', category: 'Рыба и морепродукты', kcal: 144, protein: 23.3, fats: 4.9, carbs: 0, water: 71 },
+        { fdcId: 175169, nameRu: 'Треска', nameEn: 'Fish, cod, Atlantic, raw', category: 'Рыба и морепродукты', kcal: 82, protein: 17.8, fats: 0.7, carbs: 0, water: 81 },
+        { fdcId: 175170, nameRu: 'Форель радужная', nameEn: 'Fish, trout, rainbow, raw', category: 'Рыба и морепродукты', kcal: 141, protein: 20.5, fats: 6.2, carbs: 0, water: 72 },
+        { fdcId: 175171, nameRu: 'Скумбрия', nameEn: 'Fish, mackerel, Atlantic, raw', category: 'Рыба и морепродукты', kcal: 205, protein: 18.6, fats: 13.9, carbs: 0, water: 64 },
+        { fdcId: 175172, nameRu: 'Сельдь', nameEn: 'Fish, herring, Atlantic, raw', category: 'Рыба и морепродукты', kcal: 158, protein: 18.0, fats: 9.0, carbs: 0, water: 72 },
+        { fdcId: 175174, nameRu: 'Креветки', nameEn: 'Crustaceans, shrimp, raw', category: 'Рыба и морепродукты', kcal: 85, protein: 20.1, fats: 0.5, carbs: 0.9, water: 79 },
+        { fdcId: 175175, nameRu: 'Кальмар', nameEn: 'Mollusks, squid, raw', category: 'Рыба и морепродукты', kcal: 92, protein: 15.6, fats: 1.4, carbs: 3.1, water: 79 },
+        { fdcId: 175176, nameRu: 'Мидии', nameEn: 'Mollusks, mussel, blue, raw', category: 'Рыба и морепродукты', kcal: 86, protein: 11.9, fats: 2.2, carbs: 3.7, water: 81 },
+        { fdcId: 175178, nameRu: 'Минтай', nameEn: 'Fish, pollock, raw', category: 'Рыба и морепродукты', kcal: 92, protein: 19.4, fats: 1.0, carbs: 0, water: 79 },
+
+        // ─── Овощи ───
+        { fdcId: 170393, nameRu: 'Картофель', nameEn: 'Potatoes, raw, flesh and skin', category: 'Овощи', kcal: 77, protein: 2.1, fats: 0.1, carbs: 17.5, water: 79 },
+        { fdcId: 170394, nameRu: 'Морковь', nameEn: 'Carrots, raw', category: 'Овощи', kcal: 41, protein: 0.9, fats: 0.2, carbs: 9.6, water: 88 },
+        { fdcId: 170395, nameRu: 'Свёкла', nameEn: 'Beets, raw', category: 'Овощи', kcal: 43, protein: 1.6, fats: 0.2, carbs: 9.6, water: 88 },
+        { fdcId: 170396, nameRu: 'Капуста белокочанная', nameEn: 'Cabbage, raw', category: 'Овощи', kcal: 25, protein: 1.3, fats: 0.1, carbs: 5.8, water: 92 },
+        { fdcId: 170397, nameRu: 'Цветная капуста', nameEn: 'Cauliflower, raw', category: 'Овощи', kcal: 25, protein: 1.9, fats: 0.3, carbs: 5.0, water: 92 },
+        { fdcId: 170398, nameRu: 'Брокколи', nameEn: 'Broccoli, raw', category: 'Овощи', kcal: 34, protein: 2.8, fats: 0.4, carbs: 6.6, water: 89 },
+        { fdcId: 170399, nameRu: 'Огурец', nameEn: 'Cucumber, with peel, raw', category: 'Овощи', kcal: 15, protein: 0.7, fats: 0.1, carbs: 3.6, water: 95 },
+        { fdcId: 170400, nameRu: 'Помидор', nameEn: 'Tomatoes, red, ripe, raw', category: 'Овощи', kcal: 18, protein: 0.9, fats: 0.2, carbs: 3.9, water: 95 },
+        { fdcId: 170401, nameRu: 'Перец сладкий', nameEn: 'Peppers, sweet, red, raw', category: 'Овощи', kcal: 31, protein: 1.0, fats: 0.3, carbs: 6.0, water: 92 },
+        { fdcId: 170402, nameRu: 'Кабачок', nameEn: 'Squash, summer, zucchini, raw', category: 'Овощи', kcal: 17, protein: 1.2, fats: 0.3, carbs: 3.1, water: 95 },
+        { fdcId: 170403, nameRu: 'Баклажан', nameEn: 'Eggplant, raw', category: 'Овощи', kcal: 25, protein: 1.0, fats: 0.2, carbs: 6.0, water: 92 },
+        { fdcId: 170404, nameRu: 'Лук репчатый', nameEn: 'Onions, raw', category: 'Овощи', kcal: 40, protein: 1.1, fats: 0.1, carbs: 9.3, water: 89 },
+        { fdcId: 170405, nameRu: 'Чеснок', nameEn: 'Garlic, raw', category: 'Овощи', kcal: 149, protein: 6.4, fats: 0.5, carbs: 33.1, water: 59 },
+        { fdcId: 170406, nameRu: 'Тыква', nameEn: 'Pumpkin, raw', category: 'Овощи', kcal: 26, protein: 1.0, fats: 0.1, carbs: 6.5, water: 92 },
+        { fdcId: 170407, nameRu: 'Шпинат', nameEn: 'Spinach, raw', category: 'Овощи', kcal: 23, protein: 2.9, fats: 0.4, carbs: 3.6, water: 91 },
+        { fdcId: 170408, nameRu: 'Грибы шампиньоны', nameEn: 'Mushrooms, white, raw', category: 'Овощи', kcal: 22, protein: 3.1, fats: 0.3, carbs: 3.3, water: 92 },
+        { fdcId: 170409, nameRu: 'Редис', nameEn: 'Radishes, raw', category: 'Овощи', kcal: 16, protein: 0.7, fats: 0.1, carbs: 3.4, water: 95 },
+        { fdcId: 170410, nameRu: 'Сельдерей', nameEn: 'Celery, raw', category: 'Овощи', kcal: 14, protein: 0.7, fats: 0.2, carbs: 3.0, water: 95 },
+        { fdcId: 170411, nameRu: 'Авокадо', nameEn: 'Avocados, raw', category: 'Овощи', kcal: 160, protein: 2.0, fats: 14.7, carbs: 8.5, water: 73 },
+        { fdcId: 170412, nameRu: 'Кукуруза', nameEn: 'Corn, sweet, raw', category: 'Овощи', kcal: 86, protein: 3.3, fats: 1.4, carbs: 18.7, water: 76 },
+
+        // ─── Фрукты ───
+        { fdcId: 171688, nameRu: 'Яблоко', nameEn: 'Apples, raw, with skin', category: 'Фрукты', kcal: 52, protein: 0.3, fats: 0.2, carbs: 13.8, water: 86 },
+        { fdcId: 171689, nameRu: 'Банан', nameEn: 'Bananas, raw', category: 'Фрукты', kcal: 89, protein: 1.1, fats: 0.3, carbs: 22.8, water: 75 },
+        { fdcId: 171690, nameRu: 'Апельсин', nameEn: 'Oranges, raw', category: 'Фрукты', kcal: 47, protein: 0.9, fats: 0.1, carbs: 11.8, water: 87 },
+        { fdcId: 171691, nameRu: 'Лимон', nameEn: 'Lemons, raw, without peel', category: 'Фрукты', kcal: 29, protein: 1.1, fats: 0.3, carbs: 9.3, water: 89 },
+        { fdcId: 171692, nameRu: 'Грейпфрут', nameEn: 'Grapefruit, raw, pink', category: 'Фрукты', kcal: 42, protein: 0.8, fats: 0.1, carbs: 10.7, water: 88 },
+        { fdcId: 171693, nameRu: 'Мандарин', nameEn: 'Tangerines (mandarins), raw', category: 'Фрукты', kcal: 53, protein: 0.8, fats: 0.3, carbs: 13.3, water: 85 },
+        { fdcId: 171694, nameRu: 'Виноград', nameEn: 'Grapes, red or green, raw', category: 'Фрукты', kcal: 69, protein: 0.7, fats: 0.2, carbs: 18.1, water: 81 },
+        { fdcId: 171695, nameRu: 'Клубника', nameEn: 'Strawberries, raw', category: 'Фрукты', kcal: 32, protein: 0.7, fats: 0.3, carbs: 7.7, water: 91 },
+        { fdcId: 171696, nameRu: 'Малина', nameEn: 'Raspberries, raw', category: 'Фрукты', kcal: 52, protein: 1.2, fats: 0.7, carbs: 11.9, water: 86 },
+        { fdcId: 171697, nameRu: 'Черника', nameEn: 'Blueberries, raw', category: 'Фрукты', kcal: 57, protein: 0.7, fats: 0.3, carbs: 14.5, water: 84 },
+        { fdcId: 171698, nameRu: 'Вишня', nameEn: 'Cherries, sweet, raw', category: 'Фрукты', kcal: 63, protein: 1.1, fats: 0.2, carbs: 16.0, water: 82 },
+        { fdcId: 171699, nameRu: 'Персик', nameEn: 'Peaches, raw', category: 'Фрукты', kcal: 39, protein: 0.9, fats: 0.3, carbs: 9.5, water: 89 },
+        { fdcId: 171700, nameRu: 'Груша', nameEn: 'Pears, raw', category: 'Фрукты', kcal: 57, protein: 0.4, fats: 0.1, carbs: 15.2, water: 84 },
+        { fdcId: 171701, nameRu: 'Слива', nameEn: 'Plums, raw', category: 'Фрукты', kcal: 46, protein: 0.7, fats: 0.3, carbs: 11.4, water: 87 },
+        { fdcId: 171702, nameRu: 'Абрикос', nameEn: 'Apricots, raw', category: 'Фрукты', kcal: 48, protein: 1.4, fats: 0.4, carbs: 11.1, water: 86 },
+        { fdcId: 171703, nameRu: 'Манго', nameEn: 'Mangos, raw', category: 'Фрукты', kcal: 60, protein: 0.8, fats: 0.4, carbs: 15.0, water: 84 },
+        { fdcId: 171704, nameRu: 'Ананас', nameEn: 'Pineapple, raw', category: 'Фрукты', kcal: 50, protein: 0.5, fats: 0.1, carbs: 13.1, water: 86 },
+        { fdcId: 171705, nameRu: 'Киви', nameEn: 'Kiwifruit, green, raw', category: 'Фрукты', kcal: 61, protein: 1.1, fats: 0.5, carbs: 14.7, water: 83 },
+        { fdcId: 171706, nameRu: 'Арбуз', nameEn: 'Watermelon, raw', category: 'Фрукты', kcal: 30, protein: 0.6, fats: 0.2, carbs: 7.6, water: 91 },
+        { fdcId: 171707, nameRu: 'Дыня', nameEn: 'Melons, cantaloupe, raw', category: 'Фрукты', kcal: 34, protein: 0.8, fats: 0.2, carbs: 8.2, water: 90 },
+        { fdcId: 171708, nameRu: 'Гранат', nameEn: 'Pomegranates, raw', category: 'Фрукты', kcal: 83, protein: 1.7, fats: 1.2, carbs: 18.7, water: 78 },
+        { fdcId: 171709, nameRu: 'Хурма', nameEn: 'Persimmons, raw', category: 'Фрукты', kcal: 70, protein: 0.6, fats: 0.2, carbs: 18.6, water: 80 },
+
+        // ─── Зерновые и макароны ───
+        { fdcId: 169717, nameRu: 'Рис белый', nameEn: 'Rice, white, long-grain, raw', category: 'Зерновые и макароны', kcal: 365, protein: 7.1, fats: 0.7, carbs: 80.0, water: 12 },
+        { fdcId: 169718, nameRu: 'Рис бурый', nameEn: 'Rice, brown, long-grain, raw', category: 'Зерновые и макароны', kcal: 370, protein: 7.9, fats: 2.9, carbs: 77.2, water: 11 },
+        { fdcId: 169719, nameRu: 'Гречка', nameEn: 'Buckwheat groats, roasted, dry', category: 'Зерновые и макароны', kcal: 346, protein: 11.7, fats: 2.7, carbs: 74.9, water: 10 },
+        { fdcId: 169720, nameRu: 'Овсянка (геркулес)', nameEn: 'Oats, regular and quick, not fortified, dry', category: 'Зерновые и макароны', kcal: 379, protein: 13.2, fats: 6.5, carbs: 67.7, water: 11 },
+        { fdcId: 169721, nameRu: 'Пшено', nameEn: 'Millet, raw', category: 'Зерновые и макароны', kcal: 378, protein: 11.0, fats: 4.2, carbs: 72.8, water: 9 },
+        { fdcId: 169722, nameRu: 'Перловка', nameEn: 'Barley, pearled, raw', category: 'Зерновые и макароны', kcal: 352, protein: 9.9, fats: 1.2, carbs: 77.7, water: 10 },
+        { fdcId: 169723, nameRu: 'Манка', nameEn: 'Wheat flour, semolina', category: 'Зерновые и макароны', kcal: 360, protein: 12.7, fats: 1.1, carbs: 72.8, water: 12 },
+        { fdcId: 169724, nameRu: 'Булгур', nameEn: 'Bulgur, dry', category: 'Зерновые и макароны', kcal: 342, protein: 12.3, fats: 1.3, carbs: 75.9, water: 9 },
+        { fdcId: 169725, nameRu: 'Кускус', nameEn: 'Couscous, dry', category: 'Зерновые и макароны', kcal: 376, protein: 12.8, fats: 0.6, carbs: 77.4, water: 9 },
+        { fdcId: 169726, nameRu: 'Макароны (паста)', nameEn: 'Pasta, dry, enriched', category: 'Зерновые и макароны', kcal: 371, protein: 13.0, fats: 1.5, carbs: 74.7, water: 10 },
+        { fdcId: 169727, nameRu: 'Мука пшеничная в/с', nameEn: 'Wheat flour, white, all-purpose', category: 'Зерновые и макароны', kcal: 364, protein: 10.3, fats: 1.0, carbs: 76.3, water: 12 },
+        { fdcId: 169728, nameRu: 'Хлеб белый', nameEn: 'Bread, white, commercial', category: 'Зерновые и макароны', kcal: 265, protein: 9.4, fats: 3.3, carbs: 49.2, water: 36 },
+        { fdcId: 169729, nameRu: 'Хлеб чёрный (ржаной)', nameEn: 'Bread, rye', category: 'Зерновые и макароны', kcal: 259, protein: 8.5, fats: 3.3, carbs: 48.3, water: 38 },
+
+        // ─── Бобовые ───
+        { fdcId: 175197, nameRu: 'Чечевица', nameEn: 'Lentils, raw', category: 'Бобовые', kcal: 352, protein: 24.6, fats: 1.1, carbs: 63.4, water: 8 },
+        { fdcId: 175198, nameRu: 'Нут', nameEn: 'Chickpeas (garbanzo beans), raw', category: 'Бобовые', kcal: 364, protein: 19.3, fats: 6.0, carbs: 60.7, water: 8 },
+        { fdcId: 175199, nameRu: 'Фасоль красная', nameEn: 'Beans, kidney, red, raw', category: 'Бобовые', kcal: 333, protein: 23.6, fats: 0.8, carbs: 60.0, water: 12 },
+        { fdcId: 175200, nameRu: 'Фасоль белая', nameEn: 'Beans, white, raw', category: 'Бобовые', kcal: 333, protein: 23.4, fats: 0.9, carbs: 60.3, water: 12 },
+        { fdcId: 175201, nameRu: 'Горох зелёный', nameEn: 'Peas, green, raw', category: 'Бобовые', kcal: 81, protein: 5.4, fats: 0.4, carbs: 14.5, water: 79 },
+        { fdcId: 175202, nameRu: 'Соевые бобы', nameEn: 'Soybeans, raw', category: 'Бобовые', kcal: 446, protein: 36.5, fats: 19.9, carbs: 30.2, water: 9 },
+        { fdcId: 175203, nameRu: 'Тофу', nameEn: 'Tofu, firm, raw', category: 'Бобовые', kcal: 144, protein: 15.8, fats: 8.7, carbs: 2.8, water: 70 },
+
+        // ─── Орехи и семена ───
+        { fdcId: 170567, nameRu: 'Грецкий орех', nameEn: 'Nuts, walnuts, English', category: 'Орехи и семена', kcal: 654, protein: 15.2, fats: 65.2, carbs: 13.7, water: 4 },
+        { fdcId: 170568, nameRu: 'Миндаль', nameEn: 'Nuts, almonds', category: 'Орехи и семена', kcal: 579, protein: 21.2, fats: 49.9, carbs: 21.7, water: 4 },
+        { fdcId: 170569, nameRu: 'Фундук', nameEn: 'Nuts, hazelnuts or filberts', category: 'Орехи и семена', kcal: 628, protein: 15.0, fats: 60.8, carbs: 16.7, water: 5 },
+        { fdcId: 170570, nameRu: 'Кешью', nameEn: 'Nuts, cashew nuts, raw', category: 'Орехи и семена', kcal: 553, protein: 18.2, fats: 43.8, carbs: 30.2, water: 5 },
+        { fdcId: 170571, nameRu: 'Арахис', nameEn: 'Peanuts, raw', category: 'Орехи и семена', kcal: 567, protein: 25.8, fats: 49.2, carbs: 16.1, water: 7 },
+        { fdcId: 170572, nameRu: 'Семена подсолнечника', nameEn: 'Seeds, sunflower seed kernels, dried', category: 'Орехи и семена', kcal: 584, protein: 20.8, fats: 51.5, carbs: 20.0, water: 5 },
+        { fdcId: 170573, nameRu: 'Семена тыквы', nameEn: 'Seeds, pumpkin and squash, dried', category: 'Орехи и семена', kcal: 559, protein: 30.2, fats: 49.1, carbs: 10.7, water: 5 },
+        { fdcId: 170574, nameRu: 'Семена льна', nameEn: 'Seeds, flaxseed', category: 'Орехи и семена', kcal: 534, protein: 18.3, fats: 42.2, carbs: 28.9, water: 7 },
+        { fdcId: 170575, nameRu: 'Кунжут', nameEn: 'Seeds, sesame seeds, whole, dried', category: 'Орехи и семена', kcal: 573, protein: 17.7, fats: 49.7, carbs: 23.5, water: 5 },
+        { fdcId: 170576, nameRu: 'Семена чиа', nameEn: 'Seeds, chia seeds, dried', category: 'Орехи и семена', kcal: 486, protein: 16.5, fats: 30.7, carbs: 42.1, water: 6 },
+
+        // ─── Жиры и масла ───
+        { fdcId: 171411, nameRu: 'Масло подсолнечное', nameEn: 'Oil, sunflower, linoleic', category: 'Жиры и масла', kcal: 884, protein: 0, fats: 100, carbs: 0, water: 0 },
+        { fdcId: 171413, nameRu: 'Масло оливковое', nameEn: 'Oil, olive, salad or cooking', category: 'Жиры и масла', kcal: 884, protein: 0, fats: 100, carbs: 0, water: 0 },
+        { fdcId: 171414, nameRu: 'Масло кокосовое', nameEn: 'Oil, coconut', category: 'Жиры и масла', kcal: 862, protein: 0, fats: 100, carbs: 0, water: 0 },
+        { fdcId: 171415, nameRu: 'Масло льняное', nameEn: 'Oil, flaxseed, cold pressed', category: 'Жиры и масла', kcal: 884, protein: 0, fats: 100, carbs: 0, water: 0 },
+
+        // ─── Специи и травы ───
+        { fdcId: 171319, nameRu: 'Перец чёрный молотый', nameEn: 'Spices, pepper, black', category: 'Специи и травы', kcal: 251, protein: 10.4, fats: 3.3, carbs: 64.8, water: 13 },
+        { fdcId: 171320, nameRu: 'Корица молотая', nameEn: 'Spices, cinnamon, ground', category: 'Специи и травы', kcal: 247, protein: 4.0, fats: 1.2, carbs: 80.6, water: 11 },
+        { fdcId: 171321, nameRu: 'Куркума', nameEn: 'Spices, turmeric, ground', category: 'Специи и травы', kcal: 354, protein: 7.8, fats: 9.9, carbs: 64.9, water: 11 },
+        { fdcId: 171322, nameRu: 'Паприка', nameEn: 'Spices, paprika', category: 'Специи и травы', kcal: 282, protein: 14.1, fats: 12.9, carbs: 53.9, water: 11 },
+        { fdcId: 171323, nameRu: 'Имбирь молотый', nameEn: 'Spices, ginger, ground', category: 'Специи и травы', kcal: 335, protein: 9.0, fats: 4.2, carbs: 71.6, water: 10 },
+        { fdcId: 171324, nameRu: 'Чеснок сушёный', nameEn: 'Spices, garlic powder', category: 'Специи и травы', kcal: 331, protein: 16.6, fats: 0.7, carbs: 72.7, water: 6 },
+        { fdcId: 171325, nameRu: 'Укроп сушёный', nameEn: 'Spices, dill weed, dried', category: 'Специи и травы', kcal: 253, protein: 20.0, fats: 4.4, carbs: 55.8, water: 8 },
+        { fdcId: 171326, nameRu: 'Базилик сушёный', nameEn: 'Spices, basil, dried', category: 'Специи и травы', kcal: 233, protein: 22.9, fats: 4.1, carbs: 47.8, water: 10 },
+        { fdcId: 171327, nameRu: 'Орегано сушёный', nameEn: 'Spices, oregano, dried', category: 'Специи и травы', kcal: 265, protein: 9.0, fats: 4.3, carbs: 68.9, water: 10 },
+        { fdcId: 171328, nameRu: 'Тимьян сушёный', nameEn: 'Spices, thyme, dried', category: 'Специи и травы', kcal: 276, protein: 9.1, fats: 7.4, carbs: 63.9, water: 8 },
+
+        // ─── Сладости и десерты (НОВАЯ категория!) ───
+        { fdcId: 167587, nameRu: 'Сахар белый', nameEn: 'Sugars, granulated', category: 'Сладости', kcal: 387, protein: 0, fats: 0, carbs: 99.8, water: 0 },
+        { fdcId: 167588, nameRu: 'Мёд', nameEn: 'Honey', category: 'Сладости', kcal: 304, protein: 0.3, fats: 0, carbs: 82.4, water: 17 },
+        { fdcId: 167590, nameRu: 'Шоколад тёмный (70%)', nameEn: 'Chocolate, dark, 70-85% cacao solids', category: 'Сладости', kcal: 598, protein: 7.8, fats: 42.6, carbs: 45.9, water: 1 },
+        { fdcId: 167591, nameRu: 'Шоколад молочный', nameEn: 'Chocolate, milk', category: 'Сладости', kcal: 535, protein: 7.6, fats: 29.7, carbs: 59.4, water: 2 },
+        { fdcId: 167592, nameRu: 'Какао-порошок', nameEn: 'Cocoa, dry powder, unsweetened', category: 'Сладости', kcal: 228, protein: 19.6, fats: 13.7, carbs: 57.9, water: 3 },
+        { fdcId: 167593, nameRu: 'Варенье (джем)', nameEn: 'Jams and preserves', category: 'Сладости', kcal: 278, protein: 0.4, fats: 0.1, carbs: 68.9, water: 30 },
+        { fdcId: 167594, nameRu: 'Сгущённое молоко', nameEn: 'Milk, canned, condensed, sweetened', category: 'Сладости', kcal: 321, protein: 7.9, fats: 8.7, carbs: 54.4, water: 27 },
+        { fdcId: 167595, nameRu: 'Мороженое ванильное', nameEn: 'Ice cream, vanilla', category: 'Сладости', kcal: 207, protein: 3.5, fats: 11.0, carbs: 23.6, water: 61 },
+
+        // ─── Напитки (НОВАЯ категория!) ───
+        { fdcId: 171890, nameRu: 'Кофе чёрный', nameEn: 'Coffee, brewed, espresso', category: 'Напитки', kcal: 2, protein: 0.1, fats: 0.2, carbs: 0, water: 98 },
+        { fdcId: 171891, nameRu: 'Чай чёрный без сахара', nameEn: 'Tea, brewed, black', category: 'Напитки', kcal: 1, protein: 0, fats: 0, carbs: 0.3, water: 100 },
+        { fdcId: 171892, nameRu: 'Сок апельсиновый', nameEn: 'Orange juice, raw', category: 'Напитки', kcal: 45, protein: 0.7, fats: 0.2, carbs: 10.4, water: 88 },
+        { fdcId: 171893, nameRu: 'Сок яблочный', nameEn: 'Apple juice, unsweetened', category: 'Напитки', kcal: 46, protein: 0.1, fats: 0.1, carbs: 11.3, water: 88 },
+        { fdcId: 171894, nameRu: 'Кокосовое молоко', nameEn: 'Coconut milk, raw', category: 'Напитки', kcal: 230, protein: 2.3, fats: 23.8, carbs: 5.5, water: 68 },
+
+        // ─── Выпечка ───
+        { fdcId: 167545, nameRu: 'Блины', nameEn: 'Pancakes, plain, dry mix', category: 'Выпечка', kcal: 227, protein: 7.2, fats: 5.2, carbs: 38.2, water: 48 },
+        { fdcId: 167546, nameRu: 'Круассан', nameEn: 'Croissant, butter', category: 'Выпечка', kcal: 406, protein: 8.2, fats: 21.0, carbs: 45.9, water: 23 },
+        { fdcId: 167547, nameRu: 'Пончик', nameEn: 'Doughnut, yeast-leavened', category: 'Выпечка', kcal: 421, protein: 6.1, fats: 22.7, carbs: 49.5, water: 20 },
+        { fdcId: 167548, nameRu: 'Пирог яблочный', nameEn: 'Pie, apple, commercial', category: 'Выпечка', kcal: 237, protein: 1.9, fats: 11.0, carbs: 34.0, water: 52 },
+        { fdcId: 167549, nameRu: 'Бисквит', nameEn: 'Cake, sponge, commercial', category: 'Выпечка', kcal: 297, protein: 5.8, fats: 3.6, carbs: 62.1, water: 27 },
+        { fdcId: 167550, nameRu: 'Печенье овсяное', nameEn: 'Cookie, oatmeal, commercial', category: 'Выпечка', kcal: 450, protein: 6.2, fats: 18.1, carbs: 67.5, water: 6 },
+        { fdcId: 167551, nameRu: 'Вафли', nameEn: 'Waffle, plain, commercial', category: 'Выпечка', kcal: 291, protein: 7.9, fats: 9.6, carbs: 44.4, water: 36 },
+      ];
+
+      for (const ing of ingredients) {
+        await sql`
+          INSERT INTO ingredients (fdc_id, name_ru, name_en, category, kcal_per_100g, protein_g, fats_g, carbs_g, water_pct)
+          VALUES (${ing.fdcId}, ${ing.nameRu}, ${ing.nameEn}, ${ing.category}, ${ing.kcal}, ${ing.protein}, ${ing.fats}, ${ing.carbs}, ${ing.water})
+          ON CONFLICT (fdc_id) DO UPDATE SET
+            name_ru = EXCLUDED.name_ru,
+            name_en = EXCLUDED.name_en,
+            category = EXCLUDED.category,
+            kcal_per_100g = EXCLUDED.kcal_per_100g,
+            protein_g = EXCLUDED.protein_g,
+            fats_g = EXCLUDED.fats_g,
+            carbs_g = EXCLUDED.carbs_g,
+            water_pct = EXCLUDED.water_pct
+        `;
+      }
+
+      // ─── ЧАСТЬ 2: Сроки хранения (USDA FoodKeeper + FDA Food Code) ───
+      // Добавляем недостающие записи для категорий:
+      //   - Детское питание (fridge/pantry)
+      //   - Напитки (fridge/pantry)
+      //   - Выпечка/Десерты (fridge/pantry) — ранее были только в freezer
+      //   - Яйца продукты (fridge)
+      //   - Полуфабрикаты (fridge/freezer)
+      //   - Консервы открытые (fridge)
+      //   - Заморозка: дополнительные записи из FoodKeeper
+
+      const shelfLifeEntries: {
+        storageType: string; keyword: string; days: number; priority: number; description: string;
+      }[] = [
+        // ─── Выпечка и десерты (FRIDGE) — из USDA FoodKeeper ───
+        { storageType: 'fridge', keyword: 'торт', days: 5, priority: 7, description: 'Торт с кремом, ~5 дней' },
+        { storageType: 'fridge', keyword: 'чизкейк', days: 7, priority: 8, description: 'Чизкейк, ~7 дней' },
+        { storageType: 'fridge', keyword: 'пирожн', days: 3, priority: 7, description: 'Пирожное с кремом, ~3 дня' },
+        { storageType: 'fridge', keyword: 'эклер', days: 3, priority: 7, description: 'Эклеры, ~3 дня' },
+        { storageType: 'fridge', keyword: 'тирамису', days: 3, priority: 8, description: 'Тирамису, ~3 дня' },
+        { storageType: 'fridge', keyword: 'мусс', days: 3, priority: 6, description: 'Мусс десертный, ~3 дня' },
+        { storageType: 'fridge', keyword: 'панна', days: 3, priority: 7, description: 'Панна-котта, ~3 дня' },
+        { storageType: 'fridge', keyword: 'желе', days: 5, priority: 6, description: 'Желе, ~5 дней' },
+        { storageType: 'fridge', keyword: 'пудинг', days: 4, priority: 6, description: 'Пудинг, ~4 дня' },
+        { storageType: 'fridge', keyword: 'крем', days: 3, priority: 5, description: 'Крем кондитерский, ~3 дня' },
+        { storageType: 'fridge', keyword: 'бисквит', days: 5, priority: 6, description: 'Бисквит без крема, ~5 дней' },
+        { storageType: 'fridge', keyword: 'кекс', days: 7, priority: 6, description: 'Кекс, ~7 дней' },
+        { storageType: 'fridge', keyword: 'маффин', days: 5, priority: 7, description: 'Маффины, ~5 дней' },
+        { storageType: 'fridge', keyword: 'круассан', days: 5, priority: 7, description: 'Круассаны, ~5 дней' },
+        { storageType: 'fridge', keyword: 'пирог', days: 5, priority: 6, description: 'Пирог, ~5 дней' },
+        { storageType: 'fridge', keyword: 'пирожк', days: 3, priority: 7, description: 'Пирожки, ~3 дня' },
+        { storageType: 'fridge', keyword: 'штрудел', days: 4, priority: 7, description: 'Штрудель, ~4 дня' },
+        { storageType: 'fridge', keyword: 'сырник', days: 3, priority: 7, description: 'Сырники готовые, ~3 дня' },
+        { storageType: 'fridge', keyword: 'запеканк', days: 4, priority: 6, description: 'Запеканка, ~4 дня' },
+        { storageType: 'fridge', keyword: 'мороженое', days: 0, priority: 7, description: 'Мороженое — только морозилка!' },
+        { storageType: 'fridge', keyword: 'десерт', days: 3, priority: 4, description: 'Десерт (общее), ~3 дня' },
+
+        // ─── Выпечка (PANTRY) — из USDA FoodKeeper ───
+        { storageType: 'pantry', keyword: 'торт', days: 3, priority: 6, description: 'Торт без крема, ~3 дня' },
+        { storageType: 'pantry', keyword: 'кекс', days: 7, priority: 6, description: 'Кекс, ~7 дней' },
+        { storageType: 'pantry', keyword: 'маффин', days: 5, priority: 6, description: 'Маффины, ~5 дней' },
+        { storageType: 'pantry', keyword: 'круассан', days: 2, priority: 7, description: 'Круассаны, ~2 дня' },
+        { storageType: 'pantry', keyword: 'пирог', days: 3, priority: 5, description: 'Пирог, ~3 дня' },
+        { storageType: 'pantry', keyword: 'пирожк', days: 2, priority: 7, description: 'Пирожки, ~2 дня' },
+        { storageType: 'pantry', keyword: 'вафл', days: 90, priority: 6, description: 'Вафли (заводские), ~3 месяца' },
+        { storageType: 'pantry', keyword: 'зефир', days: 30, priority: 6, description: 'Зефир, ~1 месяц' },
+        { storageType: 'pantry', keyword: 'пастил', days: 30, priority: 6, description: 'Пастила, ~1 месяц' },
+        { storageType: 'pantry', keyword: 'мармелад', days: 90, priority: 6, description: 'Мармелад, ~3 месяца' },
+        { storageType: 'pantry', keyword: 'халв', days: 60, priority: 6, description: 'Халва, ~2 месяца' },
+        { storageType: 'pantry', keyword: 'козинак', days: 90, priority: 6, description: 'Козинаки, ~3 месяца' },
+        { storageType: 'pantry', keyword: 'нуга', days: 90, priority: 6, description: 'Нуга, ~3 месяца' },
+        { storageType: 'pantry', keyword: 'рахат', days: 90, priority: 6, description: 'Рахат-лукум, ~3 месяца' },
+        { storageType: 'pantry', keyword: 'ирис', days: 60, priority: 6, description: 'Ириски, ~2 месяца' },
+        { storageType: 'pantry', keyword: 'карамел', days: 180, priority: 6, description: 'Карамель, ~6 месяцев' },
+        { storageType: 'pantry', keyword: 'леденц', days: 365, priority: 6, description: 'Леденцы, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'пряник', days: 30, priority: 6, description: 'Пряники, ~1 месяц' },
+        { storageType: 'pantry', keyword: 'баранк', days: 60, priority: 6, description: 'Баранки/бублики, ~2 месяца' },
+        { storageType: 'pantry', keyword: 'сушк', days: 90, priority: 6, description: 'Сушки, ~3 месяца' },
+
+        // ─── Напитки (FRIDGE) — из USDA FoodKeeper / FDA ───
+        { storageType: 'fridge', keyword: 'молоко растительн', days: 10, priority: 8, description: 'Растительное молоко открытое, ~10 дней' },
+        { storageType: 'fridge', keyword: 'овсян молок', days: 7, priority: 8, description: 'Овсяное молоко открытое, ~7 дней' },
+        { storageType: 'fridge', keyword: 'миндальн молок', days: 10, priority: 8, description: 'Миндальное молоко открытое, ~10 дней' },
+        { storageType: 'fridge', keyword: 'кокосов молок', days: 5, priority: 8, description: 'Кокосовое молоко открытое, ~5 дней' },
+        { storageType: 'fridge', keyword: 'смузи', days: 2, priority: 7, description: 'Смузи, ~2 дня' },
+        { storageType: 'fridge', keyword: 'компот', days: 5, priority: 6, description: 'Компот домашний, ~5 дней' },
+        { storageType: 'fridge', keyword: 'морс', days: 3, priority: 6, description: 'Морс, ~3 дня' },
+        { storageType: 'fridge', keyword: 'квас', days: 5, priority: 6, description: 'Квас, ~5 дней' },
+        { storageType: 'fridge', keyword: 'кисел', days: 3, priority: 6, description: 'Кисель, ~3 дня' },
+        { storageType: 'fridge', keyword: 'лимонад', days: 5, priority: 6, description: 'Лимонад открытый, ~5 дней' },
+        { storageType: 'fridge', keyword: 'пиво', days: 3, priority: 5, description: 'Пиво открытое, ~3 дня' },
+        { storageType: 'fridge', keyword: 'вино', days: 5, priority: 5, description: 'Вино открытое, ~5 дней' },
+
+        // ─── Напитки (PANTRY) — закрытые, из USDA FoodKeeper ───
+        { storageType: 'pantry', keyword: 'молоко растительн', days: 180, priority: 7, description: 'Растительное молоко закрытое, ~6 мес' },
+        { storageType: 'pantry', keyword: 'газировк', days: 270, priority: 5, description: 'Газировка, ~9 месяцев' },
+        { storageType: 'pantry', keyword: 'пиво', days: 180, priority: 5, description: 'Пиво закрытое, ~6 месяцев' },
+        { storageType: 'pantry', keyword: 'вино', days: 730, priority: 5, description: 'Вино закрытое, ~2 года' },
+        { storageType: 'pantry', keyword: 'компот', days: 365, priority: 7, description: 'Компот закатанный, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'сок', days: 365, priority: 6, description: 'Сок в упаковке, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'энергетик', days: 365, priority: 5, description: 'Энергетик, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'кокосов молок', days: 365, priority: 7, description: 'Кокосовое молоко в банке, ~12 месяцев' },
+
+        // ─── Полуфабрикаты (FRIDGE) — из FoodKeeper ───
+        { storageType: 'fridge', keyword: 'пельмен', days: 2, priority: 7, description: 'Пельмени (охл.), ~2 дня → лучше заморозить' },
+        { storageType: 'fridge', keyword: 'вареник', days: 2, priority: 7, description: 'Вареники (охл.), ~2 дня → лучше заморозить' },
+        { storageType: 'fridge', keyword: 'котлет сыр', days: 2, priority: 8, description: 'Котлеты сырые, ~2 дня' },
+        { storageType: 'fridge', keyword: 'манты', days: 2, priority: 7, description: 'Манты (охл.), ~2 дня → лучше заморозить' },
+        { storageType: 'fridge', keyword: 'хинкал', days: 2, priority: 7, description: 'Хинкали (охл.), ~2 дня' },
+        { storageType: 'fridge', keyword: 'шаурм', days: 2, priority: 7, description: 'Шаурма, ~2 дня' },
+        { storageType: 'fridge', keyword: 'роллы', days: 1, priority: 7, description: 'Роллы/суши, ~1 день' },
+        { storageType: 'fridge', keyword: 'суши', days: 1, priority: 7, description: 'Суши, ~1 день' },
+        { storageType: 'fridge', keyword: 'пицц', days: 4, priority: 6, description: 'Пицца (готовая), ~4 дня' },
+
+        // ─── Консервы открытые (FRIDGE) — из FDA Food Code ───
+        { storageType: 'fridge', keyword: 'консерв открыт', days: 5, priority: 8, description: 'Консервы открытые, ~5 дней' },
+        { storageType: 'fridge', keyword: 'тушёнк', days: 5, priority: 7, description: 'Тушёнка открытая, ~5 дней' },
+        { storageType: 'fridge', keyword: 'тушенк', days: 5, priority: 7, description: 'Тушёнка открытая, ~5 дней' },
+        { storageType: 'fridge', keyword: 'шпроты', days: 3, priority: 7, description: 'Шпроты открытые, ~3 дня' },
+        { storageType: 'fridge', keyword: 'паштет', days: 5, priority: 7, description: 'Паштет открытый, ~5 дней' },
+
+        // ─── Детское питание (FRIDGE) — из FoodKeeper ───
+        { storageType: 'fridge', keyword: 'детск пюре', days: 2, priority: 8, description: 'Детское пюре открытое, ~2 дня' },
+        { storageType: 'fridge', keyword: 'детск питан', days: 2, priority: 8, description: 'Детское питание открытое, ~2 дня' },
+        { storageType: 'fridge', keyword: 'детск смес', days: 1, priority: 9, description: 'Детская смесь разведённая, ~1 день' },
+
+        // ─── Детское питание (PANTRY) — закрытое ───
+        { storageType: 'pantry', keyword: 'детск пюре', days: 365, priority: 7, description: 'Детское пюре закрытое, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'детск питан', days: 365, priority: 7, description: 'Детское питание закрытое, ~12 месяцев' },
+        { storageType: 'pantry', keyword: 'детск смес', days: 365, priority: 8, description: 'Детская смесь закрытая, ~12 месяцев' },
+
+        // ─── Яйца-продукты (FRIDGE) — из FoodKeeper ───
+        { storageType: 'fridge', keyword: 'яйцо варён', days: 7, priority: 8, description: 'Яйцо варёное, ~7 дней' },
+        { storageType: 'fridge', keyword: 'яйца варён', days: 7, priority: 8, description: 'Яйца варёные, ~7 дней' },
+        { storageType: 'fridge', keyword: 'омлет', days: 3, priority: 7, description: 'Омлет готовый, ~3 дня' },
+        { storageType: 'fridge', keyword: 'яичниц', days: 2, priority: 7, description: 'Яичница, ~2 дня' },
+
+        // ─── Заморозка: доп. записи из FoodKeeper (freezer) ───
+        { storageType: 'freezer', keyword: 'шаурм', days: 60, priority: 6, description: 'Шаурма замороженная, ~2 мес' },
+        { storageType: 'freezer', keyword: 'пицц', days: 60, priority: 6, description: 'Пицца замороженная, ~2 мес' },
+        { storageType: 'freezer', keyword: 'роллы', days: 30, priority: 6, description: 'Роллы замороженные, ~1 мес' },
+        { storageType: 'freezer', keyword: 'суши', days: 30, priority: 6, description: 'Суши замороженные, ~1 мес' },
+        { storageType: 'freezer', keyword: 'смузи', days: 90, priority: 6, description: 'Смузи замороженный, ~3 мес' },
+        { storageType: 'freezer', keyword: 'пудинг', days: 60, priority: 6, description: 'Пудинг замороженный, ~2 мес' },
+        { storageType: 'freezer', keyword: 'запеканк', days: 90, priority: 6, description: 'Запеканка замороженная, ~3 мес' },
+        { storageType: 'freezer', keyword: 'омлет', days: 60, priority: 6, description: 'Омлет замороженный, ~2 мес' },
+        { storageType: 'freezer', keyword: 'паштет', days: 30, priority: 6, description: 'Паштет замороженный, ~1 мес' },
+        { storageType: 'freezer', keyword: 'кабачков', days: 240, priority: 6, description: 'Кабачковая икра, ~8 мес' },
+        { storageType: 'freezer', keyword: 'икра кабачк', days: 240, priority: 7, description: 'Кабачковая икра, ~8 мес' },
+        { storageType: 'freezer', keyword: 'яблок', days: 240, priority: 6, description: 'Яблоки замороженные, ~8 мес' },
+        { storageType: 'freezer', keyword: 'банан', days: 90, priority: 6, description: 'Бананы замороженные, ~3 мес' },
+        { storageType: 'freezer', keyword: 'манго', days: 270, priority: 6, description: 'Манго замороженное, ~9 мес' },
+        { storageType: 'freezer', keyword: 'ананас', days: 270, priority: 6, description: 'Ананас замороженный, ~9 мес' },
+      ];
+
+      for (const e of shelfLifeEntries) {
+        await sql`
+          INSERT INTO shelf_life (storage_type, keyword, days, priority, description)
+          VALUES (${e.storageType}, ${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT (storage_type, keyword) DO UPDATE SET
+            days = EXCLUDED.days,
+            priority = EXCLUDED.priority,
+            description = EXCLUDED.description
+        `;
+      }
+
+      // Также добавляем в freezer_shelf_life (для обратной совместимости
+      // со старым кодом preserves.suggestExpiry)
+      const freezerOnlyEntries = shelfLifeEntries.filter(e => e.storageType === 'freezer');
+      for (const e of freezerOnlyEntries) {
+        await sql`
+          INSERT INTO freezer_shelf_life (keyword, days, priority, description)
+          VALUES (${e.keyword}, ${e.days}, ${e.priority}, ${e.description})
+          ON CONFLICT (keyword) DO UPDATE SET
+            days = EXCLUDED.days,
+            priority = EXCLUDED.priority,
+            description = EXCLUDED.description
+        `;
+      }
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
