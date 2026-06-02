@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lte, sql, inArray } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { cookingHistory, recipeIngredients, receipts, receiptItems } from '../db/schema';
@@ -107,7 +107,7 @@ export const analyticsRouter = router({
           receiptId: receiptItems.receiptId,
         })
         .from(receiptItems)
-        .where(sql`${receiptItems.receiptId} = ANY(${receiptIds})`);
+        .where(inArray(receiptItems.receiptId, receiptIds));
 
       // Топ-15 продуктов по количеству покупок
       const productCount = new Map<string, { count: number; totalSpent: number }>();
@@ -325,7 +325,7 @@ export const analyticsRouter = router({
           unit: recipeIngredients.unit,
         })
         .from(recipeIngredients)
-        .where(sql`${recipeIngredients.recipeId} = ANY(${recipeIds})`);
+        .where(inArray(recipeIngredients.recipeId, recipeIds));
 
       // Суммируем: для каждого факта готовки умножаем ингредиенты на (servings/default_servings).
       // Упрощённо: считаем что ингредиенты даны на 1 порцию (не совсем точно,
