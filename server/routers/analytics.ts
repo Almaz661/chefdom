@@ -56,24 +56,29 @@ export const analyticsRouter = router({
         periodLabel = `${input.period} год`;
       }
 
-      // Получаем все чеки за период
+      // Получаем все чеки за период.
+      // COALESCE: если purchase_date пустая (OCR не распознал дату или
+      // чек создан вручную без даты), используем created_at как фоллбэк.
+      // Без этого чеки с purchase_date = NULL "исчезали" из аналитики.
+      const effectiveDate = sql<string>`COALESCE(${receipts.purchaseDate}, TO_CHAR(${receipts.createdAt}, 'YYYY-MM-DD'))`;
+
       const periodReceipts = await db
         .select({
           id: receipts.id,
           storeName: receipts.storeName,
           totalAmount: receipts.totalAmount,
-          purchaseDate: receipts.purchaseDate,
+          purchaseDate: effectiveDate.as('effective_date'),
           currency: receipts.currency,
         })
         .from(receipts)
         .where(
           and(
             eq(receipts.userId, ctx.userId),
-            gte(receipts.purchaseDate, dateFrom),
-            lte(receipts.purchaseDate, dateTo),
+            gte(effectiveDate, dateFrom),
+            lte(effectiveDate, dateTo),
           ),
         )
-        .orderBy(desc(receipts.purchaseDate));
+        .orderBy(desc(effectiveDate));
 
       if (periodReceipts.length === 0) {
         return {
@@ -148,7 +153,7 @@ export const analyticsRouter = router({
       if (input.period.length === 4) {
         const monthMap = new Map<string, { totalSpent: number; count: number }>();
         for (const r of periodReceipts) {
-          const month = r.purchaseDate?.slice(0, 7) || 'unknown';
+          const month = (r.purchaseDate ?? '').slice(0, 7) || 'unknown';
           const prev = monthMap.get(month) || { totalSpent: 0, count: 0 };
           prev.totalSpent += r.totalAmount ? parseFloat(r.totalAmount as unknown as string) : 0;
           prev.count += 1;
