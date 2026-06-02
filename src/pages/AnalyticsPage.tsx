@@ -24,8 +24,14 @@ export function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("month");
   const [tab, setTab] = useState<"cooking" | "spending" | "prices">("cooking");
 
-  const { data: topRecipes = [] } = trpc.analytics.topRecipes.useQuery({ period });
-  const { data: consumption = [] } = trpc.analytics.productConsumption.useQuery({ period });
+  const { data: topRecipes = [] } = trpc.analytics.topRecipes.useQuery(
+    { period },
+    { enabled: tab === "cooking" },
+  );
+  const { data: consumption = [] } = trpc.analytics.productConsumption.useQuery(
+    { period },
+    { enabled: tab === "cooking" },
+  );
 
   // Расходы: текущий месяц
   const now = new Date();
