@@ -149,7 +149,7 @@ export function InventoryPage() {
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
       />
       {/* Minimal overlay for text readability only */}
-      <div className="absolute inset-0 bg-[#05070A]/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-[#05070A]/25 pointer-events-none" />
       <div className="relative h-full max-w-5xl mx-auto flex flex-col gap-5">
         {/* Header */}
         <InventoryHeader
