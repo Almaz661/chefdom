@@ -7,7 +7,7 @@ export function MenuWeekHeader() {
       {/* Title row */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[26px] font-bold text-white tracking-tight">Меню недели</h1>
+          <h1 className="text-[32px] font-bold text-white tracking-tight">Меню недели</h1>
           <p className="text-white/40 text-sm mt-0.5">Планируйте питание, экономьте время и продукты</p>
         </div>
         <div className="flex items-center gap-2">
