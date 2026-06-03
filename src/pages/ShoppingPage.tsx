@@ -1,8 +1,17 @@
-import { useState, FormEvent } from "react";
-import { ShoppingCart, Plus, Trash2, Loader2, Refrigerator, Snowflake, Package, PackagePlus } from "lucide-react";
-import { trpc } from "../utils/trpc";
+import { useState } from 'react';
+import { ShoppingCart, Loader2 } from 'lucide-react';
+import { trpc } from '../utils/trpc';
+import { GlassCard } from '../components/ui/GlassCard';
+import { ShoppingHeader } from '../components/shopping/ShoppingHeader';
+import { ShoppingKpiRow } from '../components/shopping/ShoppingKpiRow';
+import { ShoppingProgress } from '../components/shopping/ShoppingProgress';
+import { ShoppingAddForm } from '../components/shopping/ShoppingAddForm';
+import { ShoppingCategoryGroup } from '../components/shopping/ShoppingCategoryGroup';
+import { ShoppingPreviewDialog } from '../components/shopping/ShoppingPreviewDialog';
+import type { PreviewItem } from '../components/shopping/ShoppingPreviewDialog';
 
-// Ключевые слова для авто-определения storageType (дублирует логику бэкенда для превью)
+// --- Client-side storageType guessing (mirrors backend logic for preview) ---
+
 const FREEZER_KEYWORDS = [
   'замороженн', 'заморож', 'мороженое', 'пельмен', 'вареник',
   'наггетс', 'фри', 'ice cream', 'frozen',
@@ -17,7 +26,9 @@ const PANTRY_KEYWORDS = [
   'варенье', 'джем', 'мёд', 'мед', 'сироп',
 ];
 
-function guessStorageType(name: string): 'fridge' | 'freezer' | 'pantry' {
+type StorageType = 'fridge' | 'freezer' | 'pantry';
+
+function guessStorageType(name: string): StorageType {
   const lower = name.toLowerCase();
   for (const kw of FREEZER_KEYWORDS) {
     if (lower.includes(kw)) return 'freezer';
@@ -28,45 +39,28 @@ function guessStorageType(name: string): 'fridge' | 'freezer' | 'pantry' {
   return 'fridge';
 }
 
-const STORAGE_LABELS = {
-  fridge: { label: 'Холодильник', icon: Refrigerator },
-  freezer: { label: 'Морозилка', icon: Snowflake },
-  pantry: { label: 'Кладовая', icon: Package },
-} as const;
-
-type StorageType = 'fridge' | 'freezer' | 'pantry';
-
 export function ShoppingPage() {
-  const [newItem, setNewItem] = useState("");
   const [showPreview, setShowPreview] = useState(false);
-  const [previewItems, setPreviewItems] = useState<{ productName: string; quantity: number | null; unit: string | null; storageType: StorageType }[]>([]);
+  const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
+
   const utils = trpc.useUtils();
 
   const { data: items = [], isLoading } = trpc.shopping.list.useQuery();
 
   const add = trpc.shopping.add.useMutation({
-    onSuccess: () => {
-      utils.shopping.list.invalidate();
-      setNewItem("");
-    },
+    onSuccess: () => utils.shopping.list.invalidate(),
   });
 
   const toggle = trpc.shopping.toggle.useMutation({
-    onSuccess: () => {
-      utils.shopping.list.invalidate();
-    },
+    onSuccess: () => utils.shopping.list.invalidate(),
   });
 
   const remove = trpc.shopping.remove.useMutation({
-    onSuccess: () => {
-      utils.shopping.list.invalidate();
-    },
+    onSuccess: () => utils.shopping.list.invalidate(),
   });
 
   const clearChecked = trpc.shopping.clearChecked.useMutation({
-    onSuccess: () => {
-      utils.shopping.list.invalidate();
-    },
+    onSuccess: () => utils.shopping.list.invalidate(),
   });
 
   const addBulkSmart = trpc.inventory.addBulkSmart.useMutation({
@@ -77,17 +71,35 @@ export function ShoppingPage() {
     },
   });
 
-  const handleAdd = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = newItem.trim();
-    if (!trimmed) return;
-    add.mutate({ productName: trimmed });
+  // --- Computed data ---
+
+  const total = items.length;
+  const checked = items.filter((i) => i.isChecked === 1).length;
+  const remaining = total - checked;
+
+  // Group by category
+  const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
+    const cat = item.category || 'Без категории';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {});
+
+  const categories = Object.keys(grouped).sort((a, b) => {
+    if (a === 'Без категории') return 1;
+    if (b === 'Без категории') return -1;
+    return a.localeCompare(b, 'ru');
+  });
+
+  // --- Handlers ---
+
+  const handleAdd = (productName: string) => {
+    add.mutate({ productName });
   };
 
-  // Открыть превью с авто-раскладкой
   const openPreview = () => {
-    const checkedItems = items.filter(i => i.isChecked === 1);
-    const mapped = checkedItems.map(i => ({
+    const checkedItems = items.filter((i) => i.isChecked === 1);
+    const mapped = checkedItems.map((i) => ({
       productName: i.productName,
       quantity: i.quantity ? parseFloat(i.quantity) : null,
       unit: i.unit,
@@ -97,9 +109,8 @@ export function ShoppingPage() {
     setShowPreview(true);
   };
 
-  // Переключить storageType для элемента в превью (тап по иконке)
   const cycleStorage = (idx: number) => {
-    setPreviewItems(prev => {
+    setPreviewItems((prev) => {
       const next = [...prev];
       const current = next[idx].storageType;
       const order: StorageType[] = ['fridge', 'freezer', 'pantry'];
@@ -109,10 +120,9 @@ export function ShoppingPage() {
     });
   };
 
-  // Подтвердить и отправить на бэкенд
   const confirmPreview = () => {
     addBulkSmart.mutate({
-      items: previewItems.map(i => ({
+      items: previewItems.map((i) => ({
         productName: i.productName,
         quantity: i.quantity,
         unit: i.unit,
@@ -121,257 +131,82 @@ export function ShoppingPage() {
     });
   };
 
-  const total = items.length;
-  const checked = items.filter((i) => i.isChecked === 1).length;
-  const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
-
-  // Группировка по категории
-  const grouped = items.reduce<Record<string, typeof items>>((acc, item) => {
-    const cat = item.category || "Без категории";
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
-
-  const categories = Object.keys(grouped).sort((a, b) => {
-    if (a === "Без категории") return 1;
-    if (b === "Без категории") return -1;
-    return a.localeCompare(b, "ru");
-  });
-
   return (
-    <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
-      <h1 className="font-serif text-2xl font-semibold text-ink mb-8">
-        Покупки
-      </h1>
+    <div className="h-[calc(100vh-2rem)] w-full bg-[#05070A] p-6 overflow-hidden">
+      <div className="h-full max-w-5xl mx-auto flex flex-col gap-5">
+        {/* Header */}
+        <ShoppingHeader
+          checkedCount={checked}
+          onAddToInventory={openPreview}
+          addToInventoryPending={addBulkSmart.isPending || clearChecked.isPending}
+        />
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          {/* Прогресс-бар */}
-          {total > 0 && (
-            <div className="mb-6">
-              <div className="flex justify-between text-sm text-ink-soft mb-1.5">
-                <span>
-                  {checked} из {total} куплены
-                </span>
-                <span>{progress}%</span>
-              </div>
-              <div className="h-2.5 bg-surface-elevated rounded-full overflow-hidden border border-line">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
+        {/* KPI */}
+        <ShoppingKpiRow
+          total={total}
+          checked={checked}
+          remaining={remaining}
+        />
 
-          {/* Список по категориям */}
-          {total === 0 ? (
-            <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
-              <ShoppingCart
-                size={32}
-                className="text-line-strong mx-auto mb-3"
-                strokeWidth={1.5}
-              />
-              <p className="text-ink-soft text-sm">
-                Список пуст. Добавьте продукты ниже.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {categories.map((cat) => (
-                <section key={cat}>
-                  <h3 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
-                    {cat}
-                  </h3>
-                  <ul className="space-y-1">
-                    {grouped[cat].map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
-                      >
-                        <button
-                          onClick={() => toggle.mutate({ id: item.id })}
-                          className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            item.isChecked === 1
-                              ? "bg-primary border-primary"
-                              : "border-line-strong hover:border-primary"
-                          }`}
-                          aria-label={
-                            item.isChecked === 1
-                              ? "Отметить как не купленное"
-                              : "Отметить как купленное"
-                          }
-                        >
-                          {item.isChecked === 1 && (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 14 14"
-                              fill="none"
-                            >
-                              <path
-                                d="M3 7l3 3 5-5"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                        <span
-                          className={`flex-1 text-sm ${
-                            item.isChecked === 1
-                              ? "line-through text-ink-muted"
-                              : "text-ink"
-                          }`}
-                        >
-                          {item.productName}
-                          {item.quantity && (
-                            <span className="text-ink-muted ml-2">
-                              {item.quantity}
-                              {item.unit ? ` ${item.unit}` : ""}
-                            </span>
-                          )}
-                        </span>
-                        <button
-                          onClick={() => remove.mutate({ id: item.id })}
-                          className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
-                          aria-label="Удалить"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          )}
+        {/* Progress */}
+        <ShoppingProgress total={total} checked={checked} />
 
-          {/* Действия с купленными */}
-          {checked > 0 && (
-            <div className="mt-5 flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={openPreview}
-                disabled={addBulkSmart.isPending || clearChecked.isPending}
-                className="flex items-center justify-center gap-2 h-10 px-4 bg-primary text-paper rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <PackagePlus size={16} />
-                <span className="text-sm font-medium">
-                  Всё в инвентарь ({checked})
-                </span>
-              </button>
-              <button
-                onClick={() => clearChecked.mutate()}
-                disabled={clearChecked.isPending || addBulkSmart.isPending}
-                className="text-sm text-ink-muted hover:text-alert transition-colors disabled:opacity-50"
-              >
-                Очистить отмеченные
-              </button>
-            </div>
-          )}
+        {/* Add form */}
+        <ShoppingAddForm onAdd={handleAdd} isPending={add.isPending} />
 
-          {/* Форма добавления */}
-          <form
-            onSubmit={handleAdd}
-            className="mt-6 flex gap-2"
-          >
-            <input
-              type="text"
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Добавить покупку..."
-              className="flex-1 h-12 px-4 bg-paper border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
-            />
-            <button
-              type="submit"
-              disabled={!newItem.trim() || add.isPending}
-              className="w-12 h-12 rounded-lg bg-primary text-paper flex items-center justify-center hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Добавить"
-            >
-              <Plus size={20} />
-            </button>
-          </form>
-        </>
-      )}
-
-      {/* Диалог превью раскладки */}
-      {showPreview && (
-        <div
-          className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
-          onClick={() => setShowPreview(false)}
-        >
-          <div
-            className="bg-paper w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[80vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-line">
-              <h3 className="font-serif text-lg font-semibold text-ink text-center">
-                Раскладываем по местам
-              </h3>
-              <p className="text-xs text-ink-muted text-center mt-1">
-                Нажми на иконку чтобы изменить место хранения
-              </p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <ul className="space-y-2">
-                {previewItems.map((item, idx) => {
-                  const storage = STORAGE_LABELS[item.storageType];
-                  const Icon = storage.icon;
-                  return (
-                    <li
-                      key={idx}
-                      className="flex items-center gap-3 bg-surface-elevated rounded-lg px-4 py-3"
-                    >
-                      <button
-                        onClick={() => cycleStorage(idx)}
-                        className="w-9 h-9 rounded-lg border border-line bg-paper flex items-center justify-center shrink-0 hover:border-primary transition-colors"
-                        title={`Сейчас: ${storage.label}. Нажми чтобы изменить`}
-                      >
-                        <Icon size={18} className="text-primary" />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink truncate">
-                          {item.productName}
-                        </p>
-                        <p className="text-xs text-ink-muted">
-                          → {storage.label}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div className="p-4 border-t border-line flex gap-3">
-              <button
-                onClick={() => setShowPreview(false)}
-                className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={confirmPreview}
-                disabled={addBulkSmart.isPending}
-                className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
-              >
-                {addBulkSmart.isPending ? (
-                  <Loader2 size={18} className="animate-spin mx-auto" />
-                ) : (
-                  `Подтвердить (${previewItems.length})`
-                )}
-              </button>
-            </div>
+        {/* Content */}
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
           </div>
-        </div>
+        ) : total === 0 ? (
+          <GlassCard className="p-10 text-center flex-1 flex flex-col items-center justify-center">
+            <ShoppingCart
+              size={36}
+              className="text-white/15 mb-4"
+              strokeWidth={1.3}
+            />
+            <p className="text-white/40 text-sm">
+              Список пуст. Добавьте продукты выше или перенесите из меню.
+            </p>
+          </GlassCard>
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto">
+            {categories.map((cat) => (
+              <ShoppingCategoryGroup
+                key={cat}
+                category={cat}
+                items={grouped[cat]}
+                onToggle={(id) => toggle.mutate({ id })}
+                onRemove={(id) => remove.mutate({ id })}
+              />
+            ))}
+
+            {/* Clear checked */}
+            {checked > 0 && (
+              <div className="shrink-0 pt-2 pb-4">
+                <button
+                  onClick={() => clearChecked.mutate()}
+                  disabled={clearChecked.isPending || addBulkSmart.isPending}
+                  className="text-sm text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"
+                >
+                  Очистить отмеченные ({checked})
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Preview dialog */}
+      {showPreview && (
+        <ShoppingPreviewDialog
+          items={previewItems}
+          onCycleStorage={cycleStorage}
+          onConfirm={confirmPreview}
+          onClose={() => setShowPreview(false)}
+          isPending={addBulkSmart.isPending}
+        />
       )}
     </div>
   );
