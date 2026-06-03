@@ -166,24 +166,24 @@ export function SettingsPage() {
 
   return (
     <div className="max-w-lg mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink mb-8">
+      <h1 className="font-serif text-3xl lg:text-3xl font-semibold text-ink mb-8">
         Настройки
       </h1>
 
       {/* АККАУНТ */}
       <section className="mb-6">
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           Аккаунт
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-ink">Семья</p>
-              <p className="text-sm text-ink-muted">PIN: ••••</p>
+              <p className="text-base font-semibold text-ink">Семья</p>
+              <p className="text-base text-ink font-medium-muted">PIN: ••••</p>
             </div>
             <button
               onClick={() => setShowChangePin(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-lg border border-line text-sm font-medium text-ink hover:bg-surface-hover transition-colors"
+              className="flex items-center gap-2 h-9 px-4 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover transition-colors"
             >
               <KeyRound size={16} />
               Изменить PIN
@@ -194,7 +194,7 @@ export function SettingsPage() {
 
       {/* ВАЛЮТА */}
       <section className="mb-6">
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           Валюта
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
@@ -205,8 +205,8 @@ export function SettingsPage() {
               strokeWidth={2}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink">Валюта по умолчанию</p>
-              <p className="text-sm text-ink-muted">
+              <p className="text-base font-semibold text-ink">Валюта по умолчанию</p>
+              <p className="text-base text-ink font-medium-muted">
                 Подставляется в новый чек и используется для отображения цен,
                 если магазин не распознан.
               </p>
@@ -234,7 +234,7 @@ export function SettingsPage() {
                     currencyQuery.isLoading ||
                     (setCurrency.isPending && !selected)
                   }
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
                     selected
                       ? "bg-primary text-paper"
                       : "text-ink-soft hover:text-ink"
@@ -250,11 +250,11 @@ export function SettingsPage() {
 
       {/* ДАННЫЕ */}
       <section className="mb-6">
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           Данные
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <p className="text-sm font-medium text-ink">Резервная копия</p>
+          <p className="text-base font-semibold text-ink">Резервная копия</p>
 
           <button
             onClick={handleExport}
@@ -279,7 +279,7 @@ export function SettingsPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={importMutation.isPending}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-sm font-medium text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
           >
             {importMutation.isPending ? (
               <Loader2 size={18} className="animate-spin" />
@@ -306,7 +306,7 @@ export function SettingsPage() {
 
       {/* КБЖУ */}
       <section className="mb-6">
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           Калории
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
@@ -317,10 +317,10 @@ export function SettingsPage() {
               strokeWidth={2}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink">
+              <p className="text-base font-semibold text-ink">
                 Пересчитать калории
               </p>
-              <p className="text-sm text-ink-muted">
+              <p className="text-base text-ink font-medium-muted">
                 Запустит расчёт КБЖУ по справочнику продуктов для всех
                 сохранённых рецептов. Полезно если у старых рецептов нет
                 калорий.
@@ -330,7 +330,7 @@ export function SettingsPage() {
           <button
             onClick={handleRecalcNutrition}
             disabled={recalcMutation.isPending}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-sm font-medium text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
           >
             {recalcMutation.isPending ? (
               <>
@@ -367,11 +367,11 @@ export function SettingsPage() {
 
       {/* КЭШ ПРИЛОЖЕНИЯ */}
       <section className="mb-6">
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           Кэш приложения
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <p className="text-sm text-ink-muted">
+          <p className="text-base text-ink font-medium-muted">
             Если приложение «застряло» на старой версии или что-то отображается
             странно — нажми, чтобы загрузить свежие страницы. Твои данные (рецепты,
             чеки, инвентарь) не пострадают: они на сервере.
@@ -379,7 +379,7 @@ export function SettingsPage() {
           <button
             onClick={handleClearCache}
             disabled={isClearingCache}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-sm font-medium text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
           >
             {isClearingCache ? (
               <Loader2 size={18} className="animate-spin" />
@@ -393,15 +393,15 @@ export function SettingsPage() {
 
       {/* О ПРИЛОЖЕНИИ */}
       <section>
-        <h2 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
           О приложении
         </h2>
         <div className="bg-paper border border-line rounded-xl p-4 space-y-2">
-          <p className="text-sm font-medium text-ink">ШефДом! версия 1.0</p>
-          <p className="text-sm text-ink-muted">
+          <p className="text-base font-semibold text-ink">ШефДом! версия 1.0</p>
+          <p className="text-base text-ink font-medium-muted">
             Рецептов в базе: {stats?.recipesCount ?? "—"}
           </p>
-          <p className="text-sm text-ink-muted">База данных: Neon PostgreSQL</p>
+          <p className="text-base text-ink font-medium-muted">База данных: Neon PostgreSQL</p>
         </div>
       </section>
 

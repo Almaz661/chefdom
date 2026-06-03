@@ -58,7 +58,7 @@ export function WhatToCookPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink mb-2">
+      <h1 className="font-serif text-3xl lg:text-3xl font-semibold text-ink mb-2">
         Что приготовить?
       </h1>
       <p className="text-ink-soft text-sm mb-6">Из того что есть дома</p>
@@ -69,7 +69,7 @@ export function WhatToCookPage() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`h-9 px-4 rounded-full text-sm font-medium transition-colors ${
+            className={`h-9 px-4 rounded-full text-base font-semibold transition-colors ${
               filter === f.key
                 ? "bg-primary text-paper"
                 : "bg-paper border border-line text-ink-soft hover:text-ink"
@@ -96,7 +96,7 @@ export function WhatToCookPage() {
           </p>
           <Link
             to="/recipes"
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-primary text-paper text-sm font-medium hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-primary text-paper text-base font-semibold hover:bg-primary-dark transition-colors"
           >
             <Plus size={16} />
             Добавить рецепты
@@ -142,7 +142,7 @@ export function WhatToCookPage() {
                   <p className="font-serif text-base font-semibold text-ink truncate mb-1">
                     {r.title}
                   </p>
-                  <div className="flex flex-wrap gap-3 text-xs text-ink-muted mb-2">
+                  <div className="flex flex-wrap gap-3 text-base text-ink font-medium-muted font-medium mb-2">
                     {r.totalTime && (
                       <span className="flex items-center gap-1">
                         <Clock size={12} />

@@ -166,7 +166,7 @@ export function MenuPage() {
                           isToday ? "text-primary" : "text-ink-soft"
                         }`}
                       >
-                        <div className="text-sm font-medium">{label}</div>
+                        <div className="text-base font-semibold">{label}</div>
                         <div className="text-xs">{formatShort(dayDate)}</div>
                       </th>
                     );
@@ -176,7 +176,7 @@ export function MenuPage() {
               <tbody>
                 {MEALS.map(({ key, label }) => (
                   <tr key={key}>
-                    <td className="text-xs text-ink-muted font-medium pr-2 align-top pt-3">
+                    <td className="text-base text-ink font-medium-muted font-medium font-medium pr-2 align-top pt-3">
                       {label}
                     </td>
                     {DAYS.map((_, dayIdx) => {
@@ -254,7 +254,7 @@ export function MenuPage() {
                       );
                       return (
                         <div key={key} className="flex items-start gap-2">
-                          <span className="text-xs text-ink-muted w-16 shrink-0 pt-2">
+                          <span className="text-base text-ink font-medium-muted font-medium w-16 shrink-0 pt-2">
                             {mealLabel}
                           </span>
                           <div className="flex-1">
@@ -467,12 +467,12 @@ function RecipePickerDialog({
           {!search.trim() && showSuggestions && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider">
+                <h4 className="text-sm font-bold text-ink-muted uppercase tracking-wider">
                   Рекомендации
                 </h4>
                 <button
                   onClick={() => setShowSuggestions(false)}
-                  className="text-xs text-ink-muted hover:text-ink"
+                  className="text-base text-ink font-medium-muted font-medium hover:text-ink"
                 >
                   Скрыть
                 </button>
@@ -503,7 +503,7 @@ function RecipePickerDialog({
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-ink truncate">
+                          <p className="text-base font-semibold text-ink truncate">
                             {s.recipe.title}
                           </p>
                           <p className="text-xs text-primary truncate">
@@ -515,7 +515,7 @@ function RecipePickerDialog({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-ink-muted text-center py-2">
+                <p className="text-base text-ink font-medium-muted font-medium text-center py-2">
                   Нет рекомендаций
                 </p>
               )}
@@ -534,12 +534,12 @@ function RecipePickerDialog({
 
           {/* Все рецепты */}
           {search.trim() && (
-            <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+            <h4 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-2">
               Результаты поиска
             </h4>
           )}
           {!search.trim() && (
-            <h4 className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-2">
+            <h4 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-2">
               Все рецепты
             </h4>
           )}
@@ -572,10 +572,10 @@ function RecipePickerDialog({
                       <div className="w-12 h-12 rounded-lg bg-surface-elevated border border-line shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-ink truncate">
+                      <p className="text-base font-semibold text-ink truncate">
                         {r.title}
                       </p>
-                      <p className="text-xs text-ink-muted">
+                      <p className="text-base text-ink font-medium-muted font-medium">
                         {r.totalTime ? `${r.totalTime} мин` : ""}
                         {r.totalTime && r.category ? " · " : ""}
                         {r.category ?? ""}

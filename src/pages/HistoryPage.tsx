@@ -108,7 +108,7 @@ export function HistoryPage() {
               key={value}
               type="button"
               onClick={() => setPeriod(value)}
-              className={`px-4 h-10 rounded-full text-sm font-medium border transition-colors ${
+              className={`px-4 h-10 rounded-full text-base font-semibold border transition-colors ${
                 active
                   ? "bg-primary text-white border-primary"
                   : "bg-paper text-ink-soft border-line hover:border-primary hover:text-primary"
@@ -163,7 +163,7 @@ export function HistoryPage() {
                         <p className="font-medium text-ink truncate">
                           {row.recipeTitle}
                         </p>
-                        <p className="text-xs text-ink-muted">
+                        <p className="text-base text-ink font-medium-muted font-medium">
                           {pluralizePortions(row.servings)} · {time}
                         </p>
                       </div>

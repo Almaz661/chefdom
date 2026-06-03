@@ -327,7 +327,7 @@ export function AddRecipePage() {
         </h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Название <span className="text-alert">*</span>
             </label>
             <input
@@ -340,7 +340,7 @@ export function AddRecipePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Описание
             </label>
             <textarea
@@ -353,7 +353,7 @@ export function AddRecipePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Ссылка на фото
             </label>
             <input
@@ -393,7 +393,7 @@ export function AddRecipePage() {
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Порций
             </label>
             <input
@@ -406,7 +406,7 @@ export function AddRecipePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Подготовка, мин
             </label>
             <input
@@ -418,7 +418,7 @@ export function AddRecipePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Готовка, мин
             </label>
             <input
@@ -430,7 +430,7 @@ export function AddRecipePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Всего, мин
             </label>
             <input
@@ -444,7 +444,7 @@ export function AddRecipePage() {
           </div>
         </div>
         <div className="mt-4 max-w-xs">
-          <label className="block text-sm font-medium text-ink mb-1.5">
+          <label className="block text-base font-semibold text-ink mb-1.5">
             Калории на порцию
           </label>
           <input
@@ -464,7 +464,7 @@ export function AddRecipePage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Категория
             </label>
             <select
@@ -477,7 +477,7 @@ export function AddRecipePage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Кухня
             </label>
             <select
@@ -490,7 +490,7 @@ export function AddRecipePage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">
+            <label className="block text-base font-semibold text-ink mb-1.5">
               Сложность
             </label>
             <select
@@ -514,7 +514,7 @@ export function AddRecipePage() {
           <button
             type="button"
             onClick={addIngredient}
-            className="text-primary text-sm font-medium hover:text-primary-dark inline-flex items-center gap-1"
+            className="text-primary text-base font-semibold hover:text-primary-dark inline-flex items-center gap-1"
           >
             <Plus size={16} /> Добавить
           </button>
@@ -601,7 +601,7 @@ export function AddRecipePage() {
           <button
             type="button"
             onClick={addStep}
-            className="text-primary text-sm font-medium hover:text-primary-dark inline-flex items-center gap-1"
+            className="text-primary text-base font-semibold hover:text-primary-dark inline-flex items-center gap-1"
           >
             <Plus size={16} /> Добавить
           </button>
@@ -613,7 +613,7 @@ export function AddRecipePage() {
               className="bg-paper border border-line rounded-lg p-4"
             >
               <div className="flex items-start gap-3 mb-3">
-                <span className="font-serif text-2xl font-semibold text-primary leading-none pt-1 w-8 flex-shrink-0">
+                <span className="font-serif text-3xl font-bold text-primary leading-none pt-1 w-8 flex-shrink-0">
                   {idx + 1}
                 </span>
                 <textarea

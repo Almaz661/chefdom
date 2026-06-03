@@ -133,7 +133,7 @@ export function RecipeDetailPage() {
         >
           <ArrowLeft size={18} /> К рецептам
         </Link>
-        <h1 className="font-serif text-2xl font-semibold text-ink mb-2">
+        <h1 className="font-serif text-3xl font-bold text-ink mb-2">
           Рецепт не найден
         </h1>
         <p className="text-ink-soft">
@@ -276,36 +276,36 @@ export function RecipeDetailPage() {
         {/* C.1 — КБЖУ на порцию с % дневной нормы */}
         {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
           <div className="bg-surface-elevated rounded-xl p-4 mb-6">
-            <p className="text-xs font-medium text-ink-muted uppercase tracking-wider mb-3">
+            <p className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
               На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
             </p>
             <div className="grid grid-cols-4 gap-3 text-center">
               {recipe.calories && (
                 <div>
                   <p className="font-serif text-xl font-semibold text-ink">{Math.round(recipe.calories * multiplier)}</p>
-                  <p className="text-xs text-ink-muted">ккал</p>
-                  <p className="text-xs text-ink-muted">{Math.round(recipe.calories * multiplier / 2000 * 100)}% нормы</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">ккал</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(recipe.calories * multiplier / 2000 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.proteinG && (
                 <div>
                   <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.proteinG) * multiplier)}г</p>
-                  <p className="text-xs text-ink-muted">белки</p>
-                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.proteinG) * multiplier / 50 * 100)}% нормы</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">белки</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.proteinG) * multiplier / 50 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.fatsG && (
                 <div>
                   <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.fatsG) * multiplier)}г</p>
-                  <p className="text-xs text-ink-muted">жиры</p>
-                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.fatsG) * multiplier / 70 * 100)}% нормы</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">жиры</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.fatsG) * multiplier / 70 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.carbsG && (
                 <div>
                   <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.carbsG) * multiplier)}г</p>
-                  <p className="text-xs text-ink-muted">углеводы</p>
-                  <p className="text-xs text-ink-muted">{Math.round(parseFloat(recipe.carbsG) * multiplier / 260 * 100)}% нормы</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">углеводы</p>
+                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.carbsG) * multiplier / 260 * 100)}% нормы</p>
                 </div>
               )}
             </div>
@@ -331,7 +331,7 @@ export function RecipeDetailPage() {
                   key={m}
                   type="button"
                   onClick={() => setMultiplier(m)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-3 py-1 rounded-md text-base font-semibold transition-colors ${
                     multiplier === m
                       ? "bg-primary text-paper"
                       : "text-ink-soft hover:text-ink"
@@ -401,7 +401,7 @@ export function RecipeDetailPage() {
             <ol className="space-y-6">
               {steps.map((step) => (
                 <li key={step.id} className="flex gap-4">
-                  <span className="font-serif text-2xl font-semibold text-primary w-8 flex-shrink-0 leading-none pt-1">
+                  <span className="font-serif text-3xl font-bold text-primary w-8 flex-shrink-0 leading-none pt-1">
                     {step.stepNumber}
                   </span>
                   <div className="flex-1 min-w-0">

@@ -121,7 +121,7 @@ function InventoryItemRow({
         <div className="grid grid-cols-2 gap-2 pl-8">
           {/* Где хранить */}
           <div>
-            <span className="block text-xs text-ink-muted mb-1">Где хранить</span>
+            <span className="block text-base text-ink font-medium-muted font-medium mb-1">Где хранить</span>
             <select
               value={selection.storage}
               onChange={(e) => {
@@ -141,7 +141,7 @@ function InventoryItemRow({
           </div>
           {/* Годен до */}
           <div>
-            <span className="block text-xs text-ink-muted mb-1">Годен до</span>
+            <span className="block text-base text-ink font-medium-muted font-medium mb-1">Годен до</span>
             <input
               type="date"
               value={selection.expiryDate}
@@ -274,7 +274,7 @@ export function ReceiptDetailPage() {
         >
           <ArrowLeft size={18} /> К чекам
         </Link>
-        <h1 className="font-serif text-2xl font-semibold text-ink mb-2">
+        <h1 className="font-serif text-3xl font-bold text-ink mb-2">
           Чек не найден
         </h1>
         <p className="text-ink-soft">{query.error?.message}</p>
@@ -455,7 +455,7 @@ export function ReceiptDetailPage() {
           <button
             type="button"
             onClick={() => setShowRaw((s) => !s)}
-            className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left text-sm text-ink-soft hover:text-ink"
+            className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left text-base text-ink font-medium-soft hover:text-ink"
           >
             <span>Сырой текст OCR (для отладки)</span>
             {showRaw ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -473,7 +473,7 @@ export function ReceiptDetailPage() {
                         setTimeout(() => setCopyDone(false), 1500);
                       });
                   }}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-paper text-xs text-ink-soft hover:text-primary hover:border-primary"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-line bg-paper text-base text-ink font-medium-soft font-medium hover:text-primary hover:border-primary"
                 >
                   {copyDone ? <Check size={14} /> : <Copy size={14} />}
                   {copyDone ? "Скопировано" : "Скопировать"}
@@ -482,7 +482,7 @@ export function ReceiptDetailPage() {
               <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-ink-soft bg-surface-elevated rounded-lg p-3 max-h-80 overflow-y-auto font-mono">
                 {receipt.ocrRaw}
               </pre>
-              <p className="text-xs text-ink-muted mt-2">
+              <p className="text-base text-ink font-medium-muted font-medium mt-2">
                 Если позиции распознались плохо — скопируй текст выше и пришли
                 разработчику. По нему можно подогнать парсер под этот формат
                 чека, после чего «Перепарсить» обновит позиции без новой
@@ -579,7 +579,7 @@ export function ReceiptDetailPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-ink">{it.productName}</p>
                     {(it.quantity || it.unit) && (
-                      <p className="text-xs text-ink-muted">
+                      <p className="text-base text-ink font-medium-muted font-medium">
                         {it.quantity ?? ""} {it.unit ?? ""}
                       </p>
                     )}
@@ -659,7 +659,7 @@ export function ReceiptDetailPage() {
             </div>
 
             <label className="block mb-3">
-              <span className="block text-sm font-medium text-ink-soft mb-1">
+              <span className="block text-base font-semibold text-ink-soft mb-1">
                 Название *
               </span>
               <input
@@ -673,7 +673,7 @@ export function ReceiptDetailPage() {
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <label className="block">
-                <span className="block text-sm font-medium text-ink-soft mb-1">
+                <span className="block text-base font-semibold text-ink-soft mb-1">
                   Кол-во
                 </span>
                 <input
@@ -685,7 +685,7 @@ export function ReceiptDetailPage() {
                 />
               </label>
               <label className="block">
-                <span className="block text-sm font-medium text-ink-soft mb-1">
+                <span className="block text-base font-semibold text-ink-soft mb-1">
                   Единица
                 </span>
                 <input
@@ -699,7 +699,7 @@ export function ReceiptDetailPage() {
             </div>
 
             <label className="block mb-5">
-              <span className="block text-sm font-medium text-ink-soft mb-1">
+              <span className="block text-base font-semibold text-ink-soft mb-1">
                 Цена ({CURRENCY_SYMBOL[currency] ?? currency})
               </span>
               <input
@@ -767,7 +767,7 @@ export function ReceiptDetailPage() {
               </button>
             </div>
 
-            <p className="text-sm text-ink-soft mb-4">
+            <p className="text-base text-ink font-medium-soft mb-4">
               Выбери товары и укажи где хранить и до какого числа годен:
             </p>
 
@@ -792,7 +792,7 @@ export function ReceiptDetailPage() {
                   Object.keys(sel).forEach(k => { sel[Number(k)].checked = false; });
                   setInvSelections(sel);
                 }}
-                className="text-xs text-ink-soft hover:underline"
+                className="text-base text-ink font-medium-soft font-medium hover:underline"
               >
                 Снять все
               </button>

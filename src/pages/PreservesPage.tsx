@@ -108,7 +108,7 @@ export function PreservesPage() {
   return (
     <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-serif text-2xl font-semibold text-ink">
+        <h1 className="font-serif text-3xl font-bold text-ink">
           Заготовки
         </h1>
         <button
@@ -126,7 +126,7 @@ export function PreservesPage() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-base font-semibold transition-colors ${
               tab === key
                 ? "bg-paper text-primary shadow-sm"
                 : "text-ink-muted hover:text-ink"
@@ -147,7 +147,7 @@ export function PreservesPage() {
           {/* Скоро истекает */}
           {expiring.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-xs font-medium text-warning uppercase tracking-wider mb-2 flex items-center gap-1">
+              <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1">
                 <AlertTriangle size={14} />
                 Скоро истекает
               </h3>
@@ -170,7 +170,7 @@ export function PreservesPage() {
                         }`}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink truncate">
+                        <p className="text-base font-semibold text-ink truncate">
                           {item.name}
                           {item.quantity && (
                             <span className="text-ink-muted ml-1">
@@ -201,7 +201,7 @@ export function PreservesPage() {
                         <button
                           onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                           disabled={consumeServings.isPending}
-                          className="flex items-center gap-1 px-2.5 h-8 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
+                          className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
                           aria-label="Съели порцию"
                           title="Списать 1 съеденную порцию"
                         >
@@ -250,7 +250,7 @@ export function PreservesPage() {
                   className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">
+                    <p className="text-base font-semibold text-ink truncate">
                       {item.name}
                       {item.quantity && (
                         <span className="text-ink-muted ml-1">
@@ -264,7 +264,7 @@ export function PreservesPage() {
                         </span>
                       )}
                     </p>
-                    <div className="flex flex-wrap gap-x-3 text-xs text-ink-muted">
+                    <div className="flex flex-wrap gap-x-3 text-base text-ink font-medium-muted font-medium">
                       {item.preparedAt && (
                         <span>{preparedText(item.preparedAt, tab)}</span>
                       )}
@@ -275,7 +275,7 @@ export function PreservesPage() {
                     <button
                       onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                       disabled={consumeServings.isPending}
-                      className="flex items-center gap-1 px-2.5 h-8 text-xs font-medium text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
+                      className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
                       aria-label="Съели порцию"
                       title="Списать 1 съеденную порцию"
                     >
@@ -480,7 +480,7 @@ function AddPreserveDialog({
             />
           )}
           <label className="block">
-            <span className="block text-xs text-ink-soft mb-1">
+            <span className="block text-base text-ink font-medium-soft font-medium mb-1">
               {preparedLabel}
             </span>
             <input
@@ -491,7 +491,7 @@ function AddPreserveDialog({
             />
           </label>
           <label className="block">
-            <span className="block text-xs text-ink-soft mb-1">
+            <span className="block text-base text-ink font-medium-soft font-medium mb-1">
               {expiryLabel}
             </span>
             <input

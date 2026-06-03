@@ -27,7 +27,7 @@ function DeleteAllButton() {
         }
       }}
       disabled={deleteAll.isPending}
-      className="h-10 px-3 rounded-lg border border-red-200 bg-paper text-red-500 text-xs font-medium hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      className="h-10 px-3 rounded-lg border border-red-200 bg-paper text-red-500 text-sm font-bold hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
       title="Удалить все товары"
     >
       <Trash2 size={14} />
@@ -55,7 +55,7 @@ function SyncFromReceiptsButton() {
         }
       }}
       disabled={sync.isPending}
-      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-xs font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      className="h-10 px-3 rounded-lg border border-line bg-paper text-ink-soft text-sm font-bold hover:border-primary hover:text-primary transition-colors disabled:opacity-50 flex items-center gap-1.5"
       title="Загрузить все товары из чеков в каталог"
     >
       {sync.isPending ? '⏳' : '📥'}
@@ -84,17 +84,17 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
     <li className="bg-paper border border-line rounded-xl px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
-          <p className="text-sm font-medium text-ink truncate">{product.nameRu}</p>
-          {product.brand && <p className="text-xs text-ink-muted">{product.brand}</p>}
+          <p className="text-base font-semibold text-ink truncate">{product.nameRu}</p>
+          {product.brand && <p className="text-base text-ink font-medium-muted font-medium">{product.brand}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
             {product.storeName && (
-              <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+              <span className="inline-flex items-center gap-1 text-base text-ink font-medium-muted font-medium">
                 <Store size={12} className="shrink-0" />
                 {product.storeName}
               </span>
             )}
             {product.purchaseDate && (
-              <span className="inline-flex items-center gap-1 text-xs text-ink-muted">
+              <span className="inline-flex items-center gap-1 text-base text-ink font-medium-muted font-medium">
                 <Calendar size={12} className="shrink-0" />
                 {product.purchaseDate}
               </span>
@@ -120,7 +120,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
       {/* История цен */}
       {showHistory && historyQuery.data && historyQuery.data.length > 1 && (
         <div className="mt-2 pt-2 border-t border-line">
-          <p className="text-xs font-medium text-ink-soft mb-1">История цен:</p>
+          <p className="text-sm font-bold text-ink-soft mb-1">История цен:</p>
           <div className="space-y-0.5">
             {historyQuery.data.slice(0, 10).map((h, i) => {
               const prev = historyQuery.data![i + 1];
@@ -135,7 +135,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
                   <span className={`font-medium tabular-nums ${diff > 0 ? 'text-red-500' : diff < 0 ? 'text-green-600' : 'text-ink'}`}>
                     €{curr.toFixed(2)}
                     {diff !== 0 && (
-                      <span className="ml-1 text-[10px]">
+                      <span className="ml-1 text-xs">
                         {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(2)}
                       </span>
                     )}
@@ -148,7 +148,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
       )}
       {showHistory && historyQuery.data && historyQuery.data.length <= 1 && (
         <div className="mt-2 pt-2 border-t border-line">
-          <p className="text-xs text-ink-muted">Пока только одна покупка. История появится после следующей.</p>
+          <p className="text-base text-ink font-medium-muted font-medium">Пока только одна покупка. История появится после следующей.</p>
         </div>
       )}
     </li>
@@ -204,7 +204,7 @@ export function ProductsPage() {
   return (
     <div className="max-w-2xl mx-auto p-4 lg:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-serif text-2xl lg:text-3xl font-semibold text-ink">
+        <h1 className="font-serif text-3xl lg:text-3xl font-semibold text-ink">
           Продукты
         </h1>
         <div className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export function ProductsPage() {
       <div className="flex gap-1 bg-surface-elevated rounded-lg p-1 mb-6">
         <button
           onClick={() => setMode("search")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-base font-semibold transition-colors ${
             mode === "search" ? "bg-paper text-primary shadow-sm" : "text-ink-muted hover:text-ink"
           }`}
         >
@@ -226,7 +226,7 @@ export function ProductsPage() {
         </button>
         <button
           onClick={() => setMode("barcode")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-base font-semibold transition-colors ${
             mode === "barcode" ? "bg-paper text-primary shadow-sm" : "text-ink-muted hover:text-ink"
           }`}
         >
@@ -301,13 +301,13 @@ export function ProductsPage() {
           {barcodeResult.data ? (
             <div className="bg-paper border border-line rounded-xl px-4 py-4">
               <p className="text-base font-medium text-ink mb-1">{barcodeResult.data.nameRu}</p>
-              {barcodeResult.data.brand && <p className="text-sm text-ink-muted">{barcodeResult.data.brand}</p>}
+              {barcodeResult.data.brand && <p className="text-base text-ink font-medium-muted">{barcodeResult.data.brand}</p>}
               {barcodeResult.data.packageQuantity && (
-                <p className="text-sm text-ink-muted">
+                <p className="text-base text-ink font-medium-muted">
                   {barcodeResult.data.packageQuantity} {barcodeResult.data.packageUnit}
                 </p>
               )}
-              <p className="text-xs text-ink-muted font-mono mt-2">{barcodeResult.data.barcode}</p>
+              <p className="text-base text-ink font-medium-muted font-medium font-mono mt-2">{barcodeResult.data.barcode}</p>
 
               {/* Кнопка "Добавить в инвентарь" */}
               {!showAddToInventory && !addedSuccess && (
@@ -324,7 +324,7 @@ export function ProductsPage() {
               {addedSuccess && (
                 <div className="mt-3 flex items-center gap-2 justify-center text-green-700 bg-green-50 border border-green-200 rounded-lg py-2.5">
                   <Check size={18} />
-                  <span className="text-sm font-medium">Добавлено в инвентарь!</span>
+                  <span className="text-base font-semibold">Добавлено в инвентарь!</span>
                 </div>
               )}
 
@@ -332,14 +332,14 @@ export function ProductsPage() {
               {showAddToInventory && (
                 <div className="mt-3 space-y-3 border-t border-line pt-3">
                   <fieldset>
-                    <legend className="block text-xs text-ink-soft mb-1">Куда положить?</legend>
+                    <legend className="block text-base text-ink font-medium-soft font-medium mb-1">Куда положить?</legend>
                     <div className="inline-flex bg-surface-elevated rounded-lg p-0.5 w-full">
                       {STORAGE_OPTIONS.map(({ key, label }) => (
                         <button
                           key={key}
                           type="button"
                           onClick={() => setStorageType(key)}
-                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                          className={`flex-1 px-2 py-2 rounded-md text-sm font-bold transition-colors ${
                             storageType === key
                               ? "bg-primary text-paper"
                               : "text-ink-soft hover:text-ink"
@@ -351,7 +351,7 @@ export function ProductsPage() {
                     </div>
                   </fieldset>
                   <label className="block">
-                    <span className="block text-xs text-ink-soft mb-1">Срок годности (необязательно)</span>
+                    <span className="block text-base text-ink font-medium-soft font-medium mb-1">Срок годности (необязательно)</span>
                     <input
                       type="date"
                       value={expiryDate}
@@ -363,7 +363,7 @@ export function ProductsPage() {
                     <button
                       type="button"
                       onClick={() => setShowAddToInventory(false)}
-                      className="flex-1 h-10 rounded-lg border border-line text-ink-soft text-sm font-medium hover:bg-surface-hover transition-colors"
+                      className="flex-1 h-10 rounded-lg border border-line text-ink-soft text-base font-semibold hover:bg-surface-hover transition-colors"
                     >
                       Отмена
                     </button>
@@ -371,7 +371,7 @@ export function ProductsPage() {
                       type="button"
                       onClick={handleAddToInventory}
                       disabled={addToInventory.isPending}
-                      className="flex-1 h-10 rounded-lg bg-primary text-paper text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                      className="flex-1 h-10 rounded-lg bg-primary text-paper text-base font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
                     >
                       {addToInventory.isPending ? "Добавляю…" : "Добавить"}
                     </button>

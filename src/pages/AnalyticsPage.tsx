@@ -59,7 +59,7 @@ export function AnalyticsPage() {
       <div className="inline-flex bg-surface-elevated rounded-lg p-1 border border-line">
         <button
           onClick={() => setTab("cooking")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
             tab === "cooking" ? "bg-primary text-paper" : "text-ink-soft hover:text-ink"
           }`}
         >
@@ -67,7 +67,7 @@ export function AnalyticsPage() {
         </button>
         <button
           onClick={() => setTab("spending")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
             tab === "spending" ? "bg-primary text-paper" : "text-ink-soft hover:text-ink"
           }`}
         >
@@ -75,7 +75,7 @@ export function AnalyticsPage() {
         </button>
         <button
           onClick={() => setTab("prices")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
             tab === "prices" ? "bg-primary text-paper" : "text-ink-soft hover:text-ink"
           }`}
         >
@@ -91,7 +91,7 @@ export function AnalyticsPage() {
               <button
                 key={key}
                 onClick={() => setPeriod(key)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
                   period === key
                     ? "bg-primary text-paper"
                     : "text-ink-soft hover:text-ink"
@@ -115,7 +115,7 @@ export function AnalyticsPage() {
               <ul className="bg-paper border border-line rounded-xl divide-y divide-line">
                 {consumption.map((item, idx) => (
                   <li key={idx} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-medium text-ink">{item.name}</span>
+                    <span className="text-base font-semibold text-ink">{item.name}</span>
                     <span className="text-sm tabular-nums text-ink-soft">
                       {item.total.toLocaleString("ru-RU")} {item.unit || ""}
                     </span>
@@ -148,17 +148,17 @@ export function AnalyticsPage() {
                       {recipe.recipeId ? (
                         <Link
                           to={`/recipes/${recipe.recipeId}`}
-                          className="text-sm font-medium text-ink hover:text-primary transition-colors truncate block"
+                          className="text-base font-semibold text-ink hover:text-primary transition-colors truncate block"
                         >
                           {recipe.recipeTitle}
                         </Link>
                       ) : (
-                        <p className="text-sm font-medium text-ink truncate">
+                        <p className="text-base font-semibold text-ink truncate">
                           {recipe.recipeTitle}
                         </p>
                       )}
                     </div>
-                    <span className="text-sm text-ink-soft shrink-0">
+                    <span className="text-base text-ink font-medium-soft shrink-0">
                       {pluralTimes(recipe.count)}
                     </span>
                   </li>
@@ -175,7 +175,7 @@ export function AnalyticsPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSpendingPeriod(currentMonth)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
                 spendingPeriod === currentMonth ? "bg-primary text-paper" : "bg-surface-elevated text-ink-soft hover:text-ink"
               }`}
             >
@@ -187,7 +187,7 @@ export function AnalyticsPage() {
                 const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
                 setSpendingPeriod(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
               }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
                 spendingPeriod !== currentMonth && spendingPeriod !== currentYear
                   ? "bg-primary text-paper"
                   : "bg-surface-elevated text-ink-soft hover:text-ink"
@@ -197,7 +197,7 @@ export function AnalyticsPage() {
             </button>
             <button
               onClick={() => setSpendingPeriod(currentYear)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
                 spendingPeriod === currentYear ? "bg-primary text-paper" : "bg-surface-elevated text-ink-soft hover:text-ink"
               }`}
             >
@@ -235,8 +235,8 @@ export function AnalyticsPage() {
                     {spending.byStore.map((store, idx) => (
                       <li key={idx} className="flex items-center justify-between px-4 py-3">
                         <div>
-                          <span className="text-sm font-medium text-ink">{store.store}</span>
-                          <span className="text-xs text-ink-muted ml-2">{store.count} чек.</span>
+                          <span className="text-base font-semibold text-ink">{store.store}</span>
+                          <span className="text-base text-ink font-medium-muted font-medium ml-2">{store.count} чек.</span>
                         </div>
                         <span className="text-sm tabular-nums font-medium text-ink">
                           {spending.currency === 'EUR' ? '€' : '₽'}
@@ -261,7 +261,7 @@ export function AnalyticsPage() {
                           <span className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {idx + 1}
                           </span>
-                          <span className="text-sm font-medium text-ink">{product.name}</span>
+                          <span className="text-base font-semibold text-ink">{product.name}</span>
                         </div>
                         <div className="text-right">
                           <span className="text-sm tabular-nums text-ink-soft">{product.count}x</span>
@@ -285,7 +285,7 @@ export function AnalyticsPage() {
                   <ul className="bg-paper border border-line rounded-xl divide-y divide-line">
                     {spending.byMonth.map((m, idx) => (
                       <li key={idx} className="flex items-center justify-between px-4 py-3">
-                        <span className="text-sm font-medium text-ink">{m.month}</span>
+                        <span className="text-base font-semibold text-ink">{m.month}</span>
                         <div className="text-right">
                           <span className="text-sm tabular-nums text-ink-muted mr-3">{m.receiptCount} чек.</span>
                           <span className="text-sm tabular-nums font-medium text-ink">

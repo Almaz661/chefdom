@@ -96,7 +96,7 @@ export function Dashboard() {
                 className="flex items-center gap-3 py-2 group"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-warning" />
-                <span className="text-sm text-ink-soft group-hover:text-ink transition-colors flex-1">
+                <span className="text-base text-ink font-medium-soft group-hover:text-ink transition-colors flex-1">
                   <span className="text-ink font-medium">{expiringTotal}</span> истекает за 3 дня
                   <span className="text-ink-muted ml-2">— {expiringNames.slice(0, 2).join(", ")}</span>
                 </span>
@@ -109,7 +109,7 @@ export function Dashboard() {
                 className="flex items-center gap-3 py-2 group"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-ink-muted" />
-                <span className="text-sm text-ink-muted group-hover:text-ink-soft transition-colors flex-1">
+                <span className="text-base text-ink font-medium-muted group-hover:text-ink-soft transition-colors flex-1">
                   <span className="text-ink-soft font-medium">{stale.length}</span> залежались {">"}30 дней
                 </span>
                 <ArrowRight size={12} className="text-ink-muted group-hover:text-primary transition-colors" />
@@ -148,10 +148,10 @@ export function Dashboard() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             {/* Content on image */}
             <div className="absolute bottom-0 inset-x-0 p-6 lg:p-8">
-              <p className="text-primary/90 text-[10px] font-semibold uppercase tracking-[0.25em] mb-2">
+              <p className="text-primary/90 text-sm font-bold uppercase tracking-[0.25em] mb-2">
                 {mealTypeLabel(todayMeal.mealType)}
               </p>
-              <h2 className="font-serif text-2xl lg:text-3xl font-semibold text-white leading-tight max-w-md">
+              <h2 className="font-serif text-3xl lg:text-3xl font-semibold text-white leading-tight max-w-md">
                 {todayMeal.recipe.title}
               </h2>
               <div className="flex items-center gap-5 mt-3">
@@ -177,7 +177,7 @@ export function Dashboard() {
             <p className="font-serif text-lg text-ink-soft group-hover:text-ink transition-colors">
               Запланируйте меню на неделю
             </p>
-            <p className="text-xs text-ink-muted mt-1.5">
+            <p className="text-base text-ink font-medium-muted font-medium mt-1.5">
               Здесь появится блюдо дня
             </p>
           </Link>
@@ -195,7 +195,7 @@ export function Dashboard() {
             <div className="w-12 h-12 mx-auto rounded-full bg-paper border border-line flex items-center justify-center group-hover:border-primary/40 transition-colors mb-3">
               <ChefHat size={18} className="text-primary" strokeWidth={1.5} />
             </div>
-            <p className="text-xs font-medium text-ink-soft group-hover:text-ink transition-colors">Что приготовить</p>
+            <p className="text-sm font-bold text-ink-soft group-hover:text-ink transition-colors">Что приготовить</p>
           </Link>
           <Link to="/shopping" className="text-center group">
             <div className="w-12 h-12 mx-auto rounded-full bg-paper border border-line flex items-center justify-center group-hover:border-primary/40 transition-colors mb-3 relative">
@@ -206,13 +206,13 @@ export function Dashboard() {
                 </span>
               )}
             </div>
-            <p className="text-xs font-medium text-ink-soft group-hover:text-ink transition-colors">Покупки</p>
+            <p className="text-sm font-bold text-ink-soft group-hover:text-ink transition-colors">Покупки</p>
           </Link>
           <Link to="/preserves" className="text-center group">
             <div className="w-12 h-12 mx-auto rounded-full bg-paper border border-line flex items-center justify-center group-hover:border-primary/40 transition-colors mb-3">
               <Snowflake size={18} className="text-primary" strokeWidth={1.5} />
             </div>
-            <p className="text-xs font-medium text-ink-soft group-hover:text-ink transition-colors">Заготовки</p>
+            <p className="text-sm font-bold text-ink-soft group-hover:text-ink transition-colors">Заготовки</p>
           </Link>
         </div>
       </div>
@@ -230,16 +230,16 @@ export function Dashboard() {
               <span className="text-sm">🏆</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-ink-muted uppercase tracking-[0.15em] mb-0.5">Фаворит месяца</p>
+              <p className="text-base text-ink font-medium-muted font-medium uppercase tracking-[0.15em] mb-0.5">Фаворит месяца</p>
               {topRecipe.recipeId ? (
-                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-sm text-ink hover:text-primary transition-colors truncate block">
+                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-base text-ink font-medium hover:text-primary transition-colors truncate block">
                   {topRecipe.recipeTitle}
                 </Link>
               ) : (
-                <p className="text-sm text-ink truncate">{topRecipe.recipeTitle}</p>
+                <p className="text-base text-ink font-medium truncate">{topRecipe.recipeTitle}</p>
               )}
             </div>
-            <span className="text-xs text-ink-muted shrink-0">×{topRecipe.count}</span>
+            <span className="text-base text-ink font-medium-muted font-medium shrink-0">×{topRecipe.count}</span>
           </div>
         )}
 
@@ -247,8 +247,8 @@ export function Dashboard() {
         {recentCooks.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[10px] text-ink-muted uppercase tracking-[0.15em]">Недавно готовили</p>
-              <Link to="/history" className="text-[10px] text-primary uppercase tracking-wider hover:text-primary-dark transition-colors">
+              <p className="text-base text-ink font-medium-muted font-medium uppercase tracking-[0.15em]">Недавно готовили</p>
+              <Link to="/history" className="text-xs text-primary uppercase tracking-wider hover:text-primary-dark transition-colors">
                 Всё
               </Link>
             </div>
@@ -271,7 +271,7 @@ export function Dashboard() {
                         </div>
                       )}
                     </div>
-                    <p className="text-[11px] text-ink-soft line-clamp-2 leading-tight">
+                    <p className="text-base text-ink font-medium-soft line-clamp-2 leading-tight">
                       {c.recipeTitle}
                     </p>
                   </div>
@@ -293,11 +293,11 @@ export function Dashboard() {
           ════════════════════════════════════════════════════════════ */}
       <div className="max-w-3xl mx-auto px-6 pb-16">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] text-ink-muted uppercase tracking-[0.15em] flex items-center gap-1.5">
+          <p className="text-base text-ink font-medium-muted font-medium uppercase tracking-[0.15em] flex items-center gap-1.5">
             <CalendarDays size={10} strokeWidth={1.5} />
             Неделя
           </p>
-          <Link to="/menu" className="text-[10px] text-primary uppercase tracking-wider hover:text-primary-dark transition-colors">
+          <Link to="/menu" className="text-xs text-primary uppercase tracking-wider hover:text-primary-dark transition-colors">
             Меню
           </Link>
         </div>
@@ -313,7 +313,7 @@ export function Dashboard() {
                 }`}>
                   {label}
                 </span>
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium transition-all ${
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                   isToday
                     ? "bg-primary text-cream"
                     : filled

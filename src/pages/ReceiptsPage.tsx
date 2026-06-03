@@ -141,14 +141,14 @@ export function ReceiptsPage() {
         <button
           type="button"
           onClick={() => setShowManual(true)}
-          className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-lg border border-line bg-paper text-ink-soft text-sm font-medium hover:border-primary hover:text-primary transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-lg border border-line bg-paper text-ink-soft text-base font-semibold hover:border-primary hover:text-primary transition-colors"
         >
           <Plus size={16} />
           Добавить вручную (без фото)
         </button>
 
         {photoStatus && (
-          <p className="text-sm text-ink-soft text-center">{photoStatus}</p>
+          <p className="text-base text-ink font-medium-soft text-center">{photoStatus}</p>
         )}
         {photoError && (
           <p className="text-sm text-alert bg-paper border border-alert rounded-lg p-3">
@@ -191,7 +191,7 @@ export function ReceiptsPage() {
                   <p className="font-medium text-ink truncate">
                     {r.storeName || "Чек без названия"}
                   </p>
-                  <p className="text-xs text-ink-muted">
+                  <p className="text-base text-ink font-medium-muted font-medium">
                     {formatDate(r.purchaseDate)}
                     {r.status === "draft" && " · черновик"}
                   </p>
@@ -232,7 +232,7 @@ export function ReceiptsPage() {
             </div>
 
             <label className="block mb-3">
-              <span className="block text-sm font-medium text-ink-soft mb-1">
+              <span className="block text-base font-semibold text-ink-soft mb-1">
                 Магазин
               </span>
               <input
@@ -245,7 +245,7 @@ export function ReceiptsPage() {
             </label>
 
             <label className="block mb-3">
-              <span className="block text-sm font-medium text-ink-soft mb-1">
+              <span className="block text-base font-semibold text-ink-soft mb-1">
                 Дата покупки
               </span>
               <input
@@ -257,7 +257,7 @@ export function ReceiptsPage() {
             </label>
 
             <fieldset className="mb-5">
-              <legend className="block text-sm font-medium text-ink-soft mb-1">
+              <legend className="block text-base font-semibold text-ink-soft mb-1">
                 Валюта
               </legend>
               <div className="inline-flex bg-surface-elevated rounded-lg p-0.5">
@@ -266,7 +266,7 @@ export function ReceiptsPage() {
                     key={c}
                     type="button"
                     onClick={() => setCurrency(c)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
                       currency === c
                         ? "bg-primary text-paper"
                         : "text-ink-soft hover:text-ink"

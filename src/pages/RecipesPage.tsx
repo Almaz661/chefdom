@@ -14,7 +14,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
         className="text-line-strong mx-auto mb-4"
         strokeWidth={1.5}
       />
-      <h2 className="font-serif text-2xl font-semibold text-ink mb-2">
+      <h2 className="font-serif text-3xl font-bold text-ink mb-2">
         В книге пока нет рецептов
       </h2>
       <p className="text-ink-soft mb-6 max-w-md mx-auto">
@@ -155,7 +155,7 @@ export function RecipesPage() {
       {/* Заголовок страницы */}
       <header className="mb-8">
         <div className="flex items-baseline justify-between gap-3">
-          <h1 className="font-serif text-2xl font-semibold text-ink">
+          <h1 className="font-serif text-3xl font-bold text-ink">
             Рецепты
           </h1>
           {!isEmpty && (
@@ -223,7 +223,7 @@ export function RecipesPage() {
           <button
             type="button"
             onClick={() => setCategory(undefined)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-base font-semibold transition-colors ${
               category === undefined
                 ? "bg-primary text-paper"
                 : "bg-paper text-ink-soft border border-line hover:border-primary"
@@ -238,7 +238,7 @@ export function RecipesPage() {
               onClick={() =>
                 setCategory(category === c.category ? undefined : c.category)
               }
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-base font-semibold transition-colors ${
                 category === c.category
                   ? "bg-primary text-paper"
                   : "bg-paper text-ink-soft border border-line hover:border-primary"
@@ -323,7 +323,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
           <Youtube size={22} className="text-red-500" />
           Импорт из YouTube
         </h3>
-        <p className="text-sm text-ink-soft mb-4">
+        <p className="text-base text-ink font-medium-soft mb-4">
           Вставь ссылку на видео с рецептом. AI извлечёт ингредиенты и шаги из описания и субтитров.
         </p>
 
@@ -367,7 +367,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         {importYt.isPending && (
-          <p className="text-xs text-ink-muted text-center mt-3">
+          <p className="text-base text-ink font-medium-muted font-medium text-center mt-3">
             AI анализирует видео... Обычно 10-20 секунд.
           </p>
         )}
