@@ -1,9 +1,25 @@
-import { Search, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Sparkles, ShoppingCart } from 'lucide-react';
 import { GoldButton } from '../ui/GoldButton';
 
-export function MenuWeekHeader() {
+export function MenuWeekHeader({
+  weekLabel,
+  onPrev,
+  onNext,
+  onToday,
+  onToShopping,
+  toShoppingPending,
+  hasMeals,
+}: {
+  weekLabel: string;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onToShopping: () => void;
+  toShoppingPending: boolean;
+  hasMeals: boolean;
+}) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 shrink-0">
       {/* Title row */}
       <div className="flex items-start justify-between">
         <div>
@@ -11,37 +27,38 @@ export function MenuWeekHeader() {
           <p className="text-white/40 text-sm mt-0.5">Планируйте питание, экономьте время и продукты</p>
         </div>
         <div className="flex items-center gap-2">
-          <GoldButton variant="outline" className="text-xs px-3 py-2">
+          <GoldButton variant="outline" className="text-xs px-3 py-2" onClick={onToday}>
             Сегодня
           </GoldButton>
-          <GoldButton className="text-xs px-3 py-2">
-            <Sparkles size={14} />
-            Автоплан
-          </GoldButton>
+          {hasMeals && (
+            <GoldButton
+              className="text-xs px-3 py-2"
+              onClick={onToShopping}
+            >
+              <ShoppingCart size={14} />
+              {toShoppingPending ? 'Добавляю...' : 'В покупки'}
+            </GoldButton>
+          )}
         </div>
       </div>
 
-      {/* Search + Date range row */}
+      {/* Date range row */}
       <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25" />
-          <input
-            type="text"
-            placeholder="Поиск блюд, ингредиентов..."
-            className="w-full h-10 pl-10 pr-4 rounded-xl border border-white/[0.06] bg-[#0c1021]/60 backdrop-blur-sm text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-[#c9953c]/40 transition-colors"
-          />
-        </div>
-
-        {/* Date range */}
+        {/* Date navigation */}
         <div className="flex items-center gap-1 px-3 py-2 rounded-xl border border-white/[0.06] bg-[#0c1021]/60 backdrop-blur-sm">
-          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
+          <button
+            onClick={onPrev}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
+          >
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm text-white/70 font-medium px-2 min-w-[160px] text-center">
-            2 — 8 июня, 2026
+          <span className="text-sm text-white/70 font-medium px-2 min-w-[200px] text-center">
+            {weekLabel}
           </span>
-          <button className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors">
+          <button
+            onClick={onNext}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
+          >
             <ChevronRight size={16} />
           </button>
         </div>
