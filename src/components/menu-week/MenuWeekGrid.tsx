@@ -1,37 +1,51 @@
-import { Plus, Clock } from 'lucide-react';
+import { Plus, Clock, X, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const MEALS = ['Завтрак', 'Обед', 'Ужин', 'Перекус'];
+const MEALS: { key: 'breakfast' | 'lunch' | 'dinner'; label: string }[] = [
+  { key: 'breakfast', label: 'Завтрак' },
+  { key: 'lunch', label: 'Обед' },
+  { key: 'dinner', label: 'Ужин' },
+];
 
-const DEMO_MEALS: Record<string, { name: string; time: string; photo: string } | null> = {
-  '0-0': { name: 'Овсянка с ягодами', time: '15 мин', photo: 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=280&fit=crop' },
-  '1-0': { name: 'Омлет с овощами', time: '12 мин', photo: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=280&fit=crop' },
-  '2-0': { name: 'Сырники со сметаной', time: '25 мин', photo: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=280&fit=crop' },
-  '3-0': { name: 'Гранола с йогуртом', time: '5 мин', photo: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=400&h=280&fit=crop' },
-  '4-0': { name: 'Каша рисовая', time: '20 мин', photo: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=400&h=280&fit=crop' },
-  '5-0': { name: 'Блины с ягодами', time: '30 мин', photo: 'https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&h=280&fit=crop' },
-  '6-0': { name: 'Яйца Бенедикт', time: '25 мин', photo: 'https://images.unsplash.com/photo-1608039829572-9b0189250953?w=400&h=280&fit=crop' },
-  '0-1': { name: 'Куриный суп', time: '40 мин', photo: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=280&fit=crop' },
-  '1-1': { name: 'Паста с лососем', time: '30 мин', photo: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=280&fit=crop' },
-  '2-1': { name: 'Борщ украинский', time: '60 мин', photo: 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=400&h=280&fit=crop' },
-  '3-1': { name: 'Цезарь с курицей', time: '20 мин', photo: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400&h=280&fit=crop' },
-  '4-1': { name: 'Том Ям', time: '35 мин', photo: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=280&fit=crop' },
-  '5-1': { name: 'Стейк с овощами', time: '25 мин', photo: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=280&fit=crop' },
-  '6-1': { name: 'Лазанья болоньезе', time: '50 мин', photo: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&h=280&fit=crop' },
-  '0-2': { name: 'Запечённый лосось', time: '35 мин', photo: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=280&fit=crop' },
-  '1-2': { name: 'Курица с рисом', time: '40 мин', photo: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=280&fit=crop' },
-  '2-2': { name: 'Тефтели в соусе', time: '45 мин', photo: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=280&fit=crop' },
-  '3-2': { name: 'Рататуй', time: '50 мин', photo: 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=400&h=280&fit=crop' },
-  '4-2': { name: 'Плов узбекский', time: '60 мин', photo: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&h=280&fit=crop' },
-  '5-2': { name: 'Утка с черносливом', time: '90 мин', photo: 'https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=280&fit=crop' },
-  '6-2': { name: 'Пицца домашняя', time: '45 мин', photo: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=280&fit=crop' },
-  '0-3': { name: 'Йогурт с орехами', time: '3 мин', photo: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=280&fit=crop' },
-  '2-3': { name: 'Фруктовый смузи', time: '5 мин', photo: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400&h=280&fit=crop' },
-  '4-3': { name: 'Орехи и сухофрукты', time: '—', photo: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=280&fit=crop' },
-  '6-3': { name: 'Чизкейк', time: '—', photo: 'https://images.unsplash.com/photo-1524351199678-941a58a3df50?w=400&h=280&fit=crop' },
-};
+interface MenuItem {
+  id: number;
+  dayOfWeek: number;
+  mealType: string;
+  recipeId: number;
+  recipeTitle: string;
+  recipeImage: string | null;
+  recipeTotalTime: number | null;
+}
 
-export function MenuWeekGrid() {
+export function MenuWeekGrid({
+  items,
+  weekStart,
+  todayStr,
+  isLoading,
+  onAddMeal,
+  onRemoveMeal,
+}: {
+  items: MenuItem[];
+  weekStart: string;
+  todayStr: string;
+  isLoading: boolean;
+  onAddMeal: (dayOfWeek: number, mealType: 'breakfast' | 'lunch' | 'dinner') => void;
+  onRemoveMeal: (itemId: number) => void;
+}) {
+  // Determine today's day index
+  const weekStartDate = new Date(weekStart + 'T00:00:00');
+  const todayDate = new Date(todayStr + 'T00:00:00');
+  const todayIdx = Math.floor((todayDate.getTime() - weekStartDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center rounded-[20px] border border-white/[0.06] bg-[#080c18]/60">
+        <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#080c18]/60 backdrop-blur-xl shadow-[0_16px_64px_rgba(0,0,0,0.5)] p-3">
       {/* Day headers */}
@@ -39,10 +53,10 @@ export function MenuWeekGrid() {
         <div />
         {DAYS.map((day, i) => (
           <div key={day} className="text-center py-1">
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${i === 0 ? 'text-[#e8b94a]' : 'text-white/40'}`}>
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${i === todayIdx ? 'text-[#e8b94a]' : 'text-white/40'}`}>
               {day}
             </span>
-            {i === 0 && (
+            {i === todayIdx && (
               <div className="w-1.5 h-1.5 rounded-full bg-[#e8b94a] mx-auto mt-1 shadow-[0_0_8px_rgba(232,185,74,0.7)]" />
             )}
           </div>
@@ -51,24 +65,37 @@ export function MenuWeekGrid() {
 
       {/* Grid body */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] grid-rows-4 gap-1 h-full">
-          {MEALS.map((meal, mealIdx) => (
-            <div key={meal} className="contents">
+        <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] grid-rows-3 gap-1 h-full">
+          {MEALS.map(({ key: mealKey, label: mealLabel }) => (
+            <div key={mealKey} className="contents">
               {/* Meal label */}
               <div className="flex items-center justify-center">
                 <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest [writing-mode:vertical-rl] rotate-180">
-                  {meal}
+                  {mealLabel}
                 </span>
               </div>
 
               {/* Day cells */}
               {DAYS.map((_, dayIdx) => {
-                const key = `${dayIdx}-${mealIdx}`;
-                const mealData = DEMO_MEALS[key];
-                return mealData ? (
-                  <MealCard key={key} {...mealData} />
+                const cellItems = items.filter(
+                  (i) => i.dayOfWeek === dayIdx && i.mealType === mealKey,
+                );
+
+                return cellItems.length > 0 ? (
+                  <div key={`${dayIdx}-${mealKey}`} className="flex flex-col gap-1 h-full min-w-0">
+                    {cellItems.map((item) => (
+                      <MealCard
+                        key={item.id}
+                        item={item}
+                        onRemove={() => onRemoveMeal(item.id)}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  <MealCardEmpty key={key} />
+                  <MealCardEmpty
+                    key={`${dayIdx}-${mealKey}`}
+                    onClick={() => onAddMeal(dayIdx, mealKey)}
+                  />
                 );
               })}
             </div>
@@ -79,41 +106,60 @@ export function MenuWeekGrid() {
   );
 }
 
-function MealCard({ name, time, photo }: { name: string; time: string; photo: string }) {
+function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9953c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0">
+    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9953c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0 relative">
+      {/* Remove button */}
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
+        className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:border-red-400"
+      >
+        <X size={10} className="text-white" />
+      </button>
+
       {/* Photo — 72% */}
-      <div className="relative flex-[72] min-h-0 overflow-hidden">
-        <img
-          src={photo}
-          alt={name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
+      <Link to={`/recipes/${item.recipeId}`} className="relative flex-[72] min-h-0 overflow-hidden block">
+        {item.recipeImage ? (
+          <img
+            src={item.recipeImage}
+            alt={item.recipeTitle}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#1a2040] to-[#0c1021] flex items-center justify-center">
+            <span className="text-white/20 text-lg font-bold">{item.recipeTitle.charAt(0)}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/90 via-transparent to-transparent" />
         {/* Time badge */}
-        <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/[0.06]">
-          <div className="flex items-center gap-0.5">
-            <Clock size={8} className="text-[#e8b94a]" />
-            <span className="text-[9px] text-white/80 font-semibold">{time}</span>
+        {item.recipeTotalTime && (
+          <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/[0.06]">
+            <div className="flex items-center gap-0.5">
+              <Clock size={8} className="text-[#e8b94a]" />
+              <span className="text-[9px] text-white/80 font-semibold">{item.recipeTotalTime} мин</span>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      </Link>
       {/* Info — 28% */}
-      <div className="flex-[28] px-2 py-1.5 flex items-center">
+      <Link to={`/recipes/${item.recipeId}`} className="flex-[28] px-2 py-1.5 flex items-center">
         <p className="text-[11px] text-white/75 font-semibold leading-tight line-clamp-2 group-hover:text-white transition-colors duration-200">
-          {name}
+          {item.recipeTitle}
         </p>
-      </div>
+      </Link>
     </div>
   );
 }
 
-function MealCardEmpty() {
+function MealCardEmpty({ onClick }: { onClick: () => void }) {
   return (
-    <div className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0">
+    <button
+      onClick={onClick}
+      className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0 w-full"
+    >
       <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9953c]/40 group-hover:bg-[#c9953c]/10 transition-all duration-300">
         <Plus size={13} className="text-white/15 group-hover:text-[#e8b94a] transition-colors duration-300" />
       </div>
-    </div>
+    </button>
   );
 }

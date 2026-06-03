@@ -1,9 +1,10 @@
 import { ShoppingCart, Lightbulb, Heart, ChevronRight, Plus } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
+import { trpc } from '../../utils/trpc';
 
 // ─── Круговая диаграмма итогов недели ───
 
-function WeekSummaryChart() {
+function WeekSummaryChart({ totalMeals }: { totalMeals: number }) {
   const segments = [
     { label: 'Белки', percent: 28, color: '#e8b94a' },
     { label: 'Жиры', percent: 32, color: '#60a5fa' },
@@ -27,29 +28,24 @@ function WeekSummaryChart() {
               return (
                 <circle
                   key={seg.label}
-                  cx="50"
-                  cy="50"
-                  r={radius}
-                  fill="none"
-                  stroke={seg.color}
-                  strokeWidth="7"
+                  cx="50" cy="50" r={radius}
+                  fill="none" stroke={seg.color} strokeWidth="7"
                   strokeDasharray={`${dashLength} ${circumference - dashLength}`}
-                  strokeDashoffset={dashOffset}
-                  strokeLinecap="round"
+                  strokeDashoffset={dashOffset} strokeLinecap="round"
                   style={{ filter: `drop-shadow(0 0 4px ${seg.color}40)` }}
                 />
               );
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-white font-bold text-lg">2 150</span>
-            <span className="text-white/30 text-[10px]">kcal/день</span>
+            <span className="text-white font-bold text-lg">{totalMeals}</span>
+            <span className="text-white/30 text-[10px]">блюд</span>
           </div>
         </div>
         <div className="space-y-3 flex-1">
           {segments.map((seg) => (
             <div key={seg.label} className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full shadow-[0_0_6px]" style={{ backgroundColor: seg.color, boxShadow: `0 0 8px ${seg.color}50` }} />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.color, boxShadow: `0 0 8px ${seg.color}50` }} />
               <span className="text-[12px] text-white/50 flex-1">{seg.label}</span>
               <span className="text-[12px] text-white/75 font-bold">{seg.percent}%</span>
             </div>
@@ -60,19 +56,13 @@ function WeekSummaryChart() {
   );
 }
 
-// ─── Список покупок ───
-
-const SHOPPING_ITEMS = [
-  { name: 'Лосось филе', qty: '500 г', checked: false },
-  { name: 'Сливки 33%', qty: '200 мл', checked: false },
-  { name: 'Шпинат', qty: '150 г', checked: true },
-  { name: 'Рис басмати', qty: '400 г', checked: false },
-  { name: 'Куриное филе', qty: '600 г', checked: false },
-  { name: 'Авокадо', qty: '2 шт', checked: true },
-];
+// ─── Список покупок (реальные данные) ───
 
 function WeekShoppingList() {
-  const unchecked = SHOPPING_ITEMS.filter(i => !i.checked).length;
+  const { data: shoppingItems = [] } = trpc.shopping.list.useQuery();
+  const unchecked = shoppingItems.filter((i: any) => !i.isChecked).length;
+  const displayItems = shoppingItems.slice(0, 6);
+
   return (
     <GlassCard className="p-7">
       <div className="flex items-center justify-between mb-4">
@@ -84,43 +74,46 @@ function WeekShoppingList() {
         </div>
         <span className="text-[11px] text-[#e8b94a]/60 font-semibold">{unchecked} позиций</span>
       </div>
-      <ul className="space-y-2.5">
-        {SHOPPING_ITEMS.map((item) => (
-          <li key={item.name} className="flex items-center gap-3 py-1">
-            <div className={`w-4 h-4 rounded-[5px] border-[1.5px] flex items-center justify-center shrink-0 transition-all ${
-              item.checked
-                ? 'bg-[#c9953c]/25 border-[#c9953c]/60'
-                : 'border-white/20 hover:border-[#c9953c]/40'
-            }`}>
-              {item.checked && (
-                <svg width="9" height="9" viewBox="0 0 8 8" fill="none">
-                  <path d="M1.5 4L3.2 5.7L6.5 2.3" stroke="#e8b94a" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+      {displayItems.length === 0 ? (
+        <p className="text-[11px] text-white/30 text-center py-3">Список пуст</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {displayItems.map((item: any) => (
+            <li key={item.id} className="flex items-center gap-3 py-1">
+              <div className={`w-4 h-4 rounded-[5px] border-[1.5px] flex items-center justify-center shrink-0 ${
+                item.isChecked ? 'bg-[#c9953c]/25 border-[#c9953c]/60' : 'border-white/20'
+              }`}>
+                {item.isChecked && (
+                  <svg width="9" height="9" viewBox="0 0 8 8" fill="none">
+                    <path d="M1.5 4L3.2 5.7L6.5 2.3" stroke="#e8b94a" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              <span className={`text-[12px] flex-1 ${item.isChecked ? 'text-white/25 line-through' : 'text-white/65'}`}>
+                {item.productName}
+              </span>
+              {item.quantity && (
+                <span className="text-[11px] text-white/30">{item.quantity}{item.unit ? ` ${item.unit}` : ''}</span>
               )}
-            </div>
-            <span className={`text-[12px] flex-1 ${item.checked ? 'text-white/25 line-through' : 'text-white/65'}`}>
-              {item.name}
-            </span>
-            <span className="text-[11px] text-white/30 font-medium">{item.qty}</span>
-          </li>
-        ))}
-      </ul>
-      <button className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-white/[0.08] text-[11px] text-white/35 hover:text-[#e8b94a] hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.03] transition-all duration-200">
+            </li>
+          ))}
+        </ul>
+      )}
+      <a href="/shopping" className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-white/[0.08] text-[11px] text-white/35 hover:text-[#e8b94a] hover:border-[#c9953c]/30 transition-all duration-200">
         Открыть все <ChevronRight size={13} />
-      </button>
+      </a>
     </GlassCard>
   );
 }
 
-// ─── Советы на неделю ───
-
-const TIPS = [
-  'Используйте шпинат до среды — истекает через 2 дня',
-  'Курицу можно заменить индейкой для разнообразия',
-  'Бульон от борща заморозьте на следующую неделю',
-];
+// ─── Советы ───
 
 function WeekTips() {
+  const TIPS = [
+    'Используйте истекающие продукты в первую очередь',
+    'Добавьте разнообразия — попробуйте новый рецепт',
+    'Заморозьте остатки бульона на следующую неделю',
+  ];
   return (
     <GlassCard className="p-7">
       <div className="flex items-center gap-2.5 mb-4">
@@ -141,54 +134,14 @@ function WeekTips() {
   );
 }
 
-// ─── Любимые блюда ───
-
-const FAVORITES = [
-  { name: 'Паста Карбонара', time: '25 мин', photo: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=100&h=100&fit=crop' },
-  { name: 'Стейк Рибай', time: '20 мин', photo: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=100&h=100&fit=crop' },
-  { name: 'Тирамису', time: '40 мин', photo: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=100&h=100&fit=crop' },
-];
-
-function WeekFavorites() {
-  return (
-    <GlassCard className="p-7">
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-7 h-7 rounded-lg bg-[#c9953c]/15 flex items-center justify-center">
-          <Heart size={14} className="text-[#e8b94a]" />
-        </div>
-        <h3 className="text-xs font-bold text-white/50 uppercase tracking-wider">Любимые блюда</h3>
-      </div>
-      <ul className="space-y-3">
-        {FAVORITES.map((fav) => (
-          <li key={fav.name} className="flex items-center gap-4 py-2 rounded-xl hover:bg-white/[0.03] transition-all duration-200 cursor-pointer px-2 -mx-2">
-            <img
-              src={fav.photo}
-              alt={fav.name}
-              className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/[0.08] shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] text-white/70 font-semibold truncate">{fav.name}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">{fav.time}</p>
-            </div>
-            <button className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center text-white/20 hover:text-[#e8b94a] hover:border-[#c9953c]/30 hover:bg-[#c9953c]/5 transition-all duration-200">
-              <Plus size={13} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </GlassCard>
-  );
-}
-
 // ─── Правая панель ───
 
-export function MenuWeekRightPanel() {
+export function MenuWeekRightPanel({ totalMeals }: { totalMeals: number }) {
   return (
     <aside className="w-[360px] min-w-[360px] max-w-[360px] h-full flex flex-col gap-5 overflow-y-auto">
-      <WeekSummaryChart />
+      <WeekSummaryChart totalMeals={totalMeals} />
       <WeekShoppingList />
       <WeekTips />
-      <WeekFavorites />
     </aside>
   );
 }
