@@ -35,7 +35,7 @@ export function MenuWeekGrid() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#080c18]/60 backdrop-blur-xl shadow-[0_16px_64px_rgba(0,0,0,0.5)] p-3">
       {/* Day headers */}
-      <div className="grid grid-cols-[36px_repeat(7,1fr)] gap-1 mb-2 shrink-0">
+      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] gap-1 mb-2 shrink-0">
         <div />
         {DAYS.map((day, i) => (
           <div key={day} className="text-center py-1">
@@ -51,7 +51,7 @@ export function MenuWeekGrid() {
 
       {/* Grid body */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="grid grid-cols-[36px_repeat(7,1fr)] grid-rows-4 gap-1 h-full">
+        <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] grid-rows-4 gap-1 h-full">
           {MEALS.map((meal, mealIdx) => (
             <div key={meal} className="contents">
               {/* Meal label */}
@@ -81,7 +81,7 @@ export function MenuWeekGrid() {
 
 function MealCard({ name, time, photo }: { name: string; time: string; photo: string }) {
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9953c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full aspect-[4/3]">
+    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9953c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0">
       {/* Photo — 72% */}
       <div className="relative flex-[72] min-h-0 overflow-hidden">
         <img
@@ -110,7 +110,7 @@ function MealCard({ name, time, photo }: { name: string; time: string; photo: st
 
 function MealCardEmpty() {
   return (
-    <div className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full aspect-[4/3]">
+    <div className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0">
       <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9953c]/40 group-hover:bg-[#c9953c]/10 transition-all duration-300">
         <Plus size={13} className="text-white/15 group-hover:text-[#e8b94a] transition-colors duration-300" />
       </div>
