@@ -33,7 +33,7 @@ export function InventoryProductCard({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white/80 truncate">
+        <p className="text-base font-semibold text-white/90 truncate">
           {item.isBasic && (
             <span className="text-[#e8b94a]/70 mr-1 text-xs" title="Базовый продукт — не попадает в покупки">📌</span>
           )}
@@ -42,7 +42,7 @@ export function InventoryProductCard({
           )}
           {item.productName}
           {item.quantity && (
-            <span className="text-white/30 ml-1.5 text-xs">
+            <span className="text-white/40 ml-1.5 text-sm font-normal">
               {item.quantity}{item.unit ? ` ${item.unit}` : ''}
             </span>
           )}
@@ -53,7 +53,7 @@ export function InventoryProductCard({
           )}
         </p>
         {item.expiryDate && (
-          <p className="text-xs text-white/30 mt-0.5">{expiryText(item.expiryDate)}</p>
+          <p className="text-sm text-white/40 mt-0.5">{expiryText(item.expiryDate)}</p>
         )}
       </div>
 
