@@ -1,5 +1,4 @@
 import { Trash2, Snowflake } from 'lucide-react';
-import { getProductImageSrc } from '../../utils/productImages';
 import type { ViewItem } from './InventoryExpiringSection';
 
 function daysUntilExpiry(expiryDate: string | null): number | null {
@@ -29,18 +28,8 @@ export function InventoryProductCard({
   onRemove: () => void;
   onToggleBasic?: () => void;
 }) {
-  const imgSrc = getProductImageSrc(item.productName, item.category);
-
   return (
     <div className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-200 group">
-      {/* Category image — Kitchen Atelier */}
-      <img
-        src={imgSrc}
-        alt={item.productName}
-        width={48}
-        height={48}
-        className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/[0.06]"
-      />
 
       {/* Info */}
       <div className="flex-1 min-w-0">
