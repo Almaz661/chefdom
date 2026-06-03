@@ -81,7 +81,7 @@ export function InventoryExpiringSection({
         {items.map((item) => {
           const days = daysUntilExpiry(item.expiryDate);
           const isExpired = days !== null && days < 0;
-          const imgSrc = getProductImageSrc(item.productName);
+          const imgSrc = getProductImageSrc(item.productName, item.category);
 
           return (
             <li
@@ -92,21 +92,13 @@ export function InventoryExpiringSection({
                   : 'bg-[#f97316]/[0.04] border-[#f97316]/15'
               }`}
             >
-              {imgSrc ? (
-                <img
-                  src={imgSrc}
-                  alt={item.productName}
-                  width={48}
-                  height={48}
-                  className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/[0.06]"
-                />
-              ) : (
-                <div
-                  className={`w-3 h-3 rounded-full shrink-0 ${
-                    isExpired ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-[#f97316] shadow-[0_0_8px_rgba(249,115,22,0.5)]'
-                  }`}
-                />
-              )}
+              <img
+                src={imgSrc}
+                alt={item.productName}
+                width={48}
+                height={48}
+                className="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/[0.06]"
+              />
 
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white/80 truncate">

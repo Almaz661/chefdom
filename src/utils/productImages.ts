@@ -1,165 +1,245 @@
 /**
- * productImages.ts
- * Сопоставляет название продукта (подстрока, без учёта регистра)
- * с путём к изображению в /images/products/.
+ * productImages.ts — Kitchen Atelier Category Image System
  *
- * Используется в InventoryPage для отображения карточек с фото 64×64.
+ * Архитектура: Category → Image (не Product → Image)
+ * 16 категорий + 1 universal fallback = 17 изображений.
+ * Покрытие: 100% продуктов. Emoji fallback удалён навсегда.
+ *
+ * Каждое изображение — полноценная Kitchen Atelier сцена категории,
+ * а не отдельный продукт и не иконка.
+ *
+ * Приоритет:
+ * 1. Keyword match (название продукта содержит ключевое слово категории)
+ * 2. Category param (если передана категория из БД)
+ * 3. Universal fallback (kitchen.webp)
  */
 
-type ImageEntry = { keywords: string[]; src: string };
+const BASE = '/images/ingredients';
 
-const IMAGE_MAP: ImageEntry[] = [
-  // ── Молочные ──────────────────────────────────────────────
-  { keywords: ["молоко", "milk"], src: "/images/products/dairy/milk.webp" },
-  { keywords: ["кефир", "kefir"], src: "/images/products/dairy/kefir.webp" },
-  { keywords: ["йогурт", "yogurt", "йогурт"], src: "/images/products/dairy/yogurt.webp" },
-  { keywords: ["сметана", "sour cream"], src: "/images/products/dairy/sour-cream.webp" },
-  { keywords: ["творог", "cottage"], src: "/images/products/dairy/cottage-cheese.webp" },
-  { keywords: ["сливки", "cream"], src: "/images/products/dairy/cream.webp" },
-  { keywords: ["масло сливочное", "сливочное масло", "butter"], src: "/images/products/dairy/butter.webp" },
-  { keywords: ["яйц", "яйко", "egg"], src: "/images/products/dairy/eggs.webp" },
-  { keywords: ["сыр моцарелла", "mozzarella"], src: "/images/products/dairy/mozzarella.webp" },
-  { keywords: ["фета", "feta"], src: "/images/products/dairy/feta.webp" },
-  { keywords: ["сыр", "cheese"], src: "/images/products/dairy/cheese.webp" },
+type CategoryDef = {
+  id: string;
+  keywords: string[];
+};
 
-  // ── Мясо ──────────────────────────────────────────────────
-  { keywords: ["куриная грудка", "грудка куриная", "chicken breast"], src: "/images/products/meat/chicken-breast.webp" },
-  { keywords: ["куриное бедро", "бедро куриное", "chicken thigh"], src: "/images/products/meat/chicken-thigh.webp" },
-  { keywords: ["куриные крылья", "крылья", "chicken wing"], src: "/images/products/meat/chicken-wings.webp" },
-  { keywords: ["курица целая", "целая курица", "whole chicken"], src: "/images/products/meat/chicken-whole.webp" },
-  { keywords: ["куриц", "курятина", "chicken"], src: "/images/products/meat/chicken-breast.webp" },
-  { keywords: ["говяжий фарш", "фарш говяжий", "beef mince"], src: "/images/products/meat/beef-mince.webp" },
-  { keywords: ["стейк", "beef steak"], src: "/images/products/meat/beef-steak.webp" },
-  { keywords: ["говядин", "beef"], src: "/images/products/meat/beef-steak.webp" },
-  { keywords: ["фарш", "ground meat", "mince"], src: "/images/products/meat/ground-meat.webp" },
-  { keywords: ["свиная вырезка", "корейка", "pork loin"], src: "/images/products/meat/pork-loin.webp" },
-  { keywords: ["свинин", "pork"], src: "/images/products/meat/pork-loin.webp" },
-  { keywords: ["бекон", "bacon"], src: "/images/products/meat/bacon.webp" },
-  { keywords: ["сосиск", "колбас", "сардельк", "sausage"], src: "/images/products/meat/sausage.webp" },
-  { keywords: ["индейк", "turkey"], src: "/images/products/meat/turkey.webp" },
-  { keywords: ["баранин", "ягнятин", "lamb"], src: "/images/products/meat/lamb.webp" },
+/**
+ * Порядок важен: более специфичные категории идут первыми.
+ * «зелень» ДО «овощи» (шпинат = зелень, не овощ в контексте визуала).
+ * «замороженное» ДО «мясо/ягоды» (замороженная курица = frozen, не meat).
+ * «соусы» ДО «масла» (кетчуп = соус, не масло).
+ */
+const CATEGORIES: CategoryDef[] = [
+  // --- Специфичные (проверяются первыми) ---
+  {
+    id: 'frozen',
+    keywords: [
+      'замороженн', 'заморож', 'мороженое', 'заморозк',
+      'frozen', 'ice cream', 'bevroren',
+    ],
+  },
+  {
+    id: 'preserves',
+    keywords: [
+      'варенье', 'джем', 'компот домашн', 'консерв', 'маринован',
+      'солён', 'солен', 'квашен', 'мочён', 'тушён', 'тушенк',
+      'заготовк', 'закатк',
+      'jam', 'preserve', 'pickle', 'canned',
+    ],
+  },
+  {
+    id: 'sauces',
+    keywords: [
+      'соус', 'кетчуп', 'майонез', 'горчиц', 'уксус', 'заправк',
+      'маринад', 'песто', 'аджик', 'ткемали', 'табаско', 'васаби',
+      'сальса', 'тартар', 'бешамель',
+      'sauce', 'ketchup', 'mayonnaise', 'mustard', 'vinegar', 'pesto',
+    ],
+  },
+  {
+    id: 'sweets',
+    keywords: [
+      'шоколад', 'конфет', 'торт', 'пирожн', 'вафл',
+      'зефир', 'мармелад', 'халва', 'пастил', 'ирис',
+      'chocolate', 'candy', 'cake', 'sweet',
+    ],
+  },
+  {
+    id: 'bakery',
+    keywords: [
+      'хлеб', 'булк', 'батон', 'лаваш', 'пирог', 'кулич', 'кекс',
+      'круассан', 'багет', 'лепёшк', 'лепешк', 'сдоб', 'печень',
+      'пончик', 'маффин', 'блин', 'оладь', 'сырник',
+      'bread', 'baguette', 'croissant', 'pastry', 'muffin', 'pancake',
+    ],
+  },
 
-  // ── Рыба и морепродукты ───────────────────────────────────
-  { keywords: ["лосос", "семга", "salmon"], src: "/images/products/fish/salmon.webp" },
-  { keywords: ["форел", "trout"], src: "/images/products/fish/trout.webp" },
-  { keywords: ["тунец", "tuna"], src: "/images/products/fish/tuna.webp" },
-  { keywords: ["треска", "cod"], src: "/images/products/fish/cod.webp" },
-  { keywords: ["скумбри", "mackerel"], src: "/images/products/fish/mackerel.webp" },
-  { keywords: ["сельдь", "herring"], src: "/images/products/fish/herring.webp" },
-  { keywords: ["креветк", "shrimp", "prawn"], src: "/images/products/fish/shrimp.webp" },
-  { keywords: ["кальмар", "squid"], src: "/images/products/fish/squid.webp" },
+  // --- Зелень ДО овощей ---
+  {
+    id: 'greens',
+    keywords: [
+      'укроп', 'петрушк', 'кинза', 'кориандр', 'базилик', 'мята',
+      'зелёный лук', 'зеленый лук', 'салат', 'руккол', 'шпинат',
+      'щавель', 'зелен',
+      'dill', 'parsley', 'basil', 'mint', 'cilantro', 'lettuce',
+      'spinach', 'arugula',
+    ],
+  },
 
-  // ── Овощи ─────────────────────────────────────────────────
-  { keywords: ["помидор", "томат", "tomato"], src: "/images/products/vegetables/tomato.webp" },
-  { keywords: ["огурец", "огурц", "cucumber"], src: "/images/products/vegetables/cucumber.webp" },
-  { keywords: ["перец болгарский", "болгарский перец", "bell pepper"], src: "/images/products/vegetables/bell-pepper.webp" },
-  { keywords: ["морков", "carrot"], src: "/images/products/vegetables/carrot.webp" },
-  { keywords: ["картофел", "картошк", "potato"], src: "/images/products/vegetables/potato.webp" },
-  { keywords: ["лук репчатый", "репчатый лук", "onion"], src: "/images/products/vegetables/onion.webp" },
-  { keywords: ["чеснок", "garlic"], src: "/images/products/vegetables/garlic.webp" },
-  { keywords: ["капуста белокочанная", "белокочанная капуста", "cabbage"], src: "/images/products/vegetables/cabbage.webp" },
-  { keywords: ["брокколи", "broccoli"], src: "/images/products/vegetables/broccoli.webp" },
-  { keywords: ["цветная капуста", "cauliflower"], src: "/images/products/vegetables/cauliflower.webp" },
-  { keywords: ["баклажан", "eggplant", "aubergine"], src: "/images/products/vegetables/eggplant.webp" },
-  { keywords: ["кабачок", "zucchini", "courgette"], src: "/images/products/vegetables/zucchini.webp" },
-  { keywords: ["шпинат", "spinach"], src: "/images/products/vegetables/spinach.webp" },
-  { keywords: ["спаржа", "asparagus"], src: "/images/products/vegetables/asparagus.webp" },
-  { keywords: ["грибы", "гриб", "mushroom"], src: "/images/products/vegetables/mushroom.webp" },
-  { keywords: ["горошек", "peas"], src: "/images/products/vegetables/peas.webp" },
-  { keywords: ["кукуруза", "corn"], src: "/images/products/vegetables/corn.webp" },
-  { keywords: ["свёкл", "свекол", "beet"], src: "/images/products/vegetables/beet.webp" },
-  { keywords: ["тыква", "pumpkin"], src: "/images/products/vegetables/pumpkin.webp" },
-  { keywords: ["батат", "sweet potato"], src: "/images/products/vegetables/sweet-potato.webp" },
-
-  // ── Фрукты и ягоды ────────────────────────────────────────
-  { keywords: ["яблок", "apple"], src: "/images/products/fruits/apple.webp" },
-  { keywords: ["банан", "banana"], src: "/images/products/fruits/banana.webp" },
-  { keywords: ["апельсин", "orange"], src: "/images/products/fruits/orange.webp" },
-  { keywords: ["лимон", "lemon"], src: "/images/products/fruits/lemon.webp" },
-  { keywords: ["груш", "pear"], src: "/images/products/fruits/pear.webp" },
-  { keywords: ["персик", "peach"], src: "/images/products/fruits/peach.webp" },
-  { keywords: ["слив", "plum"], src: "/images/products/fruits/plum.webp" },
-  { keywords: ["виноград", "grape"], src: "/images/products/fruits/grape.webp" },
-  { keywords: ["клубник", "земляник", "strawberry"], src: "/images/products/fruits/strawberry.webp" },
-  { keywords: ["малин", "raspberry"], src: "/images/products/fruits/raspberry.webp" },
-  { keywords: ["черник", "blueberry"], src: "/images/products/fruits/blueberry.webp" },
-  { keywords: ["вишн", "черешн", "cherry"], src: "/images/products/fruits/cherry.webp" },
-  { keywords: ["манго", "mango"], src: "/images/products/fruits/mango.webp" },
-  { keywords: ["ананас", "pineapple"], src: "/images/products/fruits/pineapple.webp" },
-  { keywords: ["киви", "kiwi"], src: "/images/products/fruits/kiwi.webp" },
-  { keywords: ["авокадо", "avocado"], src: "/images/products/fruits/avocado.webp" },
-  { keywords: ["арбуз", "watermelon"], src: "/images/products/fruits/watermelon.webp" },
-
-  // ── Зелень ───────────────────────────────────────────────
-  { keywords: ["укроп", "dill"], src: "/images/products/greens/dill.webp" },
-  { keywords: ["петрушк", "parsley"], src: "/images/products/greens/parsley.webp" },
-  { keywords: ["кинза", "кориандр", "cilantro", "coriander"], src: "/images/products/greens/cilantro.webp" },
-  { keywords: ["базилик", "basil"], src: "/images/products/greens/basil.webp" },
-  { keywords: ["мята", "mint"], src: "/images/products/greens/mint.webp" },
-  { keywords: ["зелёный лук", "зеленый лук", "green onion"], src: "/images/products/greens/green-onion.webp" },
-  { keywords: ["салат листовой", "салат", "lettuce"], src: "/images/products/greens/lettuce.webp" },
-
-  // ── Крупы, бобовые, хлеб ────────────────────────────────
-  { keywords: ["рис", "rice"], src: "/images/products/grains/rice.webp" },
-  { keywords: ["гречк", "buckwheat"], src: "/images/products/grains/buckwheat.webp" },
-  { keywords: ["овсянк", "овсяная крупа", "oatmeal", "oat"], src: "/images/products/grains/oatmeal.webp" },
-  { keywords: ["спагетти", "spaghetti"], src: "/images/products/grains/spaghetti.webp" },
-  { keywords: ["паст", "макарон", "pasta"], src: "/images/products/grains/pasta.webp" },
-  { keywords: ["мука", "flour"], src: "/images/products/grains/flour.webp" },
-  { keywords: ["хлеб", "bread"], src: "/images/products/grains/bread.webp" },
-  { keywords: ["фасол", "beans"], src: "/images/products/grains/beans.webp" },
-  { keywords: ["чечевиц", "lentil"], src: "/images/products/grains/lentils.webp" },
-  { keywords: ["нут", "chickpea"], src: "/images/products/grains/chickpeas.webp" },
-
-  // ── Масла и соусы ────────────────────────────────────────
-  { keywords: ["оливковое масло", "olive oil"], src: "/images/products/oils/olive-oil.webp" },
-  { keywords: ["подсолнечное масло", "sunflower oil"], src: "/images/products/oils/sunflower-oil.webp" },
-  { keywords: ["майонез", "mayonnaise"], src: "/images/products/oils/mayonnaise.webp" },
-  { keywords: ["кетчуп", "ketchup"], src: "/images/products/oils/ketchup.webp" },
-  { keywords: ["горчица", "mustard"], src: "/images/products/oils/mustard.webp" },
-  { keywords: ["мёд", "мед", "honey"], src: "/images/products/oils/honey.webp" },
-
-  // ── Специи ───────────────────────────────────────────────
-  { keywords: ["соль", "salt"], src: "/images/products/spices/salt.webp" },
-  { keywords: ["сахар", "sugar"], src: "/images/products/spices/sugar.webp" },
-  { keywords: ["перец чёрный", "черный перец", "black pepper"], src: "/images/products/spices/black-pepper.webp" },
-  { keywords: ["куркума", "turmeric"], src: "/images/products/spices/turmeric.webp" },
-  { keywords: ["корица", "cinnamon"], src: "/images/products/spices/cinnamon.webp" },
-
-  // ── Напитки ──────────────────────────────────────────────
-  { keywords: ["вода", "water"], src: "/images/products/beverages/water.webp" },
-  { keywords: ["кофе", "coffee"], src: "/images/products/beverages/coffee.webp" },
-  { keywords: ["чай", "tea"], src: "/images/products/beverages/tea.webp" },
-  { keywords: ["сок", "juice"], src: "/images/products/beverages/juice.webp" },
-
-  // ── Орехи и сухофрукты ───────────────────────────────────
-  { keywords: ["грецкий орех", "walnut"], src: "/images/products/nuts/walnut.webp" },
-  { keywords: ["миндал", "almond"], src: "/images/products/nuts/almond.webp" },
-  { keywords: ["фундук", "hazelnut"], src: "/images/products/nuts/hazelnut.webp" },
-  { keywords: ["изюм", "raisin"], src: "/images/products/nuts/raisins.webp" },
-
-  // ── Заморозка ────────────────────────────────────────────
-  { keywords: ["замороженные ягоды", "frozen berries"], src: "/images/products/frozen/frozen-berries.webp" },
-  { keywords: ["пельмени", "вареники", "dumpling"], src: "/images/products/frozen/dumplings.webp" },
-  { keywords: ["мороженое", "ice cream"], src: "/images/products/frozen/ice-cream.webp" },
-
-  // ── Сладкое ─────────────────────────────────────────────
-  { keywords: ["шоколад", "chocolate"], src: "/images/products/sweets/chocolate.webp" },
+  // --- Основные категории ---
+  {
+    id: 'dairy',
+    keywords: [
+      'молок', 'кефир', 'йогурт', 'сметан', 'творог', 'сливк',
+      'сыр', 'масло сливочн', 'сливочное масло', 'яйц',
+      'ряженк', 'простокваш', 'тан', 'айран',
+      'butter', 'milk', 'cheese', 'egg', 'yogurt', 'cream',
+      'feta', 'mozzarella', 'kefir', 'kaas', 'eieren', 'melk',
+    ],
+  },
+  {
+    id: 'meat',
+    keywords: [
+      'куриц', 'курин', 'говяд', 'свинин', 'фарш', 'бекон',
+      'сосиск', 'колбас', 'индейк', 'баранин', 'ягнятин',
+      'стейк', 'мясо', 'ветчин', 'шашлык', 'рёбр', 'ребр',
+      'грудинк', 'вырезк', 'антрекот', 'котлет',
+      'chicken', 'beef', 'pork', 'meat', 'bacon', 'sausage',
+      'turkey', 'lamb', 'kip', 'vlees', 'gehakt',
+    ],
+  },
+  {
+    id: 'fish',
+    keywords: [
+      'лосос', 'сёмга', 'семга', 'форел', 'тунец', 'треска',
+      'скумбри', 'сельд', 'креветк', 'кальмар', 'рыб', 'мидии',
+      'устриц', 'краб', 'окун', 'судак', 'щук', 'карп', 'минтай',
+      'salmon', 'fish', 'tuna', 'cod', 'shrimp', 'squid', 'trout',
+      'vis', 'garnaal', 'zalm',
+    ],
+  },
+  {
+    id: 'nuts',
+    keywords: [
+      'орех', 'миндал', 'фундук', 'кешью', 'арахис', 'фисташк',
+      'изюм', 'курага', 'чернослив', 'финик', 'семечк', 'семена',
+      'кунжут', 'лён', 'лен', 'чиа',
+      'walnut', 'almond', 'hazelnut', 'raisin', 'nut', 'seed',
+      'cashew', 'pistachio',
+    ],
+  },
+  {
+    id: 'spices',
+    keywords: [
+      'соль', 'сахар', 'перец', 'куркум', 'корица', 'специ',
+      'приправ', 'паприк', 'имбир', 'ваниль', 'лавров', 'гвоздик',
+      'мускат', 'тмин', 'кардамон', 'анис', 'шафран', 'хмели',
+      'salt', 'sugar', 'pepper', 'spice', 'cinnamon', 'turmeric',
+      'ginger', 'zout', 'suiker', 'peper',
+    ],
+  },
+  {
+    id: 'oils',
+    keywords: [
+      'масло оливк', 'масло подсолн', 'масло растит', 'масло кокос',
+      'масло кунжут', 'масло льнян', 'мёд', 'мед', 'сироп',
+      'olive oil', 'oil', 'honey', 'olie', 'honing',
+    ],
+  },
+  {
+    id: 'beverages',
+    keywords: [
+      'вода', 'чай', 'кофе', 'сок', 'компот', 'какао', 'лимонад',
+      'смузи', 'вино', 'пиво', 'морс', 'кисель', 'квас',
+      'water', 'tea', 'coffee', 'juice',
+      'thee', 'koffie', 'sap', 'water',
+    ],
+  },
+  {
+    id: 'grains',
+    keywords: [
+      'рис', 'гречк', 'овсянк', 'макарон', 'спагетти', 'паст',
+      'лапш', 'мука', 'крупа', 'каша', 'булгур', 'кускус', 'киноа',
+      'перлов', 'манк', 'пшен', 'ячнев',
+      'rice', 'pasta', 'flour', 'oat', 'buckwheat', 'spaghetti',
+      'rijst', 'meel',
+    ],
+  },
+  {
+    id: 'fruits',
+    keywords: [
+      'яблок', 'банан', 'апельсин', 'лимон', 'груш', 'персик',
+      'слив', 'виноград', 'клубник', 'малин', 'черник', 'вишн',
+      'черешн', 'манго', 'ананас', 'киви', 'авокадо', 'арбуз',
+      'дын', 'гранат', 'хурма', 'инжир', 'ягод', 'смородин',
+      'крыжовник', 'облепих', 'брусник', 'клюкв',
+      'apple', 'banana', 'orange', 'lemon', 'grape', 'strawberry',
+      'mango', 'kiwi', 'avocado', 'cherry', 'peach', 'pear',
+    ],
+  },
+  {
+    id: 'vegetables',
+    keywords: [
+      'помидор', 'томат', 'огурец', 'перец болгар', 'морков',
+      'картофел', 'картошк', 'лук', 'чеснок', 'капуст', 'брокколи',
+      'цветная', 'баклажан', 'кабачок', 'спарж', 'кукуруз',
+      'свёкл', 'свекол', 'тыкв', 'бата', 'редис', 'редьк',
+      'сельдерей', 'горох', 'фасол', 'чечевиц', 'нут', 'гриб',
+      'шампиньон', 'вешенк', 'репа', 'топинамбур',
+      'tomato', 'cucumber', 'carrot', 'potato', 'onion', 'garlic',
+      'cabbage', 'broccoli', 'eggplant', 'zucchini', 'corn',
+      'pumpkin', 'mushroom', 'bean', 'lentil', 'peas',
+      'aardappel', 'ui', 'wortel', 'tomaat', 'komkommer',
+    ],
+  },
 ];
 
 /**
- * Возвращает путь к изображению для продукта по его названию.
- * Поиск нечёткий: проверяются ключевые слова внутри строки (toLowerCase).
- * Если совпадений нет — возвращает null.
+ * Возвращает путь к изображению категории для продукта.
+ * ВСЕГДА возвращает string — emoji fallback больше не существует.
+ *
+ * @param productName — название продукта (из inventory/shopping)
+ * @param category — категория из БД (необязательно, для fallback)
  */
-export function getProductImageSrc(productName: string): string | null {
+export function getProductImageSrc(
+  productName: string,
+  category?: string | null,
+): string {
   const lower = productName.toLowerCase();
-  for (const entry of IMAGE_MAP) {
-    for (const kw of entry.keywords) {
-      if (lower.includes(kw.toLowerCase())) {
-        return entry.src;
+
+  // 1. Keyword match — ищем категорию по ключевым словам в названии
+  for (const cat of CATEGORIES) {
+    for (const kw of cat.keywords) {
+      if (lower.includes(kw)) {
+        return `${BASE}/${cat.id}.webp`;
       }
     }
   }
-  return null;
+
+  // 2. Category param fallback — если есть поле category из БД
+  if (category) {
+    const catLower = category.toLowerCase();
+    // Проверяем по id категорий
+    for (const cat of CATEGORIES) {
+      if (catLower.includes(cat.id)) return `${BASE}/${cat.id}.webp`;
+    }
+    // Русские названия категорий
+    if (catLower.includes('молоч') || catLower.includes('dairy')) return `${BASE}/dairy.webp`;
+    if (catLower.includes('мяс') || catLower.includes('meat')) return `${BASE}/meat.webp`;
+    if (catLower.includes('рыб') || catLower.includes('fish')) return `${BASE}/fish.webp`;
+    if (catLower.includes('овощ') || catLower.includes('veget')) return `${BASE}/vegetables.webp`;
+    if (catLower.includes('фрукт') || catLower.includes('ягод')) return `${BASE}/fruits.webp`;
+    if (catLower.includes('зелен') || catLower.includes('green')) return `${BASE}/greens.webp`;
+    if (catLower.includes('круп') || catLower.includes('зерн')) return `${BASE}/grains.webp`;
+    if (catLower.includes('спец')) return `${BASE}/spices.webp`;
+    if (catLower.includes('напит') || catLower.includes('bever')) return `${BASE}/beverages.webp`;
+    if (catLower.includes('орех') || catLower.includes('nut')) return `${BASE}/nuts.webp`;
+    if (catLower.includes('замор') || catLower.includes('frozen')) return `${BASE}/frozen.webp`;
+    if (catLower.includes('загот') || catLower.includes('conserv')) return `${BASE}/preserves.webp`;
+    if (catLower.includes('выпеч') || catLower.includes('хлеб')) return `${BASE}/bakery.webp`;
+    if (catLower.includes('сладк') || catLower.includes('sweet')) return `${BASE}/sweets.webp`;
+    if (catLower.includes('соус') || catLower.includes('sauce')) return `${BASE}/sauces.webp`;
+    if (catLower.includes('масл') || catLower.includes('oil')) return `${BASE}/oils.webp`;
+  }
+
+  // 3. Universal fallback — Kitchen Atelier atmosphere
+  return `${BASE}/kitchen.webp`;
 }
