@@ -40,16 +40,16 @@ export function ShoppingProgress({
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-white font-bold text-lg">{progress}%</span>
+          <span className="text-white font-extrabold text-xl">{progress}%</span>
         </div>
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className="text-white/70 text-sm font-medium">
+        <p className="text-white/70 text-base font-bold">
           {checked} из {total} куплены
         </p>
-        <p className="text-white/30 text-xs mt-1">
+        <p className="text-white/30 text-sm font-medium mt-1">
           {total - checked === 0
             ? 'Всё куплено! Можно переносить в инвентарь.'
             : `Осталось ${total - checked} позиций`}

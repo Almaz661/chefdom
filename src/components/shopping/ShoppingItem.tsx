@@ -48,18 +48,18 @@ export function ShoppingItem({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate transition-colors ${
-          isChecked ? 'line-through text-white/25' : 'text-white/80'
+        <p className={`text-base font-semibold truncate transition-colors ${
+          isChecked ? 'line-through text-white/25' : 'text-white/90'
         }`}>
           {item.productName}
           {item.quantity && (
-            <span className={`ml-2 text-xs ${isChecked ? 'text-white/15' : 'text-white/30'}`}>
+            <span className={`ml-2 text-sm font-normal ${isChecked ? 'text-white/15' : 'text-white/40'}`}>
               {item.quantity}{item.unit ? ` ${item.unit}` : ''}
             </span>
           )}
         </p>
         {item.recipeSource && (
-          <p className="text-[10px] text-white/20 mt-0.5 truncate">
+          <p className="text-xs font-medium text-white/25 mt-0.5 truncate">
             из: {item.recipeSource}
           </p>
         )}

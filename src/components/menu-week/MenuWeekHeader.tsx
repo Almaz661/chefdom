@@ -23,19 +23,19 @@ export function MenuWeekHeader({
       {/* Title row */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[32px] font-bold text-white tracking-tight">Меню недели</h1>
-          <p className="text-white/40 text-sm mt-0.5">Планируйте питание, экономьте время и продукты</p>
+          <h1 className="text-[36px] font-extrabold text-white tracking-tight">Меню недели</h1>
+          <p className="text-white/40 text-base font-medium mt-0.5">Планируйте питание, экономьте время и продукты</p>
         </div>
         <div className="flex items-center gap-2">
-          <GoldButton variant="outline" className="text-xs px-3 py-2" onClick={onToday}>
+          <GoldButton variant="outline" className="text-sm font-bold px-4 py-2.5" onClick={onToday}>
             Сегодня
           </GoldButton>
           {hasMeals && (
             <GoldButton
-              className="text-xs px-3 py-2"
+              className="text-sm font-bold px-4 py-2.5"
               onClick={onToShopping}
             >
-              <ShoppingCart size={14} />
+              <ShoppingCart size={16} />
               {toShoppingPending ? 'Добавляю...' : 'В покупки'}
             </GoldButton>
           )}
@@ -52,7 +52,7 @@ export function MenuWeekHeader({
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm text-white/70 font-medium px-2 min-w-[200px] text-center">
+          <span className="text-base text-white/70 font-bold px-2 min-w-[200px] text-center">
             {weekLabel}
           </span>
           <button

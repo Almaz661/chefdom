@@ -22,11 +22,11 @@ export function MenuWeekKpiRow({
             className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: `${accent}20`, boxShadow: `0 0 24px ${accent}20` }}
           >
-            <Icon size={24} style={{ color: accent }} strokeWidth={1.7} />
+            <Icon size={28} style={{ color: accent }} strokeWidth={1.7} />
           </div>
           <div className="min-w-0">
-            <p className="text-white font-bold text-2xl leading-tight truncate">{value}</p>
-            <p className="text-white/40 text-xs mt-0.5 truncate">{label}</p>
+            <p className="text-white font-extrabold text-3xl leading-tight truncate">{value}</p>
+            <p className="text-white/40 text-sm font-semibold mt-0.5 truncate">{label}</p>
           </div>
         </GlassCard>
       ))}
