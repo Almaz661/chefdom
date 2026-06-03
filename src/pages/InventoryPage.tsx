@@ -13,12 +13,14 @@ import {
 import { Link } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 import { BarcodeScanner } from "../components/BarcodeScanner";
+import { StorageBanner } from "../components/StorageBanner";
 import { getProductImageSrc } from "../utils/productImages";
+import { createSvgPlaceholder } from "../utils/productPlaceholder";
 
 const TABS = [
-  { key: "fridge" as const, label: "Холодильник", emoji: "\u{1F9CA}", icon: Refrigerator },
-  { key: "freezer" as const, label: "Морозилка", emoji: "\u2744\uFE0F", icon: Snowflake },
-  { key: "pantry" as const, label: "Кладовая", emoji: "\u{1F4E6}", icon: Package },
+  { key: "fridge" as const, label: "Холодильник", icon: Refrigerator },
+  { key: "freezer" as const, label: "Морозилка", icon: Snowflake },
+  { key: "pantry" as const, label: "Кладовая", icon: Package },
 ];
 
 /** Сколько дней до истечения срока */
@@ -93,7 +95,7 @@ function RecalcExpiryButton() {
       {recalc.isPending ? (
         <Loader2 size={14} className="animate-spin" />
       ) : (
-        <span>📅</span>
+        <span className="text-sm">⏱</span>
       )}
       <span className="hidden sm:inline">{recalc.isPending ? 'Считаю…' : 'Сроки'}</span>
     </button>
@@ -252,11 +254,10 @@ export function InventoryPage() {
             </button>
           </div>
         </div>
-        {/* Изменение 6: Подтекст */}
-        <p className="text-sm text-[#a0a9b8]">
-          {currentTab.label} • {pluralProducts(items.length)}
-        </p>
       </div>
+
+      {/* Баннер хранилища (CSS градиент) */}
+      <StorageBanner storageType={tab} itemCount={items.length} />
 
       {/* Сканер */}
       {showScanner && (
@@ -268,9 +269,9 @@ export function InventoryPage() {
         </div>
       )}
 
-      {/* Изменение 1: Вкладки с иконками + золотистое подчеркивание */}
+      {/* Вкладки с иконками + золотистое подчеркивание 3px */}
       <div className="flex border-b border-[#3a4558] mb-6">
-        {TABS.map(({ key, label, emoji }) => (
+        {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -280,8 +281,8 @@ export function InventoryPage() {
                 : "text-[#a0a9b8] hover:text-[#d4a574]"
             }`}
           >
-            <span className="text-base">{emoji}</span>
-            <span className="hidden sm:inline">{label}</span>
+            <Icon size={16} strokeWidth={1.5} />
+            <span>{label}</span>
             {tab === key && (
               <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#d4a574]" />
             )}
@@ -331,10 +332,12 @@ export function InventoryPage() {
             Добавить продукт
           </button>
 
-          {/* Пустое состояние */}
+          {/* Все продукты — напрямую как карточки */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <span className="text-5xl mb-4">{currentTab.emoji}</span>
+              <div className="w-16 h-16 rounded-full bg-[#3a4558] flex items-center justify-center mb-4">
+                {(() => { const Icon = currentTab.icon; return <Icon size={28} className="text-[#a0a9b8]" strokeWidth={1.5} />; })()}
+              </div>
               <p className="text-lg font-semibold text-white mb-1">
                 {currentTab.label} пуст{tab === "pantry" ? "а" : tab === "freezer" ? "а" : ""}
               </p>
@@ -361,75 +364,52 @@ export function InventoryPage() {
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Все карточки по категориям — показываем ВСЕ продукты */}
-              {(() => {
-                // Группируем ВСЕ items (не только normal) кроме заготовок
-                const allWithoutPreserves = items.filter(i => i.category !== "Заготовки");
-                const allPreserveItems = items.filter(i => i.category === "Заготовки");
-                const allGrouped = allWithoutPreserves.reduce<Record<string, ViewItem[]>>((acc, item) => {
-                  const cat = item.category || "Без категории";
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(item);
-                  return acc;
-                }, {});
-                const allCategories = Object.keys(allGrouped).sort((a, b) => {
-                  if (a === "Без категории") return 1;
-                  if (b === "Без категории") return -1;
-                  return a.localeCompare(b, "ru");
-                });
-
-                return (
-                  <>
-                    {allCategories.map((cat) => (
-                      <section key={cat}>
-                        <h3 className="text-xs font-medium text-[#a0a9b8] uppercase tracking-wider mb-2">
-                          {cat}
-                        </h3>
-                        <ul className="space-y-3">
-                          {allGrouped[cat].map((item) => (
-                            <InventoryCard
-                              key={`${item.source}-${item.id}`}
-                              item={item}
-                              tabEmoji={currentTab.emoji}
-                              onRemove={() => handleRemove(item)}
-                              onEdit={() => setEditItem(item.id)}
-                              onToggleBasic={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
-                            />
-                          ))}
-                        </ul>
-                      </section>
+              {/* Основные карточки по категориям */}
+              {categories.map((cat) => (
+                <section key={cat}>
+                  <h3 className="text-xs font-medium text-[#a0a9b8] uppercase tracking-wider mb-2">
+                    {cat}
+                  </h3>
+                  <ul className="space-y-2">
+                    {grouped[cat].map((item) => (
+                      <InventoryCard
+                        key={`${item.source}-${item.id}`}
+                        item={item}
+                        onRemove={() => handleRemove(item)}
+                        onEdit={() => setEditItem(item.id)}
+                        onToggleBasic={() => toggleBasic.mutate({ id: item.id, isBasic: !item.isBasic })}
+                      />
                     ))}
+                  </ul>
+                </section>
+              ))}
 
-                    {/* Группа «Заготовки» в Морозилке — отдельная секция */}
-                    {tab === "freezer" && allPreserveItems.length > 0 && (
-                      <section className="pt-6 border-t border-[#3a4558]">
-                        <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <span>❄️</span> Заготовки
-                          <Link
-                            to="/preserves"
-                            className="ml-auto text-xs text-[#d4a574] normal-case font-normal tracking-normal"
-                          >
-                            в раздел →
-                          </Link>
-                        </h3>
-                        <ul className="space-y-3">
-                          {allPreserveItems.map((item) => (
-                            <InventoryCard
-                              key={`${item.source}-${item.id}`}
-                              item={item}
-                              tabEmoji="❄️"
-                              onRemove={() => handleRemove(item)}
-                              onEdit={() => {}}
-                              onToggleBasic={() => {}}
-                              isPreserve
-                            />
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-                  </>
-                );
-              })()}
+              {/* Изменение 7: Группа «Заготовки» в Морозилке — отдельная секция */}
+              {tab === "freezer" && preserveItems.length > 0 && (
+                <section className="pt-6 border-t border-[#3a4558]">
+                  <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Snowflake size={12} className="text-[#38bdf8]" /> Заготовки
+                    <Link
+                      to="/preserves"
+                      className="ml-auto text-xs text-[#d4a574] normal-case font-normal tracking-normal"
+                    >
+                      в раздел →
+                    </Link>
+                  </h3>
+                  <ul className="space-y-2">
+                    {preserveItems.map((item) => (
+                      <InventoryCard
+                        key={`${item.source}-${item.id}`}
+                        item={item}
+                        onRemove={() => handleRemove(item)}
+                        onEdit={() => {}}
+                        onToggleBasic={() => {}}
+                        isPreserve
+                      />
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
           )}
         </>
@@ -466,7 +446,6 @@ export function InventoryPage() {
 
 function InventoryCard({
   item,
-  tabEmoji,
   onRemove,
   onEdit,
   onToggleBasic,
@@ -482,34 +461,31 @@ function InventoryCard({
     minQuantity: string | null;
     isBasic: boolean;
   };
-  tabEmoji: string;
   onRemove: () => void;
   onEdit: () => void;
   onToggleBasic: () => void;
   isPreserve?: boolean;
 }) {
-  const imgSrc = getProductImageSrc(item.productName);
+  const imgSrc = getProductImageSrc(item.productName) || createSvgPlaceholder(item.productName, 80, 80);
 
   return (
     <li className="rounded-lg border border-[#3a4558] bg-[#232b3b] p-4 hover:border-[#4a5568] transition-colors item-card animate-reveal">
       {/* Шапка: иконка + название + кнопки */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {imgSrc ? (
+          {imgSrc && (
             <img
               src={imgSrc}
               alt={item.productName}
-              width={64}
-              height={64}
-              className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#1a1f2e]"
+              width={80}
+              height={80}
+              className="w-10 h-10 rounded-lg object-cover shrink-0"
             />
-          ) : (
-            <span className="text-lg shrink-0">{tabEmoji}</span>
           )}
           <div className="min-w-0">
             <p className="text-sm font-semibold text-white truncate">
               {item.isBasic && (
-                <span className="text-xs text-[#d4a574] mr-1" title="Базовый продукт">📌</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-[#d4a574] mr-1.5 align-middle" title="Базовый продукт" />
               )}
               {item.productName}
             </p>
@@ -526,7 +502,7 @@ function InventoryCard({
               }`}
               title={item.isBasic ? "Убрать из базовых" : "Базовый (не в покупки)"}
             >
-              📌
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-current" />
             </button>
           )}
           {item.source === "inventory" && !isPreserve && (
