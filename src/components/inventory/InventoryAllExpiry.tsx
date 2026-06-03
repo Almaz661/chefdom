@@ -42,7 +42,7 @@ export function InventoryAllExpiry({
             : 'border-white/[0.06] bg-[#080c18]/60 text-white/50 hover:text-[#e8b94a] hover:border-[#c9953c]/20'
         }`}
       >
-        <span className="text-sm font-medium">
+        <span className="text-base font-bold">
           📋 Все сроки годности ({items.length})
         </span>
         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -77,17 +77,17 @@ export function InventoryAllExpiry({
                     }`}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white/70 truncate">
+                    <p className="text-base font-semibold text-white/70 truncate">
                       {item.productName}
                       {item.quantity && (
-                        <span className="text-white/25 ml-1.5 text-xs">
+                        <span className="text-white/30 ml-1.5 text-sm font-normal">
                           {item.quantity}{item.unit ? ` ${item.unit}` : ''}
                         </span>
                       )}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`text-xs font-medium ${
+                    <p className={`text-sm font-bold ${
                       isExpired ? 'text-red-400' : isSoon ? 'text-[#f97316]' : 'text-white/40'
                     }`}>
                       {item.expiryDate && new Date(item.expiryDate).toLocaleDateString('ru-RU', {
@@ -95,7 +95,7 @@ export function InventoryAllExpiry({
                         month: 'short',
                       })}
                     </p>
-                    <p className={`text-[10px] ${
+                    <p className={`text-xs font-medium ${
                       isExpired ? 'text-red-400/70' : isSoon ? 'text-[#f97316]/70' : 'text-white/25'
                     }`}>
                       {expiryText(item.expiryDate)}

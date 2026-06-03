@@ -80,8 +80,8 @@ export function InventoryCategoryCard({
         {/* Content */}
         <div className="relative z-10 flex items-center justify-between w-full">
           <div>
-            <h3 className="text-white font-bold text-sm">{category}</h3>
-            <p className="text-white/40 text-xs mt-0.5">
+            <h3 className="text-white font-extrabold text-lg">{category}</h3>
+            <p className="text-white/40 text-sm font-semibold mt-0.5">
               {items.length} {items.length === 1 ? 'продукт' : items.length < 5 ? 'продукта' : 'продуктов'}
             </p>
           </div>

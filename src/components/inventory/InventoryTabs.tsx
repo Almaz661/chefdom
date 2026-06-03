@@ -19,13 +19,13 @@ export function InventoryTabs({
         <button
           key={key}
           onClick={() => onChange(key)}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-200 ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
             active === key
               ? 'bg-gradient-to-r from-[#c9953c]/20 to-[#e8b94a]/10 text-[#e8b94a] border border-[#c9953c]/30 shadow-[0_0_12px_rgba(201,149,60,0.15)]'
               : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
           }`}
         >
-          <Icon size={15} strokeWidth={1.7} />
+          <Icon size={18} strokeWidth={1.7} />
           <span className="hidden sm:inline">{label}</span>
         </button>
       ))}

@@ -53,7 +53,7 @@ export function InventoryExpiringSection({
   return (
     <GlassCard className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold text-[#f97316] uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-extrabold text-[#f97316] uppercase tracking-wider flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-[#f97316]/15 flex items-center justify-center">
             <AlertTriangle size={14} className="text-[#f97316]" />
           </div>
@@ -64,7 +64,7 @@ export function InventoryExpiringSection({
             <button
               key={key}
               onClick={() => onExpiryPeriodChange(key)}
-              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 ${
+              className={`px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
                 expiryPeriod === key
                   ? 'bg-[#f97316]/20 text-[#f97316] border border-[#f97316]/30'
                   : 'text-white/30 hover:text-white/50 hover:bg-white/[0.04]'
@@ -97,23 +97,23 @@ export function InventoryExpiringSection({
               />
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white/80 truncate">
+                <p className="text-base font-semibold text-white/90 truncate">
                   {item.source === 'preserve' && (
-                    <Snowflake size={12} className="inline-block mr-1 text-blue-400 align-text-bottom" />
+                    <Snowflake size={14} className="inline-block mr-1 text-blue-400 align-text-bottom" />
                   )}
                   {item.productName}
                   {item.quantity && (
-                    <span className="text-white/30 ml-1.5 text-xs">
+                    <span className="text-white/40 ml-1.5 text-sm font-normal">
                       {item.quantity}{item.unit ? ` ${item.unit}` : ''}
                     </span>
                   )}
                   {item.minQuantity && (
-                    <span className="text-[#e8b94a]/60 ml-1.5 text-xs" title="Мин. остаток для авто-докупки">
+                    <span className="text-[#e8b94a]/60 ml-1.5 text-sm font-normal" title="Мин. остаток для авто-докупки">
                       (мин: {item.minQuantity})
                     </span>
                   )}
                 </p>
-                <p className={`text-xs mt-0.5 ${isExpired ? 'text-red-400' : 'text-[#f97316]/80'}`}>
+                <p className={`text-sm font-medium mt-0.5 ${isExpired ? 'text-red-400' : 'text-[#f97316]/80'}`}>
                   {expiryText(item.expiryDate)}
                   {item.expiryDate && (
                     <span className="text-white/25 ml-1">
