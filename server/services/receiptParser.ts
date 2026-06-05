@@ -275,7 +275,7 @@ const SKIP_LINE: RegExp[] = [
   /^\s*\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\s*$/,
   /^\s*(?:касс|cash|карта|оплата|sale|n\d+\s+\d+)/i,
   // Немецкие итоговые/служебные строки (Penny, Rewe, Edeka, Lidl)
-  /^\s*lebensmittel\s*$/i,
+  // LEBENSMITTEL убран — в Penny это реальная позиция с ценой
   /^\s*(summe|zwischensumme|gesamtbetrag|gesamt|mwst|steuer|ust|mehrwertsteuer)\b/i,
   /^\s*(geg[e|e]ben|gegeben|rueckgeld|r[uü]ckgeld|wechselgeld|bar|ec-cash|ec\s*karte)\b/i,
   /^\s*(vielen\s*dank|auf\s*wiedersehen|ihr\s*einkauf|einkauf\s*bei|willkommen|bonuspunkte|payback)\b/i,
