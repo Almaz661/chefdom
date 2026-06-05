@@ -388,7 +388,6 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
 
   const tryCommit = (price: number): boolean => {
     if (!looksLikePrice(price)) return false;
-    if (total !== null && Math.abs(price - total) < 0.01) return false;
     if (!pendingName) return false;
     items.push({ name: pendingName, price });
     pendingName = null;
@@ -431,7 +430,7 @@ function parseAll(text: string, total: number | null): ItemCandidate[] {
     if (looksLikeProductName(line)) {
       // Хвостовая цена? Используем extractTrailingPrice для надёжности.
       const trailingPrice = extractTrailingPrice(line);
-      if (trailingPrice !== null && looksLikePrice(trailingPrice) && (total === null || Math.abs(trailingPrice - total) > 0.01)) {
+      if (trailingPrice !== null && looksLikePrice(trailingPrice)) {
         // Проверяем что после удаления цены осталось валидное имя
         const withoutPrice = line.replace(/\s*-?\d{1,4}[.,]\d{2}.*$/, '').trim();
         if (looksLikeProductName(withoutPrice)) {
@@ -490,8 +489,6 @@ function parseParallelColumns(
       const p = priceOnlyValue(l);
       if (p === null) continue;
       if (!looksLikePrice(p)) continue;
-      // Не считаем итог позицией
-      if (total !== null && Math.abs(p - total) < 0.01) continue;
       prices.push(p);
       continue;
     }
