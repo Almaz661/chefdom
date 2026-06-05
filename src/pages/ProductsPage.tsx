@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Package, Barcode, Plus, Check, Store, Calendar, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { toast } from "../components/ui/Toast";
 import { BarcodeScanner } from "../components/BarcodeScanner";
 
 const STORAGE_OPTIONS: { key: "fridge" | "freezer" | "pantry"; label: string }[] = [
@@ -17,6 +18,7 @@ function DeleteAllButton() {
       utils.products.list.invalidate();
       utils.products.search.invalidate();
     },
+    onError: (err) => toast.error(err.message),
   });
 
   return (
@@ -43,8 +45,9 @@ function SyncFromReceiptsButton() {
     onSuccess: (data) => {
       utils.products.list.invalidate();
       utils.products.search.invalidate();
-      alert(`Готово! Загружено ${data.synced} товаров из чеков в каталог.`);
+      toast.success(`Загружено ${data.synced} товаров из чеков`);
     },
+    onError: (err) => toast.error(err.message),
   });
 
   return (
@@ -74,6 +77,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
       utils.products.list.invalidate();
       utils.products.search.invalidate();
     },
+    onError: (err) => toast.error(err.message),
   });
   const historyQuery = trpc.products.getPriceHistory.useQuery(
     { productName: product.nameRu },

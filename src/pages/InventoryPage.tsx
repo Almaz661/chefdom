@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { trpc } from '../utils/trpc';
+import { toast } from '../components/ui/Toast';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 import { InventoryHeader } from '../components/inventory/InventoryHeader';
 import { InventoryTabs } from '../components/inventory/InventoryTabs';
@@ -42,22 +43,26 @@ export function InventoryPage() {
 
   const remove = trpc.inventory.remove.useMutation({
     onSuccess: () => utils.inventory.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
   const removePreserve = trpc.preserves.remove.useMutation({
     onSuccess: () => utils.preserves.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
   const toggleBasic = trpc.inventory.update.useMutation({
     onSuccess: () => utils.inventory.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
   const recalc = trpc.inventory.recalcExpiry.useMutation({
     onSuccess: (data) => {
       utils.inventory.list.invalidate();
       if (data.updated > 0) {
-        alert(`Готово! Проставлено сроков: ${data.updated} из ${data.total} продуктов без даты.`);
+        toast.success(`Проставлено сроков: ${data.updated} из ${data.total} продуктов`);
       } else {
-        alert('У всех продуктов уже есть сроки, или не нашлось совпадений в справочнике.');
+        toast.info('У всех продуктов уже есть сроки или не нашлось совпадений');
       }
     },
+    onError: (err) => toast.error(err.message),
   });
 
   // --- Data transformations (logic preserved 1:1) ---

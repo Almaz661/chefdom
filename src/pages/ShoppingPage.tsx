@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ShoppingCart, Loader2 } from 'lucide-react';
 import { trpc } from '../utils/trpc';
+import { toast } from '../components/ui/Toast';
 import { GlassCard } from '../components/ui/GlassCard';
 import { ShoppingHeader } from '../components/shopping/ShoppingHeader';
 import { ShoppingKpiRow } from '../components/shopping/ShoppingKpiRow';
@@ -49,26 +50,31 @@ export function ShoppingPage() {
 
   const add = trpc.shopping.add.useMutation({
     onSuccess: () => utils.shopping.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   const toggle = trpc.shopping.toggle.useMutation({
     onSuccess: () => utils.shopping.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   const remove = trpc.shopping.remove.useMutation({
     onSuccess: () => utils.shopping.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   const clearChecked = trpc.shopping.clearChecked.useMutation({
     onSuccess: () => utils.shopping.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   const addBulkSmart = trpc.inventory.addBulkSmart.useMutation({
     onSuccess: (data) => {
       clearChecked.mutate();
       setShowPreview(false);
-      alert(`Добавлено в инвентарь: ${data.added} товаров`);
+      toast.success(`Добавлено в инвентарь: ${data.added} товаров`);
     },
+    onError: (err) => toast.error(err.message),
   });
 
   // --- Computed data ---

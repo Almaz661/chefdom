@@ -6,7 +6,7 @@ import { validateFetchUrl } from "./urlValidation";
 import { normalizeRecipeCategory } from "./categoryNormalize";
 import { db } from "../db/index";
 import { recipes, recipeIngredients, recipeSteps } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // --- Types ---
 
@@ -204,11 +204,11 @@ async function runImport(job: ImportJob, userId: number): Promise<void> {
     job.currentUrl = url;
     job.currentTitle = null;
 
-    // Дедуп: проверить source_url в БД
+    // Дедуп: проверить source_url в БД только для этого пользователя
     const existing = await db
       .select({ id: recipes.id })
       .from(recipes)
-      .where(eq(recipes.sourceUrl, url))
+      .where(and(eq(recipes.sourceUrl, url), eq(recipes.userId, userId)))
       .limit(1);
 
     if (existing.length > 0) {

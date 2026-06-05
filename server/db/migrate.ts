@@ -1706,6 +1706,44 @@ const migrations: Migration[] = [
       `;
     },
   },
+  {
+    version: '035_performance_indexes_v2',
+    up: async (sql) => {
+      // Критические индексы которых не хватало для масштабирования на 5000+ рецептов.
+      // Все IF NOT EXISTS — идемпотентно.
+
+      // recipe_ingredients(recipe_id) — ключевой для getSuggestions и matchWithInventory
+      // (загрузка ингредиентов для тысяч рецептов одним inArray-запросом)
+      await sql`CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id_v2 ON recipe_ingredients(recipe_id)`;
+
+      // menus(user_id, week_start_date) — частый запрос в getWeek/addItem/toShopping
+      await sql`CREATE INDEX IF NOT EXISTS idx_menus_user_week ON menus(user_id, week_start_date)`;
+
+      // menu_items(menu_id) — JOIN при загрузке меню недели
+      await sql`CREATE INDEX IF NOT EXISTS idx_menu_items_menu_id ON menu_items(menu_id)`;
+
+      // cooking_history(user_id, recipe_id) — для getSuggestions (lastCookedMap)
+      await sql`CREATE INDEX IF NOT EXISTS idx_cooking_history_user_recipe_v2 ON cooking_history(user_id, recipe_id)`;
+
+      // inventory(user_id, expiry_date) — для getExpiring и getSuggestions
+      await sql`CREATE INDEX IF NOT EXISTS idx_inventory_user_expiry_v2 ON inventory(user_id, expiry_date) WHERE expiry_date IS NOT NULL`;
+
+      // inventory(user_id, storage_type) — для фильтрации по вкладке
+      await sql`CREATE INDEX IF NOT EXISTS idx_inventory_user_storage ON inventory(user_id, storage_type)`;
+
+      // receipt_items(receipt_id) — для экспорта и синхронизации
+      await sql`CREATE INDEX IF NOT EXISTS idx_receipt_items_receipt_id ON receipt_items(receipt_id)`;
+
+      // recipes(source_url) — для дедупликации при sectionImport
+      await sql`CREATE INDEX IF NOT EXISTS idx_recipes_source_url ON recipes(source_url) WHERE source_url IS NOT NULL`;
+
+      // preserves(user_id, expiry_date) — для getSuggestions и getExpiring заготовок
+      await sql`CREATE INDEX IF NOT EXISTS idx_preserves_user_expiry ON preserves(user_id, expiry_date) WHERE expiry_date IS NOT NULL`;
+
+      // purchase_items(user_id) — для list и дедупликации
+      await sql`CREATE INDEX IF NOT EXISTS idx_purchase_items_user_id ON purchase_items(user_id)`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

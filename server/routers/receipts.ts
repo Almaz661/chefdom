@@ -493,7 +493,7 @@ export const receiptsRouter = router({
   // Проходит по всем позициям всех чеков, добавляет/обновляет в products
   // с ценой, магазином и датой покупки.
   syncAllToProducts: protectedProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       const allItems = await db
         .select({
           productName: receiptItems.productName,
@@ -502,7 +502,8 @@ export const receiptsRouter = router({
           purchaseDate: receipts.purchaseDate,
         })
         .from(receiptItems)
-        .innerJoin(receipts, eq(receiptItems.receiptId, receipts.id));
+        .innerJoin(receipts, eq(receiptItems.receiptId, receipts.id))
+        .where(eq(receipts.userId, ctx.userId));
 
       let synced = 0;
       for (const item of allItems) {

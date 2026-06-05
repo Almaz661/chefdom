@@ -12,6 +12,7 @@ import {
   Minus,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { toast } from "../components/ui/Toast";
 
 // Этап D — заготовки. Четыре типа в одной таблице, переключение табами.
 //
@@ -83,10 +84,12 @@ export function PreservesPage() {
 
   const remove = trpc.preserves.remove.useMutation({
     onSuccess: () => utils.preserves.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   const consumeServings = trpc.preserves.consumeServings.useMutation({
     onSuccess: () => utils.preserves.list.invalidate(),
+    onError: (err) => toast.error(err.message),
   });
 
   // Фильтр по табу
