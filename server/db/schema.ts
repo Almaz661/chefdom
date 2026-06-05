@@ -133,8 +133,12 @@ export const menuItems = pgTable('menu_items', {
   dayOfWeek: integer('day_of_week').notNull(),
   mealType: text('meal_type').notNull(),
   recipeId: integer('recipe_id')
-    .notNull()
     .references(() => recipes.id, { onDelete: 'cascade' }),
+  // Заготовка (готовое блюдо) — альтернатива рецепту
+  preserveId: integer('preserve_id')
+    .references(() => preserves.id, { onDelete: 'set null' }),
+  // Название для случая когда нет ни рецепта ни заготовки (ручной ввод)
+  customTitle: text('custom_title'),
 });
 
 // Инвентарь (что есть дома).

@@ -6,10 +6,12 @@ export function RecipePickerDialog({
   onSelect,
   onClose,
   loading,
+  onSelectPreserve,
 }: {
   onSelect: (recipeId: number) => void;
   onClose: () => void;
   loading: boolean;
+  onSelectPreserve?: (preserveId: number, name: string) => void;
 }) {
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -21,6 +23,11 @@ export function RecipePickerDialog({
   const { data: suggestions, isLoading: suggestionsLoading } = trpc.menu.getSuggestions.useQuery(
     { limit: 6 },
     { enabled: showSuggestions && !search.trim() }
+  );
+
+  const { data: cookedPreserves } = trpc.menu.getCookedPreserves.useQuery(
+    undefined,
+    { enabled: !search.trim() }
   );
 
   const recipes = data?.items ?? [];
@@ -120,6 +127,38 @@ export function RecipePickerDialog({
             <button onClick={() => setShowSuggestions(true)} className="mb-3 text-[11px] text-[#e8b94a] hover:underline">
               Показать рекомендации
             </button>
+          )}
+
+          {/* Готово дома — заготовки */}
+          {!search.trim() && cookedPreserves && cookedPreserves.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
+                🍽 Готово дома
+              </h4>
+              <ul className="space-y-1.5">
+                {cookedPreserves.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      onClick={() => onSelectPreserve ? onSelectPreserve(p.id, p.name) : undefined}
+                      disabled={loading || !onSelectPreserve}
+                      className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/20 hover:border-emerald-600/30 hover:bg-emerald-950/50 transition-all text-left disabled:opacity-50"
+                    >
+                      <div className="w-11 h-11 rounded-lg bg-emerald-900/40 border border-emerald-700/20 shrink-0 flex items-center justify-center text-lg">
+                        🍲
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-semibold text-white/70 truncate">{p.name}</p>
+                        <p className="text-[10px] text-emerald-400/70">
+                          {p.servings ? `${p.servings} порц.` : ''}
+                          {p.servings && p.expiryDate ? ' · ' : ''}
+                          {p.expiryDate ? `до ${new Date(p.expiryDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}` : ''}
+                        </p>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {/* All recipes */}

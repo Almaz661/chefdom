@@ -32,7 +32,7 @@ export const menuRouter = router({
           .limit(1);
       }
 
-      // Получить все items с данными рецепта
+      // Получить все items с данными рецепта или заготовки
       const items = await db
         .select({
           id: menuItems.id,
@@ -42,12 +42,25 @@ export const menuRouter = router({
           recipeTitle: recipes.title,
           recipeImage: recipes.imageUrl,
           recipeTotalTime: recipes.totalTime,
+          preserveId: menuItems.preserveId,
+          preserveName: preserves.name,
+          customTitle: menuItems.customTitle,
         })
         .from(menuItems)
-        .innerJoin(recipes, eq(menuItems.recipeId, recipes.id))
+        .leftJoin(recipes, eq(menuItems.recipeId, recipes.id))
+        .leftJoin(preserves, eq(menuItems.preserveId, preserves.id))
         .where(eq(menuItems.menuId, menu.id));
 
-      return { menuId: menu.id, weekStart: menu.weekStartDate, items };
+      // Унифицируем title и image для отображения
+      return {
+        menuId: menu.id,
+        weekStart: menu.weekStartDate,
+        items: items.map(i => ({
+          ...i,
+          recipeTitle: i.recipeTitle ?? i.preserveName ?? i.customTitle ?? 'Блюдо',
+          recipeImage: i.recipeImage ?? null,
+        })),
+      };
     }),
 
   // Добавить рецепт в слот
@@ -57,7 +70,11 @@ export const menuRouter = router({
         weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         dayOfWeek: z.number().int().min(0).max(6),
         mealType: z.enum(mealTypes),
-        recipeId: z.number().int().positive(),
+        recipeId: z.number().int().positive().optional(),
+        preserveId: z.number().int().positive().optional(),
+        customTitle: z.string().max(200).optional(),
+      }).refine(d => d.recipeId || d.preserveId || d.customTitle, {
+        message: 'Нужен recipeId, preserveId или customTitle',
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -81,15 +98,16 @@ export const menuRouter = router({
           .limit(1);
       }
 
-      // Проверить что рецепт существует
-      const [recipe] = await db
-        .select({ id: recipes.id })
-        .from(recipes)
-        .where(and(eq(recipes.id, input.recipeId), eq(recipes.userId, ctx.userId)))
-        .limit(1);
-
-      if (!recipe) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
+      // Проверить что рецепт существует (если передан)
+      if (input.recipeId) {
+        const [recipe] = await db
+          .select({ id: recipes.id })
+          .from(recipes)
+          .where(and(eq(recipes.id, input.recipeId), eq(recipes.userId, ctx.userId)))
+          .limit(1);
+        if (!recipe) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Рецепт не найден' });
+        }
       }
 
       const [created] = await db
@@ -98,7 +116,9 @@ export const menuRouter = router({
           menuId: menu.id,
           dayOfWeek: input.dayOfWeek,
           mealType: input.mealType,
-          recipeId: input.recipeId,
+          recipeId: input.recipeId ?? null,
+          preserveId: input.preserveId ?? null,
+          customTitle: input.customTitle ?? null,
         })
         .returning({ id: menuItems.id });
 

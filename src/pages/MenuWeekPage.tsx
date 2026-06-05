@@ -127,6 +127,14 @@ export function MenuWeekPage() {
               recipeId,
             });
           }}
+          onSelectPreserve={(preserveId) => {
+            addItem.mutate({
+              weekStart,
+              dayOfWeek: pickSlot.dayOfWeek,
+              mealType: pickSlot.mealType,
+              preserveId,
+            });
+          }}
           onClose={() => setPickSlot(null)}
           loading={addItem.isPending}
         />
