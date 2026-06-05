@@ -335,27 +335,61 @@ export const menuRouter = router({
       // Также исключаем «базовые продукты» (isBasic=1) — соль, масло и т.д.
       // которые пользователь пометил как «всегда есть дома».
       const invItems = await db
-        .select({ productName: inventory.productName })
+        .select({ productName: inventory.productName, quantity: inventory.quantity, unit: inventory.unit, isBasic: inventory.isBasic })
         .from(inventory)
         .where(eq(inventory.userId, ctx.userId));
       const preserveItems = await db
         .select({ name: preserves.name })
         .from(preserves)
         .where(eq(preserves.userId, ctx.userId));
-      const basicItems = await db
-        .select({ productName: inventory.productName })
-        .from(inventory)
-        .where(and(eq(inventory.userId, ctx.userId), eq(inventory.isBasic, 1)));
+
+      // Карта: нормализованное имя → количество в инвентаре
+      const atHomeQty = new Map<string, number>();
+      for (const i of invItems) {
+        const key = normalizeName(i.productName);
+        const qty = i.quantity ? parseFloat(i.quantity) : 0;
+        atHomeQty.set(key, (atHomeQty.get(key) ?? 0) + qty);
+      }
+      // Заготовки — только имя (нет единиц для сравнения)
       const atHomeKeys = new Set([
-        ...invItems.map(i => normalizeName(i.productName)),
         ...preserveItems.map(p => normalizeName(p.name)),
-        ...basicItems.map(i => normalizeName(i.productName)),
       ]);
 
-      // Убираем из aggregated то что уже есть дома
-      for (const [key] of aggregated) {
+      // Вычитаем из aggregated то что уже есть дома по количеству.
+      // Если в инвентаре достаточно — не добавляем в покупки.
+      // Если меньше нужного — добавляем только разницу.
+      // Базовые продукты (isBasic=1) — всегда исключаем полностью.
+      const basicKeys = new Set(
+        invItems.filter(i => i.isBasic === 1).map(i => normalizeName(i.productName))
+      );
+
+      for (const [key, item] of aggregated) {
+        // Базовые — всегда есть дома
+        if (basicKeys.has(key)) {
+          aggregated.delete(key);
+          continue;
+        }
+        // Есть в заготовках — пропускаем
         if (atHomeKeys.has(key)) {
           aggregated.delete(key);
+          continue;
+        }
+        // Есть в инвентаре — вычитаем количество
+        if (atHomeQty.has(key)) {
+          const inStock = atHomeQty.get(key)!;
+          if (item.amount !== null) {
+            const needed = item.amount - inStock;
+            if (needed <= 0) {
+              // Достаточно — не покупать
+              aggregated.delete(key);
+            } else {
+              // Покупать только разницу
+              item.amount = needed;
+            }
+          } else {
+            // Количество не указано, но продукт есть — пропускаем
+            aggregated.delete(key);
+          }
         }
       }
 
