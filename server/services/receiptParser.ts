@@ -168,7 +168,7 @@ function detectLanguageByContent(text: string): 'NL' | 'DE' | 'PL' | 'EN' | null
   // Польские слова (продукты, единицы)
   const plMatches = lower.match(/\b(ogorki|kiszone|pieprz|czarny|herbata|owocowa|woda|mineralna|kapusta|kiszona|maslo|chleb|mleko|ser|jajka|ziarnisty|mrozon|swiezy|szynka|kielbasa|sloneczn)\b/gi);
   // Немецкие слова
-  const deMatches = lower.match(/\b(speisesalz|weizengruetze|sonnenblumen[oö]l|milch|brot|k[aä]se|butter|mehl|zucker|eier|wurst|schinken|sahne|joghurt|nudeln|reis|grob)\b/gi);
+  const deMatches = lower.match(/\b(speisesalz|weizengruetze|sonnenblumen[oö]l|milch|brot|k[aä]se|butter|mehl|zucker|eier|wurst|schinken|sahne|joghurt|nudeln|reis|grob|naturjoghurt|schmelzk[aä]se|landbrot|blattgelatine|thunfisch|brustfile|schenkel|lebensmittel|frischerabatt)\b/gi);
   // Голландские слова
   const nlMatches = lower.match(/\b(slagroom|volle\s*melk|kaas|brood|boter|eieren|worst|ham|yoghurt|rijst|suiker|meel|kwark|kip|varkensvlees)\b/gi);
 
@@ -231,7 +231,7 @@ function isQuantityLine(line: string): boolean {
 // Они НЕ являются товарами, но имеют связанную отрицательную цену.
 // Мы их сохраняем как позиции с отрицательной ценой (для отображения скидки).
 function isDiscountLine(line: string): boolean {
-  return /\b(korting|discount|скидка|акция|sale)\b/i.test(line);
+  return /\b(korting|rabatt|discount|скидка|акция|sale|promo)\b/i.test(line);
 }
 
 // Пытаемся достать «хвостовую» цену из произвольной строки (для one-line формата).
@@ -274,6 +274,11 @@ const SKIP_LINE: RegExp[] = [
   /^\s*\d{1,2}[:.]\d{2}(?::\d{2})?\s*$/,
   /^\s*\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\s*$/,
   /^\s*(?:касс|cash|карта|оплата|sale|n\d+\s+\d+)/i,
+  // Немецкие итоговые/служебные строки (Penny, Rewe, Edeka, Lidl)
+  /^\s*lebensmittel\s*$/i,
+  /^\s*(summe|zwischensumme|gesamtbetrag|gesamt|mwst|steuer|ust|mehrwertsteuer)\b/i,
+  /^\s*(geg[e|e]ben|gegeben|rueckgeld|r[uü]ckgeld|wechselgeld|bar|ec-cash|ec\s*karte)\b/i,
+  /^\s*(vielen\s*dank|auf\s*wiedersehen|ihr\s*einkauf|einkauf\s*bei|willkommen|bonuspunkte|payback)\b/i,
   // Длинные цифровые ID / штрих-коды / транзакции
   /^\s*[A-Z0-9]{12,}\s*$/,
   /^\s*\d{6,}\s*$/,
@@ -638,13 +643,13 @@ export function parseReceiptText(
   // DATE: <YYYY-MM-DD>
   let geminiStore: string | null = null;
   let geminiDate: string | null = null;
-  const storeMatch = text.match(/^STORE:\s*(.+)$/m);
-  const dateMatch = text.match(/^DATE:\s*(\d{4}-\d{2}-\d{2})$/m);
+  const storeMatch = text.match(/^STORE:\s*(.+)$/im);
+  const dateMatch = text.match(/^DATE:\s*(\d{4}-\d{2}-\d{2})$/im);
   if (storeMatch) geminiStore = storeMatch[1].trim();
   if (dateMatch) geminiDate = dateMatch[1].trim();
 
   // Убираем метаданные из текста перед парсингом позиций
-  const textWithoutMeta = text.replace(/^(STORE|DATE):.*$/gm, '').trim();
+  const textWithoutMeta = text.replace(/^(STORE|DATE):.*$/gim, '').trim();
 
   const { storeName: detectedStore, currency, sourceLang } = detectStoreAndCurrency(textWithoutMeta, defaultCurrency);
   const purchaseDate = geminiDate ?? detectDate(textWithoutMeta);
