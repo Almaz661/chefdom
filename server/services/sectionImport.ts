@@ -67,7 +67,7 @@ export function cancelActiveJob(): boolean {
   return true;
 }
 
-export function startSectionImport(seedUrl: string): ImportJob {
+export function startSectionImport(seedUrl: string, userId: number): ImportJob {
   if (activeJob && activeJob.status === "running") {
     throw new Error("Дождитесь завершения текущего импорта.");
   }
@@ -89,7 +89,7 @@ export function startSectionImport(seedUrl: string): ImportJob {
   activeJob = job;
 
   // Запускаем асинхронно — не блокируем ответ клиенту
-  runImport(job).catch((err) => {
+  runImport(job, userId).catch((err) => {
     job.status = "error";
     job.errors.push({ url: seedUrl, message: String(err) });
   });
@@ -99,7 +99,7 @@ export function startSectionImport(seedUrl: string): ImportJob {
 
 // --- Import runner ---
 
-async function runImport(job: ImportJob): Promise<void> {
+async function runImport(job: ImportJob, userId: number): Promise<void> {
   let parsedSeed: URL;
   try {
     parsedSeed = new URL(job.seedUrl);
@@ -229,6 +229,7 @@ async function runImport(job: ImportJob): Promise<void> {
         const [created] = await tx
           .insert(recipes)
           .values({
+            userId,
             title: scraped.title,
             description: scraped.description,
             imageUrl: scraped.imageUrl,

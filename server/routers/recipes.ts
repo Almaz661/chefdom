@@ -439,9 +439,9 @@ export const recipesRouter = router({
 
   importSectionStart: protectedProcedure
     .input(z.object({ url: z.string().url('Некорректный URL раздела') }))
-    .mutation(({ input }) => {
+    .mutation(({ input, ctx }) => {
       try {
-        const job = startSectionImport(input.url);
+        const job = startSectionImport(input.url, ctx.userId);
         return { jobId: job.id };
       } catch (err) {
         throw new TRPCError({
