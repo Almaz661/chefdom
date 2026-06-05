@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { and, desc, eq, gte, lte, sql, inArray } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
-import { cookingHistory, recipeIngredients, receipts, receiptItems } from '../db/schema';
+import { cookingHistory, recipeIngredients, receipts, receiptItems, recipes } from '../db/schema';
 
 // C.3 — Аналитика.
 // Период: «Неделя» / «Месяц» / «3 месяца» (план раздел 19.4).
@@ -316,7 +316,7 @@ export const analyticsRouter = router({
       const recipeIds = [...new Set(cooks.filter(c => c.recipeId !== null).map(c => c.recipeId!))];
       if (recipeIds.length === 0) return [];
 
-      // Получаем ингредиенты этих рецептов
+      // Получаем ингредиенты этих рецептов + servings рецепта (для масштабирования)
       const allIngredients = await db
         .select({
           recipeId: recipeIngredients.recipeId,
@@ -327,21 +327,30 @@ export const analyticsRouter = router({
         .from(recipeIngredients)
         .where(inArray(recipeIngredients.recipeId, recipeIds));
 
-      // Суммируем: для каждого факта готовки умножаем ингредиенты на (servings/default_servings).
-      // Упрощённо: считаем что ингредиенты даны на 1 порцию (не совсем точно,
-      // но для аналитики расхода достаточно).
+      // Получаем servings рецептов (на сколько порций написан рецепт)
+      const recipeServings = await db
+        .select({ id: recipes.id, servings: recipes.servings })
+        .from(recipes)
+        .where(inArray(recipes.id, recipeIds));
+      const recipeServingsMap = new Map(recipeServings.map(r => [r.id, r.servings ?? 1]));
+
+      // Суммируем: для каждого факта готовки умножаем ингредиенты на
+      // (cook.servings / recipe.servings) — реальный расход продуктов.
       const consumption: Record<string, { name: string; unit: string | null; total: number }> = {};
 
       for (const cook of cooks) {
         if (!cook.recipeId) continue;
         const ings = allIngredients.filter(i => i.recipeId === cook.recipeId);
+        const recipeDefaultServings = recipeServingsMap.get(cook.recipeId) ?? 1;
+        const cookedServings = cook.servings ?? recipeDefaultServings;
+        const multiplier = recipeDefaultServings > 0 ? cookedServings / recipeDefaultServings : 1;
         for (const ing of ings) {
           const key = `${ing.name.toLowerCase()}|${(ing.unit || '').toLowerCase()}`;
           if (!consumption[key]) {
             consumption[key] = { name: ing.name, unit: ing.unit, total: 0 };
           }
           const amount = ing.amount ? parseFloat(ing.amount) : 0;
-          consumption[key].total += amount;
+          consumption[key].total += amount * multiplier;
         }
       }
 
