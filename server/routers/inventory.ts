@@ -236,17 +236,17 @@ export const inventoryRouter = router({
   // Ищет по справочнику shelf_life для каждого продукта по storageType+name.
   recalcExpiry: protectedProcedure
     .mutation(async ({ ctx }) => {
-      // Берём все продукты без срока годности
-      const itemsWithoutExpiry = await db
+      // Берём только продукты БЕЗ срока годности — фильтр в SQL, не в JS
+      const noExpiry = await db
         .select()
         .from(inventory)
         .where(
           and(
             eq(inventory.userId, ctx.userId),
+            isNull(inventory.expiryDate),
           )
         );
 
-      const noExpiry = itemsWithoutExpiry.filter(i => !i.expiryDate);
       if (noExpiry.length === 0) return { updated: 0 };
 
       let updated = 0;

@@ -90,13 +90,21 @@ export const analyticsRouter = router({
         };
       }
 
-      const currency = periodReceipts[0].currency;
+      // Определяем основную валюту — ту у которой больше общая сумма.
+      // Смешивать EUR и RUB в одну сумму нельзя — результат будет бессмысленным.
+      const currencyTotals = new Map<string, number>();
+      for (const r of periodReceipts) {
+        const cur = r.currency || 'EUR';
+        currencyTotals.set(cur, (currencyTotals.get(cur) ?? 0) + (r.totalAmount ? parseFloat(r.totalAmount as unknown as string) : 0));
+      }
+      const currency = [...currencyTotals.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'EUR';
+
       const receiptIds = periodReceipts.map(r => r.id);
 
-      // Общая сумма из total_amount чеков
-      const totalSpent = periodReceipts.reduce((sum, r) => {
-        return sum + (r.totalAmount ? parseFloat(r.totalAmount as unknown as string) : 0);
-      }, 0);
+      // Суммируем только чеки в основной валюте
+      const totalSpent = periodReceipts
+        .filter(r => r.currency === currency)
+        .reduce((sum, r) => sum + (r.totalAmount ? parseFloat(r.totalAmount as unknown as string) : 0), 0);
 
       // Получаем все позиции этих чеков
       const items = await db
