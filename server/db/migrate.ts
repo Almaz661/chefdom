@@ -1744,6 +1744,16 @@ const migrations: Migration[] = [
       await sql`CREATE INDEX IF NOT EXISTS idx_purchase_items_user_id ON purchase_items(user_id)`;
     },
   },
+  {
+    version: '036_menu_items_preserve',
+    up: async (sql) => {
+      // Заготовки → Меню: добавляем preserve_id и custom_title в menu_items,
+      // делаем recipe_id nullable — можно добавить готовое блюдо без рецепта.
+      await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS preserve_id INTEGER REFERENCES preserves(id) ON DELETE SET NULL`;
+      await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS custom_title TEXT`;
+      await sql`ALTER TABLE menu_items ALTER COLUMN recipe_id DROP NOT NULL`;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
