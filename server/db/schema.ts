@@ -135,8 +135,10 @@ export const menuItems = pgTable('menu_items', {
   recipeId: integer('recipe_id')
     .references(() => recipes.id, { onDelete: 'cascade' }),
   // Заготовка (готовое блюдо) — альтернатива рецепту
-  preserveId: integer('preserve_id')
-    .references(() => preserves.id, { onDelete: 'set null' }),
+  // preserveId без FK constraint — preserves определён позже в файле,
+  // forward reference вызывает circular dependency при старте.
+  // Ссылочная целостность обеспечивается на уровне миграции.
+  preserveId: integer('preserve_id'),
   // Название для случая когда нет ни рецепта ни заготовки (ручной ввод)
   customTitle: text('custom_title'),
   // Планируемое количество порций (null = берём из рецепта)
