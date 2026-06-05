@@ -305,15 +305,7 @@ const SKIP_LINE: RegExp[] = [
 ];
 
 function isSkipLine(line: string): boolean {
-  for (let i = 0; i < SKIP_LINE.length; i++) {
-    if (SKIP_LINE[i].test(line)) {
-      if (line.trim().length > 3) {
-        console.log(`[parser-skip] rule#${i} caught: "${line.trim()}"`);
-      }
-      return true;
-    }
-  }
-  return false;
+  return SKIP_LINE.some((re) => re.test(line));
 }
 
 function isPriceOnlyLine(line: string): boolean {
