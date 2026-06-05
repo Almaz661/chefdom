@@ -619,14 +619,20 @@ export const menuRouter = router({
 
       const recipeIds = allRecipes.map(r => r.id);
 
-      // Получаем ингредиенты всех рецептов одним запросом
-      const allIngredients = await db
-        .select({
-          recipeId: recipeIngredients.recipeId,
-          name: recipeIngredients.name,
-        })
-        .from(recipeIngredients)
-        .where(inArray(recipeIngredients.recipeId, recipeIds));
+      // Получаем ингредиенты всех рецептов одним запросом (батчами по 1000 — PostgreSQL ограничение)
+      const BATCH_SIZE = 1000;
+      const allIngredients: { recipeId: number; name: string }[] = [];
+      for (let i = 0; i < recipeIds.length; i += BATCH_SIZE) {
+        const batch = recipeIds.slice(i, i + BATCH_SIZE);
+        const batchIngs = await db
+          .select({
+            recipeId: recipeIngredients.recipeId,
+            name: recipeIngredients.name,
+          })
+          .from(recipeIngredients)
+          .where(inArray(recipeIngredients.recipeId, batch));
+        allIngredients.push(...batchIngs);
+      }
 
       // Группируем по рецепту
       const ingredientsByRecipe = new Map<number, string[]>();
