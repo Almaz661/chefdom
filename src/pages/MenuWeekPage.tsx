@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
+import { toast } from '../components/ui/Toast';
 import { MenuWeekHeader } from '../components/menu-week/MenuWeekHeader';
 import { MenuWeekKpiRow } from '../components/menu-week/MenuWeekKpiRow';
 import { MenuWeekGrid } from '../components/menu-week/MenuWeekGrid';
@@ -57,15 +58,17 @@ export function MenuWeekPage() {
       utils.menu.getWeek.invalidate({ weekStart });
       setPickSlot(null);
     },
+    onError: (err) => toast.error(err.message),
   });
 
   const removeItem = trpc.menu.removeItem.useMutation({
     onSuccess: () => utils.menu.getWeek.invalidate({ weekStart }),
+    onError: (err) => toast.error(err.message),
   });
 
   const toShopping = trpc.menu.toShopping.useMutation({
-    onSuccess: (result) => alert(`Добавлено ${result.added} продуктов в покупки`),
-    onError: (err) => alert(err.message),
+    onSuccess: (result) => toast.success(`Добавлено ${result.added} продуктов в покупки`),
+    onError: (err) => toast.error(err.message),
   });
 
   const todayStr = formatDate(new Date());

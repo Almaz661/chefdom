@@ -11,6 +11,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { trpc } from "../utils/trpc";
+import { toast } from "../components/ui/Toast";
 
 // --- Helpers ---
 
@@ -93,21 +94,19 @@ export function MenuPage() {
       utils.menu.getWeek.invalidate({ weekStart });
       setPickSlot(null);
     },
+    onError: (err) => toast.error(err.message),
   });
 
   const removeItem = trpc.menu.removeItem.useMutation({
     onSuccess: () => {
       utils.menu.getWeek.invalidate({ weekStart });
     },
+    onError: (err) => toast.error(err.message),
   });
 
   const toShopping = trpc.menu.toShopping.useMutation({
-    onSuccess: (result) => {
-      alert(`Добавлено ${result.added} продуктов в список покупок`);
-    },
-    onError: (err) => {
-      alert(err.message);
-    },
+    onSuccess: (result) => toast.success(`Добавлено ${result.added} продуктов в список покупок`),
+    onError: (err) => toast.error(err.message),
   });
 
   // Сегодня — для подсветки

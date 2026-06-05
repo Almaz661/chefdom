@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { ToastContainer } from "./ui/Toast";
 import {
   Home,
   BookOpen,
@@ -57,6 +58,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-cream flex">
+      <ToastContainer />
       {/* Sidebar — desktop */}
       <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:w-[227px] lg:flex-col bg-paper border-r border-line px-3 py-6">
         <div className="px-3 mb-10">
