@@ -280,7 +280,9 @@ const SKIP_LINE: RegExp[] = [
   /^\s*(geg[e|e]ben|gegeben|rueckgeld|r[uü]ckgeld|wechselgeld|bar|ec-cash|ec\s*karte)\b/i,
   /^\s*(vielen\s*dank|auf\s*wiedersehen|ihr\s*einkauf|einkauf\s*bei|willkommen|bonuspunkte|payback)\b/i,
   // Длинные цифровые ID / штрих-коды / транзакции
-  /^\s*[A-Z0-9]{12,}\s*$/,
+  // Только если содержат хотя бы одну цифру (иначе поймаем длинные имена товаров
+  // типа SCHMELZKAESE, BLATTGELATINE — они состоят только из букв)
+  /^\s*[A-Z0-9]*\d[A-Z0-9]{10,}\s*$/,
   /^\s*\d{6,}\s*$/,
   /^\s*\d+\s+\d+\s+\d+/,
   // Адресные паттерны NL
