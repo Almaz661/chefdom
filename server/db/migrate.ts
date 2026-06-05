@@ -1753,6 +1753,7 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS custom_title TEXT`;
       await sql`ALTER TABLE menu_items ALTER COLUMN recipe_id DROP NOT NULL`;
     },
+  },
   {
     version: '037_menu_items_planned_servings',
     up: async (sql) => {
