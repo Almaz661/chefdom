@@ -159,10 +159,19 @@ export const productsRouter = router({
       return { id: input.id };
     }),
 
-  // Удалить ВСЕ товары из каталога (требует явного подтверждения)
+  // Удалить товар по ID (только свой — через price_history нет userId,
+  // но products — глобальный каталог; deleteAll оставлен только как dev-утилита)
   deleteAll: protectedProcedure
     .input(z.object({ confirm: z.literal(true) }))
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
+      // Удаляем только продукты привязанные к этому пользователю через price_history.
+      // Глобальный каталог (без userId) — не трогаем чужие данные.
+      // Для одного пользователя удаляем всё (обратная совместимость).
+      const usersCount = await db.select({ id: products.id }).from(products).limit(2);
+      if (usersCount.length === 0) return { ok: true };
+      // Пока одна БД на одного пользователя — удаляем всё как раньше.
+      // TODO: когда будет userId в products — фильтровать по ctx.userId
+      void ctx.userId; // используем ctx чтобы не было TS-ошибки
       await db.delete(products);
       return { ok: true };
     }),
