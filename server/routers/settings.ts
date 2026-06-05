@@ -50,7 +50,8 @@ export const settingsRouter = router({
     }),
 
   // Экспорт всех данных в JSON (раздел 15.1 плана)
-  exportBackup: protectedProcedure.query(async () => {
+  exportBackup: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.userId;
     const [
       allRecipes,
       allIngredients,
@@ -68,14 +69,14 @@ export const settingsRouter = router({
       db.select().from(recipes),
       db.select().from(recipeIngredients),
       db.select().from(recipeSteps),
-      db.select().from(menus),
+      db.select().from(menus).where(eq(menus.userId, userId)),
       db.select().from(menuItems),
-      db.select().from(inventory),
-      db.select().from(purchaseItems),
-      db.select().from(cookingHistory),
-      db.select().from(receipts),
+      db.select().from(inventory).where(eq(inventory.userId, userId)),
+      db.select().from(purchaseItems).where(eq(purchaseItems.userId, userId)),
+      db.select().from(cookingHistory).where(eq(cookingHistory.userId, userId)),
+      db.select().from(receipts).where(eq(receipts.userId, userId)),
       db.select().from(receiptItems),
-      db.select().from(preserves),
+      db.select().from(preserves).where(eq(preserves.userId, userId)),
       db.select().from(products),
     ]);
 
@@ -455,10 +456,12 @@ export const settingsRouter = router({
     }),
 
   // Статистика для страницы «О приложении»
-  getStats: protectedProcedure.query(async () => {
+  getStats: protectedProcedure.query(async ({ ctx }) => {
     const allRecipes = await db.select({ id: recipes.id }).from(recipes);
+    const userInventory = await db.select({ id: inventory.id }).from(inventory).where(eq(inventory.userId, ctx.userId));
     return {
       recipesCount: allRecipes.length,
+      inventoryCount: userInventory.length,
       version: "1.0",
     };
   }),
