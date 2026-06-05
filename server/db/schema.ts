@@ -65,6 +65,7 @@ export const authAttempts = pgTable('auth_attempts', {
 // difficulty: «легко» / «средне» / «сложно».
 export const recipes = pgTable('recipes', {
   id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
   title: text('title').notNull(),
   description: text('description'),
   imageUrl: text('image_url'),

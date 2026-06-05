@@ -1679,6 +1679,33 @@ const migrations: Migration[] = [
       }
     },
   },
+  {
+    version: '034_recipes_user_id',
+    up: async (sql) => {
+      // Добавляем user_id в таблицу recipes — рецепты становятся
+      // привязанными к пользователю. До этой миграции рецепты были
+      // глобальными (все пользователи видели все рецепты).
+      //
+      // Nullable + default = id первого пользователя, чтобы существующие
+      // рецепты не потеряли связь и остались видны.
+      // После миграции сервер начнёт фильтровать по userId везде.
+      await sql`
+        ALTER TABLE recipes
+        ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
+      `;
+      // Проставляем существующим рецептам userId первого пользователя
+      await sql`
+        UPDATE recipes
+        SET user_id = (SELECT id FROM users ORDER BY id LIMIT 1)
+        WHERE user_id IS NULL
+      `;
+      // Индекс для быстрой выборки рецептов пользователя
+      await sql`
+        CREATE INDEX IF NOT EXISTS idx_recipes_user_id
+        ON recipes(user_id)
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

@@ -77,8 +77,8 @@ export const recipesRouter = router({
         cursor: z.number().int().positive().optional(),
       }),
     )
-    .query(async ({ input }) => {
-      const conditions: SQL[] = [];
+    .query(async ({ input, ctx }) => {
+      const conditions: SQL[] = [eq(recipes.userId, ctx.userId)];
       if (input.search && input.search.trim()) {
         conditions.push(ilike(recipes.title, `%${input.search.trim()}%`));
       }
@@ -87,7 +87,7 @@ export const recipesRouter = router({
       if (input.difficulty) conditions.push(eq(recipes.difficulty, input.difficulty));
       if (input.cursor) conditions.push(lt(recipes.id, input.cursor));
 
-      const where = conditions.length > 0 ? and(...conditions) : undefined;
+      const where = and(...conditions);
 
       const rows = await db
         .select({
@@ -116,11 +116,11 @@ export const recipesRouter = router({
 
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const [recipe] = await db
         .select()
         .from(recipes)
-        .where(eq(recipes.id, input.id))
+        .where(and(eq(recipes.id, input.id), eq(recipes.userId, ctx.userId)))
         .limit(1);
 
       if (!recipe) {
@@ -145,11 +145,12 @@ export const recipesRouter = router({
       return { recipe, ingredients, steps };
     }),
 
-  getCategories: protectedProcedure.query(async () => {
+  getCategories: protectedProcedure.query(async ({ ctx }) => {
     const rows = await client<{ category: string; count: number }[]>`
       SELECT category, COUNT(*)::int AS count
       FROM recipes
       WHERE category IS NOT NULL AND category <> ''
+        AND user_id = ${ctx.userId}
       GROUP BY category
       ORDER BY count DESC, category ASC
     `;
@@ -166,20 +167,22 @@ export const recipesRouter = router({
       .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category, 'ru'));
   }),
 
-  getCuisines: protectedProcedure.query(async () => {
+  getCuisines: protectedProcedure.query(async ({ ctx }) => {
     const rows = await client<{ cuisine: string; count: number }[]>`
       SELECT cuisine, COUNT(*)::int AS count
       FROM recipes
       WHERE cuisine IS NOT NULL AND cuisine <> ''
+        AND user_id = ${ctx.userId}
       GROUP BY cuisine
       ORDER BY count DESC, cuisine ASC
     `;
     return rows;
   }),
 
-  getStats: protectedProcedure.query(async () => {
+  getStats: protectedProcedure.query(async ({ ctx }) => {
     const rows = await client<{ count: number }[]>`
       SELECT COUNT(*)::int AS count FROM recipes
+      WHERE user_id = ${ctx.userId}
     `;
     return { total: rows[0]?.count ?? 0 };
   }),
@@ -189,11 +192,11 @@ export const recipesRouter = router({
   // Создание: вставка recipe + ингредиентов + шагов в одной транзакции.
   create: protectedProcedure
     .input(recipeFields)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       return await db.transaction(async (tx) => {
         const [created] = await tx
           .insert(recipes)
-          .values(toRecipeRow(input))
+          .values({ ...toRecipeRow(input), userId: ctx.userId })
           .returning({ id: recipes.id });
 
         if (input.ingredients.length > 0) {
@@ -229,12 +232,12 @@ export const recipesRouter = router({
   // Это проще и безопаснее чем diff'ить, для домашнего приложения подходит.
   update: protectedProcedure
     .input(recipeFields.extend({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       return await db.transaction(async (tx) => {
         const [existing] = await tx
           .select({ id: recipes.id })
           .from(recipes)
-          .where(eq(recipes.id, input.id))
+          .where(and(eq(recipes.id, input.id), eq(recipes.userId, ctx.userId)))
           .limit(1);
 
         if (!existing) {
@@ -247,7 +250,7 @@ export const recipesRouter = router({
         await tx
           .update(recipes)
           .set({ ...toRecipeRow(input), updatedAt: new Date() })
-          .where(eq(recipes.id, input.id));
+          .where(and(eq(recipes.id, input.id), eq(recipes.userId, ctx.userId)));
 
         await tx
           .delete(recipeIngredients)
@@ -288,10 +291,10 @@ export const recipesRouter = router({
   // Удаление: каскадно удаляет ингредиенты и шаги (FK ON DELETE CASCADE).
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const result = await db
         .delete(recipes)
-        .where(eq(recipes.id, input.id))
+        .where(and(eq(recipes.id, input.id), eq(recipes.userId, ctx.userId)))
         .returning({ id: recipes.id });
       if (result.length === 0) {
         throw new TRPCError({
@@ -369,6 +372,7 @@ export const recipesRouter = router({
         const [created] = await tx
           .insert(recipes)
           .values({
+            userId: ctx.userId,
             title: scraped.title,
             description: scraped.description,
             imageUrl: scraped.imageUrl,
@@ -472,8 +476,8 @@ export const recipesRouter = router({
   // фронт показывает спиннер. Если рецептов сильно больше — нужно будет
   // Пересчёт КБЖУ всех рецептов. Batch по 10 параллельно, чтобы
   // на 15000 рецептов не упасть по таймауту (было ~1 рецепт/сек).
-  recalcAllNutrition: protectedProcedure.mutation(async () => {
-    const allRecipes = await db.select({ id: recipes.id }).from(recipes);
+  recalcAllNutrition: protectedProcedure.mutation(async ({ ctx }) => {
+    const allRecipes = await db.select({ id: recipes.id }).from(recipes).where(eq(recipes.userId, ctx.userId));
     let updated = 0;
     let failed = 0;
     const BATCH = 10;
@@ -507,7 +511,7 @@ export const recipesRouter = router({
       const { inventory } = await import('../db/schema');
       const { isNotNull, lte } = await import('drizzle-orm');
 
-      // 1. Топ-N последних рецептов
+      // 1. Топ-N последних рецептов пользователя
       const recipeRows = await db
         .select({
           id: recipes.id,
@@ -519,6 +523,7 @@ export const recipesRouter = router({
           category: recipes.category,
         })
         .from(recipes)
+        .where(eq(recipes.userId, ctx.userId))
         .orderBy(desc(recipes.id))
         .limit(input.limit);
 
