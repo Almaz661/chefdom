@@ -73,6 +73,7 @@ export const menuRouter = router({
         recipeId: z.number().int().positive().optional(),
         preserveId: z.number().int().positive().optional(),
         customTitle: z.string().max(200).optional(),
+        plannedServings: z.number().int().min(1).max(100).optional(),
       }).refine(d => d.recipeId || d.preserveId || d.customTitle, {
         message: 'Нужен recipeId, preserveId или customTitle',
       }),
@@ -119,6 +120,7 @@ export const menuRouter = router({
           recipeId: input.recipeId ?? null,
           preserveId: input.preserveId ?? null,
           customTitle: input.customTitle ?? null,
+          plannedServings: input.plannedServings ?? null,
         })
         .returning({ id: menuItems.id });
 
@@ -223,9 +225,12 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Меню на эту неделю не найдено' });
       }
 
-      // Получить все recipeId из меню
+      // Получить все items из меню с plannedServings
       const items = await db
-        .select({ recipeId: menuItems.recipeId })
+        .select({
+          recipeId: menuItems.recipeId,
+          plannedServings: menuItems.plannedServings,
+        })
         .from(menuItems)
         .where(eq(menuItems.menuId, menu.id));
 
@@ -233,13 +238,32 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Меню пустое — нечего добавлять в покупки' });
       }
 
-      // Подсчитать сколько раз каждый рецепт в меню
-      const recipeCount = new Map<number, number>();
-      for (const item of items) {
-        recipeCount.set(item.recipeId, (recipeCount.get(item.recipeId) || 0) + 1);
+      // Собираем только items с рецептом (заготовки не имеют ингредиентов для покупок)
+      const recipeItems = items.filter(i => i.recipeId !== null);
+      if (recipeItems.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'В меню нет рецептов с ингредиентами' });
       }
 
-      const recipeIds = [...recipeCount.keys()];
+      // Получаем servings каждого рецепта для вычисления множителя
+      const uniqueRecipeIds = [...new Set(recipeItems.map(i => i.recipeId!))];
+      const recipeServingsRows = await db
+        .select({ id: recipes.id, servings: recipes.servings })
+        .from(recipes)
+        .where(inArray(recipes.id, uniqueRecipeIds));
+      const recipeServingsMap = new Map(recipeServingsRows.map(r => [r.id, r.servings ?? 1]));
+
+      // Вычисляем суммарный множитель для каждого рецепта:
+      // multiplier = sum( plannedServings / recipe.servings ) по всем слотам с этим рецептом
+      const recipeMultiplier = new Map<number, number>();
+      for (const item of recipeItems) {
+        const rid = item.recipeId!;
+        const recipeServings = recipeServingsMap.get(rid) ?? 1;
+        const planned = item.plannedServings ?? recipeServings; // если не задано — берём порции рецепта
+        const factor = planned / recipeServings;
+        recipeMultiplier.set(rid, (recipeMultiplier.get(rid) ?? 0) + factor);
+      }
+
+      const recipeIds = [...recipeMultiplier.keys()];
 
       // Получить ингредиенты всех рецептов
       const ingredients = await db
@@ -331,7 +355,7 @@ export const menuRouter = router({
       for (const ing of ingredients) {
         const nameNorm = normalizeName(ing.name);
         const key = nameNorm;
-        const multiplier = recipeCount.get(ing.recipeId) || 1;
+        const multiplier = recipeMultiplier.get(ing.recipeId) ?? 1;
         const ingAmount = ing.amount ? parseFloat(ing.amount) : null;
         const scaledAmount = ingAmount !== null ? ingAmount * multiplier : null;
 

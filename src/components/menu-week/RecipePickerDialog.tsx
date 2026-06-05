@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Search, X, Loader2, Clock } from 'lucide-react';
+import { Search, X, Loader2, ChevronLeft, Users } from 'lucide-react';
 import { trpc } from '../../utils/trpc';
+
+type SelectedRecipe = { id: number; title: string; servings: number };
 
 export function RecipePickerDialog({
   onSelect,
@@ -8,13 +10,16 @@ export function RecipePickerDialog({
   loading,
   onSelectPreserve,
 }: {
-  onSelect: (recipeId: number) => void;
+  onSelect: (recipeId: number, plannedServings: number) => void;
   onClose: () => void;
   loading: boolean;
   onSelectPreserve?: (preserveId: number, name: string) => void;
 }) {
   const [search, setSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(true);
+  // Выбранный рецепт — ждём подтверждения порций
+  const [selected, setSelected] = useState<SelectedRecipe | null>(null);
+  const [plannedServings, setPlannedServings] = useState(4);
 
   const { data, isLoading } = trpc.recipes.list.useQuery({
     search: search.trim() || undefined,
@@ -22,16 +27,26 @@ export function RecipePickerDialog({
 
   const { data: suggestions, isLoading: suggestionsLoading } = trpc.menu.getSuggestions.useQuery(
     { limit: 6 },
-    { enabled: showSuggestions && !search.trim() }
+    { enabled: showSuggestions && !search.trim() && !selected }
   );
 
   const { data: cookedPreserves } = trpc.menu.getCookedPreserves.useQuery(
     undefined,
-    { enabled: !search.trim() }
+    { enabled: !search.trim() && !selected }
   );
 
   const recipes = data?.items ?? [];
   const hasSuggestions = suggestions && suggestions.length > 0;
+
+  const handlePickRecipe = (r: { id: number; title: string; servings?: number | null }) => {
+    const servings = r.servings ?? 4;
+    setSelected({ id: r.id, title: r.title, servings });
+    setPlannedServings(servings);
+  };
+
+  const handleConfirm = () => {
+    if (selected) onSelect(selected.id, plannedServings);
+  };
 
   const getReasonIcon = (type: string) => {
     switch (type) {
@@ -43,6 +58,89 @@ export function RecipePickerDialog({
     }
   };
 
+  // --- Шаг 2: подтверждение порций ---
+  if (selected) {
+    return (
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+        onClick={onClose}
+      >
+        <div
+          className="bg-[#0c1021] border border-white/[0.08] w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 shadow-[0_24px_64px_rgba(0,0,0,0.8)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setSelected(null)}
+            className="flex items-center gap-1.5 text-white/40 hover:text-white/70 text-xs mb-4 transition-colors"
+          >
+            <ChevronLeft size={14} /> Назад
+          </button>
+
+          <h3 className="text-base font-bold text-white mb-1 truncate">{selected.title}</h3>
+          <p className="text-[11px] text-white/40 mb-6">Рецепт рассчитан на {selected.servings} порц.</p>
+
+          <div className="flex items-center gap-3 mb-6">
+            <Users size={16} className="text-[#e8b94a] shrink-0" />
+            <span className="text-sm text-white/70">На сколько порций готовить?</span>
+          </div>
+
+          {/* Быстрые кнопки */}
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {[1, 2, 3, 4, 6].map(n => (
+              <button
+                key={n}
+                onClick={() => setPlannedServings(n)}
+                className={`h-10 rounded-xl text-sm font-bold transition-all ${
+                  plannedServings === n
+                    ? 'bg-[#c9953c] text-white'
+                    : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.10]'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          {/* Ручной ввод */}
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              onClick={() => setPlannedServings(p => Math.max(1, p - 1))}
+              className="w-9 h-9 rounded-lg bg-white/[0.06] text-white/60 hover:bg-white/[0.12] text-lg font-bold transition-colors"
+            >−</button>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={plannedServings}
+              onChange={(e) => setPlannedServings(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+              className="flex-1 h-9 rounded-lg bg-[#080c18] border border-white/[0.08] text-white text-center text-sm focus:outline-none focus:border-[#c9953c]/40"
+            />
+            <button
+              onClick={() => setPlannedServings(p => Math.min(100, p + 1))}
+              className="w-9 h-9 rounded-lg bg-white/[0.06] text-white/60 hover:bg-white/[0.12] text-lg font-bold transition-colors"
+            >+</button>
+          </div>
+
+          {plannedServings !== selected.servings && (
+            <p className="text-[11px] text-[#e8b94a]/70 mb-4 text-center">
+              Покупки масштабируются ×{(plannedServings / selected.servings).toFixed(2)}
+            </p>
+          )}
+
+          <button
+            onClick={handleConfirm}
+            disabled={loading}
+            className="w-full h-11 rounded-xl bg-[#c9953c] hover:bg-[#e8b94a] text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+            Добавить в меню
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Шаг 1: выбор рецепта ---
   return (
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
@@ -98,7 +196,7 @@ export function RecipePickerDialog({
                   {suggestions.map((s) => (
                     <li key={s.recipe.id}>
                       <button
-                        onClick={() => onSelect(s.recipe.id)}
+                        onClick={() => handlePickRecipe({ ...s.recipe, servings: 4 })}
                         disabled={loading}
                         className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#c9953c]/20 hover:bg-white/[0.04] transition-all text-left disabled:opacity-50"
                       >
@@ -139,7 +237,7 @@ export function RecipePickerDialog({
                 {cookedPreserves.map((p) => (
                   <li key={p.id}>
                     <button
-                      onClick={() => onSelectPreserve ? onSelectPreserve(p.id, p.name) : undefined}
+                      onClick={() => onSelectPreserve?.(p.id, p.name)}
                       disabled={loading || !onSelectPreserve}
                       className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/20 hover:border-emerald-600/30 hover:bg-emerald-950/50 transition-all text-left disabled:opacity-50"
                     >
@@ -177,7 +275,7 @@ export function RecipePickerDialog({
               {recipes.map((r) => (
                 <li key={r.id}>
                   <button
-                    onClick={() => onSelect(r.id)}
+                    onClick={() => handlePickRecipe(r)}
                     disabled={loading}
                     className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors text-left disabled:opacity-50"
                   >

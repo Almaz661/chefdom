@@ -139,6 +139,8 @@ export const menuItems = pgTable('menu_items', {
     .references(() => preserves.id, { onDelete: 'set null' }),
   // Название для случая когда нет ни рецепта ни заготовки (ручной ввод)
   customTitle: text('custom_title'),
+  // Планируемое количество порций (null = берём из рецепта)
+  plannedServings: integer('planned_servings'),
 });
 
 // Инвентарь (что есть дома).
