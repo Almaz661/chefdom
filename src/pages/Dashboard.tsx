@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { getAuth } from "../utils/auth";
 import { trpc } from "../utils/trpc";
+import { useNotifications } from "../hooks/useNotifications";
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -42,17 +43,7 @@ export function Dashboard() {
   const name = auth?.name || "Семья";
   const todayIdx = (new Date().getDay() + 6) % 7;
 
-  const { data: expiring = [] } = trpc.inventory.getExpiring.useQuery({ days: 3 });
-  const { data: allPreserves = [] } = trpc.preserves.list.useQuery();
-  const expiringPreserves = allPreserves.filter((p) => {
-    if (!p.expiryDate) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(p.expiryDate + "T00:00:00");
-    return Math.floor((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) <= 3;
-  });
-  const expiringTotal = expiring.length + expiringPreserves.length;
-  const expiringNames = [...expiring.map((e) => e.productName), ...expiringPreserves.map((p) => p.name)];
+  const { expiring, expiringPreserves, expiringTotal, expiringNames, belowMin } = useNotifications();
 
   const { data: stale = [] } = trpc.inventory.getStale.useQuery({ days: 30 });
   const { data: shopping = [] } = trpc.shopping.list.useQuery();
@@ -88,7 +79,7 @@ export function Dashboard() {
         </p>
 
         {/* Alerts — minimal inline rows, no cards */}
-        {(expiringTotal > 0 || stale.length > 0) && (
+        {(expiringTotal > 0 || stale.length > 0 || belowMin.length > 0) && (
           <div className="mt-8 space-y-1">
             {expiringTotal > 0 && (
               <Link
@@ -99,6 +90,19 @@ export function Dashboard() {
                 <span className="text-base text-ink font-medium-soft group-hover:text-ink transition-colors flex-1">
                   <span className="text-ink font-medium">{expiringTotal}</span> истекает за 3 дня
                   <span className="text-ink-muted ml-2">— {expiringNames.slice(0, 2).join(", ")}</span>
+                </span>
+                <ArrowRight size={12} className="text-ink-muted group-hover:text-primary transition-colors" />
+              </Link>
+            )}
+            {belowMin.length > 0 && (
+              <Link
+                to="/shopping"
+                className="flex items-center gap-3 py-2 group"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                <span className="text-base text-ink font-medium-soft group-hover:text-ink transition-colors flex-1">
+                  <span className="text-ink font-medium">{belowMin.length}</span> ниже минимума
+                  <span className="text-ink-muted ml-2">— {belowMin.slice(0, 2).map(i => i.productName).join(", ")}</span>
                 </span>
                 <ArrowRight size={12} className="text-ink-muted group-hover:text-primary transition-colors" />
               </Link>

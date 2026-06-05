@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "./ui/Toast";
+import { useNotifications } from "../hooks/useNotifications";
 import {
   Home,
   BookOpen,
@@ -43,6 +44,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const logoutMutation = trpc.auth.logout.useMutation();
+  const { inventoryBadge, shoppingBadge } = useNotifications();
 
   // Показываем кнопку «назад» на всех страницах кроме главной
   const isHome = location.pathname === "/";
@@ -56,6 +58,13 @@ export function Layout({ children }: { children: ReactNode }) {
     });
   };
 
+  // Badge для конкретных разделов
+  const getBadge = (to: string): number => {
+    if (to === "/inventory") return inventoryBadge;
+    if (to === "/shopping") return shoppingBadge;
+    return 0;
+  };
+
   return (
     <div className="min-h-screen bg-cream flex">
       <ToastContainer />
@@ -67,23 +76,33 @@ export function Layout({ children }: { children: ReactNode }) {
           </h1>
         </div>
         <nav className="flex-1 flex flex-col gap-0.5">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg text-[14px] font-medium transition-all ${
-                  isActive
-                    ? "text-primary bg-surface-hover border-l-[3px] border-primary pl-[13px]"
-                    : "text-ink-soft hover:text-primary hover:bg-surface-hover"
-                }`
-              }
-            >
-              <Icon size={16} strokeWidth={1.5} />
-              {label}
-            </NavLink>
-          ))}
+          {navItems.map(({ to, label, icon: Icon }) => {
+            const badge = getBadge(to);
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg text-[14px] font-medium transition-all ${
+                    isActive
+                      ? "text-primary bg-surface-hover border-l-[3px] border-primary pl-[13px]"
+                      : "text-ink-soft hover:text-primary hover:bg-surface-hover"
+                  }`
+                }
+              >
+                <span className="relative">
+                  <Icon size={16} strokeWidth={1.5} />
+                  {badge > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </span>
+                {label}
+              </NavLink>
+            );
+          })}
         </nav>
         <button
           onClick={logout}
@@ -113,21 +132,31 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Mobile nav */}
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-line lg:hidden flex">
-        {navItems.slice(0, 5).map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === "/"}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-medium min-h-[56px] ${
-                isActive ? "text-primary" : "text-ink-muted"
-              }`
-            }
-          >
-            <Icon size={20} strokeWidth={1.5} />
-            {label}
-          </NavLink>
-        ))}
+        {navItems.slice(0, 5).map(({ to, label, icon: Icon }) => {
+          const badge = getBadge(to);
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/"}
+              className={({ isActive }) =>
+                `flex-1 flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-medium min-h-[56px] ${
+                  isActive ? "text-primary" : "text-ink-muted"
+                }`
+              }
+            >
+              <span className="relative">
+                <Icon size={20} strokeWidth={1.5} />
+                {badge > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
+              </span>
+              {label}
+            </NavLink>
+          );
+        })}
       </nav>
     </div>
   );
