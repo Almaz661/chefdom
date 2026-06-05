@@ -54,30 +54,42 @@ export const settingsRouter = router({
     const userId = ctx.userId;
     const [
       allRecipes,
-      allIngredients,
-      allSteps,
       allMenus,
-      allMenuItems,
       allInventory,
       allPurchases,
       allCookingHistory,
       allReceipts,
-      allReceiptItems,
       allPreserves,
       allProducts,
     ] = await Promise.all([
-      db.select().from(recipes),
-      db.select().from(recipeIngredients),
-      db.select().from(recipeSteps),
+      db.select().from(recipes).where(eq(recipes.userId, userId)),
       db.select().from(menus).where(eq(menus.userId, userId)),
-      db.select().from(menuItems),
       db.select().from(inventory).where(eq(inventory.userId, userId)),
       db.select().from(purchaseItems).where(eq(purchaseItems.userId, userId)),
       db.select().from(cookingHistory).where(eq(cookingHistory.userId, userId)),
       db.select().from(receipts).where(eq(receipts.userId, userId)),
-      db.select().from(receiptItems),
       db.select().from(preserves).where(eq(preserves.userId, userId)),
       db.select().from(products),
+    ]);
+
+    // Загружаем ингредиенты/шаги только для рецептов этого пользователя
+    const recipeIds = allRecipes.map(r => r.id);
+    const menuIds = allMenus.map(m => m.id);
+    const receiptIds = allReceipts.map(r => r.id);
+
+    const [allIngredients, allSteps, allMenuItems, allReceiptItems] = await Promise.all([
+      recipeIds.length > 0
+        ? db.select().from(recipeIngredients).where(inArray(recipeIngredients.recipeId, recipeIds))
+        : Promise.resolve([]),
+      recipeIds.length > 0
+        ? db.select().from(recipeSteps).where(inArray(recipeSteps.recipeId, recipeIds))
+        : Promise.resolve([]),
+      menuIds.length > 0
+        ? db.select().from(menuItems).where(inArray(menuItems.menuId, menuIds))
+        : Promise.resolve([]),
+      receiptIds.length > 0
+        ? db.select().from(receiptItems).where(inArray(receiptItems.receiptId, receiptIds))
+        : Promise.resolve([]),
     ]);
 
     const recipesWithDetails = allRecipes.map((recipe) => ({
@@ -273,12 +285,17 @@ export const settingsRouter = router({
         }
         await tx.delete(menus).where(eq(menus.userId, userId));
         await tx.delete(inventory).where(eq(inventory.userId, userId));
-        // recipes/ingredients/steps — глобальные (без userId), удаляем все
-        // (для одно-семейного режима это корректно; при мульти-юзере
-        // нужно добавить userId в recipes)
-        await tx.delete(recipeIngredients);
-        await tx.delete(recipeSteps);
-        await tx.delete(recipes);
+        // recipes/ingredients/steps — теперь с userId, удаляем только свои
+        const userRecipeIds = await tx
+          .select({ id: recipes.id })
+          .from(recipes)
+          .where(eq(recipes.userId, userId));
+        if (userRecipeIds.length > 0) {
+          const ids = userRecipeIds.map(r => r.id);
+          await tx.delete(recipeIngredients).where(inArray(recipeIngredients.recipeId, ids));
+          await tx.delete(recipeSteps).where(inArray(recipeSteps.recipeId, ids));
+        }
+        await tx.delete(recipes).where(eq(recipes.userId, userId));
         // products — глобальный каталог цен, тоже полная очистка
         await tx.delete(products);
 
@@ -289,6 +306,7 @@ export const settingsRouter = router({
           const [inserted] = await tx
             .insert(recipes)
             .values({
+              userId,
               title: recipeData.title,
               description: recipeData.description ?? null,
               imageUrl: recipeData.imageUrl ?? recipeData.image_url ?? null,

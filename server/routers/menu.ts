@@ -85,7 +85,7 @@ export const menuRouter = router({
       const [recipe] = await db
         .select({ id: recipes.id })
         .from(recipes)
-        .where(eq(recipes.id, input.recipeId))
+        .where(and(eq(recipes.id, input.recipeId), eq(recipes.userId, ctx.userId)))
         .limit(1);
 
       if (!recipe) {
@@ -181,7 +181,7 @@ export const menuRouter = router({
     const [recipe] = await db
       .select()
       .from(recipes)
-      .where(eq(recipes.id, item.recipeId))
+      .where(and(eq(recipes.id, item.recipeId), eq(recipes.userId, ctx.userId)))
       .limit(1);
     if (!recipe) return null;
 
@@ -550,6 +550,7 @@ export const menuRouter = router({
           category: recipes.category,
         })
         .from(recipes)
+        .where(eq(recipes.userId, ctx.userId))
         .orderBy(desc(recipes.id))
         .limit(500);
 
