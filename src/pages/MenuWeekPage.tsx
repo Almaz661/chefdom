@@ -119,12 +119,13 @@ export function MenuWeekPage() {
       {/* Диалог выбора рецепта */}
       {pickSlot && (
         <RecipePickerDialog
-          onSelect={(recipeId) => {
+          onSelect={(recipeId, plannedServings) => {
             addItem.mutate({
               weekStart,
               dayOfWeek: pickSlot.dayOfWeek,
               mealType: pickSlot.mealType,
               recipeId,
+              plannedServings,
             });
           }}
           onSelectPreserve={(preserveId) => {

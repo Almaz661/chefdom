@@ -1753,6 +1753,13 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS custom_title TEXT`;
       await sql`ALTER TABLE menu_items ALTER COLUMN recipe_id DROP NOT NULL`;
     },
+  {
+    version: '037_menu_items_planned_servings',
+    up: async (sql) => {
+      // Плановое количество порций в слоте меню.
+      // Используется в toShopping для масштабирования ингредиентов.
+      await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS planned_servings INTEGER`;
+    },
   },
 ];
 
