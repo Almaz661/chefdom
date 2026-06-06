@@ -4,7 +4,7 @@ import { toast } from '../components/ui/Toast';
 import { MenuWeekHeader } from '../components/menu-week/MenuWeekHeader';
 import { MenuWeekKpiRow } from '../components/menu-week/MenuWeekKpiRow';
 import { MenuWeekGrid } from '../components/menu-week/MenuWeekGrid';
-import { MenuWeekRightPanel } from '../components/menu-week/MenuWeekRightPanel';
+import { MenuWeekShoppingPreview } from '../components/menu-week/MenuWeekShoppingPreview';
 import { RecipePickerDialog } from '../components/menu-week/RecipePickerDialog';
 
 // --- Helpers ---
@@ -41,10 +41,6 @@ export type PickSlot = {
   mealType: 'breakfast' | 'lunch' | 'dinner';
 } | null;
 
-/**
- * MenuWeekPage — Dark Luxury Dashboard с реальными данными.
- * Layout: grid 1fr|360px. Sidebar глобальный.
- */
 export function MenuWeekPage() {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [pickSlot, setPickSlot] = useState<PickSlot>(null);
@@ -85,38 +81,35 @@ export function MenuWeekPage() {
     : `${totalTime} мин`;
 
   return (
-    <div className="h-[calc(100vh-2rem)] w-full bg-[#05070A] p-6 overflow-hidden">
-      <div className="h-full grid grid-cols-[1fr_360px] gap-6">
-        {/* Main */}
-        <main className="h-full flex flex-col gap-5 min-h-0 overflow-hidden">
-          <MenuWeekHeader
-            weekLabel={formatWeekRange(weekStart)}
-            onPrev={prevWeek}
-            onNext={nextWeek}
-            onToday={goToday}
-            onToShopping={() => toShopping.mutate({ weekStart })}
-            toShoppingPending={toShopping.isPending}
-            hasMeals={totalMeals > 0}
-          />
-          <MenuWeekKpiRow
-            totalMeals={totalMeals}
-            totalTime={timeStr}
-          />
-          <MenuWeekGrid
-            items={items}
-            weekStart={weekStart}
-            todayStr={todayStr}
-            isLoading={isLoading}
-            onAddMeal={(dayOfWeek, mealType) => setPickSlot({ dayOfWeek, mealType })}
-            onRemoveMeal={(itemId) => removeItem.mutate({ itemId })}
-          />
-        </main>
+    <div className="min-h-screen bg-[#05070A]">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        <MenuWeekHeader
+          weekLabel={formatWeekRange(weekStart)}
+          onPrev={prevWeek}
+          onNext={nextWeek}
+          onToday={goToday}
+          onToShopping={() => toShopping.mutate({ weekStart })}
+          toShoppingPending={toShopping.isPending}
+          hasMeals={totalMeals > 0}
+        />
 
-        {/* Right Panel */}
-        <MenuWeekRightPanel totalMeals={totalMeals} />
+        <MenuWeekKpiRow
+          totalMeals={totalMeals}
+          totalTime={timeStr}
+        />
+
+        <MenuWeekGrid
+          items={items}
+          weekStart={weekStart}
+          todayStr={todayStr}
+          isLoading={isLoading}
+          onAddMeal={(dayOfWeek, mealType) => setPickSlot({ dayOfWeek, mealType })}
+          onRemoveMeal={(itemId) => removeItem.mutate({ itemId })}
+        />
+
+        <MenuWeekShoppingPreview />
       </div>
 
-      {/* Диалог выбора рецепта */}
       {pickSlot && (
         <RecipePickerDialog
           onSelect={(recipeId, plannedServings) => {
