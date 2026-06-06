@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { daysUntilExpiry } from '../../utils/dateUtils';
+import { daysUntilExpiry } from '../utils/dateUtils';
 import { Loader2 } from 'lucide-react';
 import { trpc } from '../utils/trpc';
 import { toast } from '../components/ui/Toast';
