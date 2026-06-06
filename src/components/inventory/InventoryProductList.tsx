@@ -30,7 +30,7 @@ export function InventoryProductList({
         {tab === 'freezer' && (
           <p className="text-white/25 text-xs mt-3">
             Котлеты, фарш, ягоды и другие заморозки удобнее заводить через раздел{' '}
-            <Link to="/preserves" className="text-[#e8b94a] hover:underline">
+            <Link to="/preserves" className="text-[#c9a84c] hover:underline">
               Заготовки
             </Link>
             {' '}— срок хранения подставится автоматически.
@@ -88,7 +88,7 @@ export function InventoryProductList({
             {cat === 'Заготовки' && (
               <Link
                 to="/preserves"
-                className="ml-auto text-[11px] text-[#e8b94a]/60 hover:text-[#e8b94a] normal-case font-normal tracking-normal transition-colors"
+                className="ml-auto text-[11px] text-[#c9a84c]/60 hover:text-[#c9a84c] normal-case font-normal tracking-normal transition-colors"
               >
                 в раздел →
               </Link>

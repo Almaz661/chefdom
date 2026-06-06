@@ -108,7 +108,7 @@ export function InventoryExpiringSection({
                     </span>
                   )}
                   {item.minQuantity && (
-                    <span className="text-[#e8b94a]/60 ml-1.5 text-sm font-normal" title="Мин. остаток для авто-докупки">
+                    <span className="text-[#c9a84c]/60 ml-1.5 text-sm font-normal" title="Мин. остаток для авто-докупки">
                       (мин: {item.minQuantity})
                     </span>
                   )}

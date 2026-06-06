@@ -65,7 +65,7 @@ export function AddInventoryDialog({
                 placeholder="Название продукта"
                 autoFocus
                 required
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
               />
             </div>
 
@@ -77,14 +77,14 @@ export function AddInventoryDialog({
                 placeholder="Кол-во"
                 step="any"
                 min="0"
-                className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
               />
               <input
                 type="text"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 placeholder="Ед. (кг, л, шт)"
-                className="w-28 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                className="w-28 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
               />
             </div>
 
@@ -93,7 +93,7 @@ export function AddInventoryDialog({
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9953c]/50 transition-colors [color-scheme:dark]"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
               />
               <p className="text-[11px] text-white/25 mt-1.5 ml-1">Срок годности (необязательно)</p>
             </div>
@@ -106,7 +106,7 @@ export function AddInventoryDialog({
                 placeholder="Мин. остаток (авто-докупка)"
                 step="any"
                 min="0"
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
               />
               <p className="text-[11px] text-white/25 mt-1.5 ml-1">Когда остаток ниже — автоматически в покупки</p>
             </div>
@@ -122,7 +122,7 @@ export function AddInventoryDialog({
               <button
                 type="submit"
                 disabled={!name.trim() || add.isPending}
-                className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#c9953c] to-[#e8b94a] text-[#0a0c10] font-semibold shadow-[0_4px_16px_rgba(201,149,60,0.3)] hover:shadow-[0_6px_24px_rgba(201,149,60,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                className="flex-1 h-12 rounded-xl btn-gold"
               >
                 {add.isPending ? 'Добавляю…' : 'Добавить'}
               </button>

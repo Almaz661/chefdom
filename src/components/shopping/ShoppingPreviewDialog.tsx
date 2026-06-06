@@ -65,10 +65,10 @@ export function ShoppingPreviewDialog({
                   >
                     <button
                       onClick={() => onCycleStorage(idx)}
-                      className="w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0 hover:border-[#c9953c]/40 hover:bg-[#c9953c]/10 transition-all duration-200"
+                      className="w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0 hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 transition-all duration-200"
                       title={`Сейчас: ${storage.label}. Нажми чтобы изменить`}
                     >
-                      <Icon size={18} className="text-[#e8b94a]" />
+                      <Icon size={18} className="text-[#c9a84c]" />
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white/75 truncate">
@@ -95,7 +95,7 @@ export function ShoppingPreviewDialog({
             <button
               onClick={onConfirm}
               disabled={isPending}
-              className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#c9953c] to-[#e8b94a] text-[#0a0c10] font-semibold shadow-[0_4px_16px_rgba(201,149,60,0.3)] hover:shadow-[0_6px_24px_rgba(201,149,60,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+              className="flex-1 h-12 rounded-xl btn-gold"
             >
               {isPending ? (
                 <Loader2 size={18} className="animate-spin mx-auto" />

@@ -194,7 +194,7 @@ export function InventoryPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
+            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
           </div>
         ) : (
           <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto">

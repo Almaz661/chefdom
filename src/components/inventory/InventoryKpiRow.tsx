@@ -11,7 +11,7 @@ export function InventoryKpiRow({
   basicCount: number;
 }) {
   const KPI_DATA = [
-    { icon: Package, value: String(totalItems), label: 'Продуктов', accent: '#e8b94a' },
+    { icon: Package, value: String(totalItems), label: 'Продуктов', accent: '#c9a84c' },
     { icon: AlertTriangle, value: String(expiringCount), label: 'Истекает скоро', accent: '#f97316' },
     { icon: Pin, value: String(basicCount), label: 'Базовых', accent: '#60a5fa' },
   ];

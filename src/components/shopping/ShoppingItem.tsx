@@ -28,8 +28,8 @@ export function ShoppingItem({
         onClick={onToggle}
         className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${
           isChecked
-            ? 'bg-gradient-to-r from-[#c9953c] to-[#e8b94a] border-[#c9953c] shadow-[0_0_8px_rgba(201,149,60,0.3)]'
-            : 'border-white/20 hover:border-[#c9953c]/60'
+            ? 'bg-gradient-to-r from-[#c9a84c] to-[#c9a84c] border-[#c9a84c] shadow-[0_0_8px_rgba(201,149,60,0.3)]'
+            : 'border-white/20 hover:border-[#c9a84c]/60'
         }`}
         aria-label={isChecked ? 'Отметить как не купленное' : 'Отметить как купленное'}
       >
