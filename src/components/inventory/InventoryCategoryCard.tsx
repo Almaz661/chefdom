@@ -62,11 +62,11 @@ export function InventoryCategoryCard({
   const imageSrc = getCategoryImage(category);
 
   return (
-    <div className="rounded-[20px] border border-white/[0.06] overflow-hidden transition-all duration-300 hover:border-white/[0.12]">
+    <div className="rounded-[20px] border border-white/[0.06] transition-all duration-300 hover:border-white/[0.12]">
       {/* Category header card */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full relative h-[100px] flex items-end p-5 text-left group cursor-pointer"
+        className="w-full relative h-[100px] flex items-end p-5 text-left group cursor-pointer rounded-[20px] overflow-hidden"
       >
         {/* Background image */}
         <img
