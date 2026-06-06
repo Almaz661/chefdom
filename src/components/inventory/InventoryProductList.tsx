@@ -2,7 +2,6 @@ import { Snowflake, Refrigerator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassCard } from '../ui/GlassCard';
 import { InventoryProductCard } from './InventoryProductCard';
-import { InventoryCategoryCard } from './InventoryCategoryCard';
 import type { ViewItem } from './InventoryExpiringSection';
 
 export function InventoryProductList({
@@ -56,26 +55,7 @@ export function InventoryProductList({
     return a.localeCompare(b, 'ru');
   });
 
-  // Pantry tab: Kitchen Atelier category cards with images
-  if (tab === 'pantry') {
-    return (
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {categories.map((cat) => (
-            <InventoryCategoryCard
-              key={cat}
-              category={cat}
-              items={grouped[cat]}
-              onRemove={onRemove}
-              onToggleBasic={onToggleBasic}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Fridge / Freezer: flat list with text headers (existing behavior)
+  // Все вкладки — единый простой список с заголовками категорий
   return (
     <div className="space-y-5 flex-1 min-h-0 overflow-y-auto">
       {categories.map((cat) => (
