@@ -58,7 +58,7 @@ export function InventoryCategoryCard({
   onRemove: (item: ViewItem) => void;
   onToggleBasic: (item: ViewItem) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const imageSrc = getCategoryImage(category);
 
   return (
