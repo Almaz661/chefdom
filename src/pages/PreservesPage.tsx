@@ -105,12 +105,12 @@ export function PreservesPage() {
   return (
     <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-serif text-3xl font-bold text-ink">
+        <h1 className="font-serif text-3xl font-bold text-white/80">
           Заготовки
         </h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="w-9 h-9 rounded-lg bg-primary text-cream flex items-center justify-center hover:bg-primary-dark transition-colors"
+          className="w-9 h-9 rounded-lg bg-[#c9a84c] text-[#0a0c10] flex items-center justify-center hover:bg-[#d4b55a] transition-colors"
           aria-label="Добавить заготовку"
         >
           <Plus size={16} />
@@ -118,15 +118,15 @@ export function PreservesPage() {
       </div>
 
       {/* Табы */}
-      <div className="flex gap-1 bg-surface-elevated rounded-lg p-1 mb-6">
+      <div className="flex gap-1 bg-white/[0.04] rounded-lg p-1 mb-6">
         {TABS.map(({ key, shortLabel, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-base font-semibold transition-colors ${
               tab === key
-                ? "bg-paper text-primary shadow-sm"
-                : "text-ink-muted hover:text-ink"
+                ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                : "text-white/50 hover:text-white/80"
             }`}
           >
             <Icon size={18} />
@@ -137,14 +137,14 @@ export function PreservesPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-primary" />
+          <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
         </div>
       ) : (
         <>
           {/* Скоро истекает */}
           {expiring.length > 0 && (
             <section className="mb-6">
-              <h3 className="text-sm font-bold text-warning uppercase tracking-wider mb-2 flex items-center gap-1">
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                 <AlertTriangle size={14} />
                 Скоро истекает
               </h3>
@@ -157,38 +157,38 @@ export function PreservesPage() {
                       key={item.id}
                       className={`flex items-center gap-3 rounded-lg px-4 py-3 border ${
                         isExpired
-                          ? "bg-alert/5 border-alert/30"
-                          : "bg-warning/5 border-warning/30"
+                          ? "bg-red-500/10 border-red-500/20"
+                          : "bg-amber-500/10 border-amber-500/20"
                       }`}
                     >
                       <span
                         className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                          isExpired ? "bg-alert" : "bg-warning"
+                          isExpired ? "bg-red-400" : "bg-amber-400"
                         }`}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-base font-semibold text-ink truncate">
+                        <p className="text-base font-semibold text-white/80 truncate">
                           {item.name}
                           {item.quantity && (
-                            <span className="text-ink-muted ml-1">
+                            <span className="text-white/40 ml-1">
                               {item.quantity}
                               {item.unit ? ` ${item.unit}` : ""}
                             </span>
                           )}
                           {tab === "frozen" && item.servings && (
-                            <span className="text-ink-muted ml-1">
+                            <span className="text-white/40 ml-1">
                               · {item.servings} порц.
                             </span>
                           )}
                           {tab === "cooked" && item.servings && (
-                            <span className="text-ink-muted ml-1">
+                            <span className="text-white/40 ml-1">
                               · {item.servings} порц.
                             </span>
                           )}
                         </p>
                         <p
                           className={`text-xs ${
-                            isExpired ? "text-alert" : "text-warning"
+                            isExpired ? "text-red-400" : "text-amber-400"
                           }`}
                         >
                           {expiryText(item.expiryDate)}
@@ -198,7 +198,7 @@ export function PreservesPage() {
                         <button
                           onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                           disabled={consumeServings.isPending}
-                          className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
+                          className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors shrink-0 border border-[#c9a84c]/40 rounded-lg"
                           aria-label="Съели порцию"
                           title="Списать 1 съеденную порцию"
                         >
@@ -208,7 +208,7 @@ export function PreservesPage() {
                       )}
                       <button
                         onClick={() => remove.mutate({ id: item.id })}
-                        className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                        className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-red-400 transition-colors shrink-0"
                         aria-label="Удалить"
                       >
                         <Trash2 size={16} />
@@ -222,13 +222,13 @@ export function PreservesPage() {
 
           {/* Основной список */}
           {items.length === 0 ? (
-            <div className="bg-paper border border-line border-dashed rounded-2xl p-8 text-center">
+            <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-2xl p-8 text-center">
               <TabIconComp
                 size={32}
-                className="text-line-strong mx-auto mb-3"
+                className="text-white/[0.06] mx-auto mb-3"
                 strokeWidth={1.5}
               />
-              <p className="text-ink-soft text-sm">
+              <p className="text-white/60 text-sm">
                 {tab === "cooked" &&
                   "Пусто. После готовки блюда автоматически появятся здесь."}
                 {tab === "frozen" &&
@@ -244,24 +244,24 @@ export function PreservesPage() {
               {normal.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 bg-paper rounded-lg px-4 py-3 border border-line"
+                  className="flex items-center gap-3 bg-white/[0.03] rounded-lg px-4 py-3 border border-white/[0.06]"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-ink truncate">
+                    <p className="text-base font-semibold text-white/80 truncate">
                       {item.name}
                       {item.quantity && (
-                        <span className="text-ink-muted ml-1">
+                        <span className="text-white/40 ml-1">
                           {item.quantity}
                           {item.unit ? ` ${item.unit}` : ""}
                         </span>
                       )}
                       {(tab === "frozen" || tab === "cooked") && item.servings && (
-                        <span className="text-ink-muted ml-1">
+                        <span className="text-white/40 ml-1">
                           · {item.servings} порц.
                         </span>
                       )}
                     </p>
-                    <div className="flex flex-wrap gap-x-3 text-base text-ink font-medium-muted font-medium">
+                    <div className="flex flex-wrap gap-x-3 text-base text-white/80 font-medium-muted font-medium">
                       {item.preparedAt && (
                         <span>{preparedText(item.preparedAt, tab)}</span>
                       )}
@@ -272,7 +272,7 @@ export function PreservesPage() {
                     <button
                       onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                       disabled={consumeServings.isPending}
-                      className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-primary hover:bg-primary/10 transition-colors shrink-0 border border-primary/40 rounded-lg"
+                      className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors shrink-0 border border-[#c9a84c]/40 rounded-lg"
                       aria-label="Съели порцию"
                       title="Списать 1 съеденную порцию"
                     >
@@ -282,7 +282,7 @@ export function PreservesPage() {
                   )}
                   <button
                     onClick={() => remove.mutate({ id: item.id })}
-                    className="w-8 h-8 flex items-center justify-center text-ink-muted hover:text-alert transition-colors shrink-0"
+                    className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-red-400 transition-colors shrink-0"
                     aria-label="Удалить"
                   >
                     <Trash2 size={16} />
@@ -426,15 +426,15 @@ function AddPreserveDialog({
 
   return (
     <div
-      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
     >
       <div
-        className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        className="bg-[#0c1021] border border-white/[0.08] rounded-2xl w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-serif text-lg font-semibold text-ink mb-1 inline-flex items-center gap-2">
-          <TitleIcon size={20} className="text-primary" />
+        <h3 className="font-serif text-lg font-semibold text-white/80 mb-1 inline-flex items-center gap-2">
+          <TitleIcon size={20} className="text-[#c9a84c]" />
           Добавить: {config.label}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3 mt-4">
@@ -445,7 +445,7 @@ function AddPreserveDialog({
             placeholder={namePlaceholder}
             autoFocus
             required
-            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
           />
           <div className="flex gap-2">
             <input
@@ -455,14 +455,14 @@ function AddPreserveDialog({
               placeholder="Кол-во"
               step="any"
               min="0"
-              className="flex-1 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Ед. (кг, г, шт)"
-              className="w-28 h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-28 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
             />
           </div>
           {(preserveType === "frozen" || preserveType === "cooked") && (
@@ -473,22 +473,22 @@ function AddPreserveDialog({
               placeholder="Порций (необязательно)"
               step="1"
               min="1"
-              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
             />
           )}
           <label className="block">
-            <span className="block text-base text-ink font-medium-soft font-medium mb-1">
+            <span className="block text-base text-white/60 font-medium-soft font-medium mb-1">
               {preparedLabel}
             </span>
             <input
               type="date"
               value={preparedAt}
               onChange={(e) => setPreparedAt(e.target.value)}
-              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 [color-scheme:dark]"
             />
           </label>
           <label className="block">
-            <span className="block text-base text-ink font-medium-soft font-medium mb-1">
+            <span className="block text-base text-white/60 font-medium-soft font-medium mb-1">
               {expiryLabel}
             </span>
             <input
@@ -498,13 +498,13 @@ function AddPreserveDialog({
                 setExpiryDate(e.target.value);
                 setExpiryDirty(true);
               }}
-              className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink focus:outline-none focus:border-primary"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 [color-scheme:dark]"
             />
             {/* Шеф-подсказка: показываем только для frozen и если справочник
                 нашёл совпадение. Если пользователь сам ввёл дату — мягко
                 напоминаем что подсказка проигнорирована (но не давим). */}
             {preserveType === "frozen" && shelfHint && (
-              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-fresh">
+              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-green-400">
                 <Sparkles size={12} />
                 Шеф советует: «{shelfHint.keyword}» — {shelfHint.days} дн.
                 {expiryDirty && (
@@ -519,7 +519,7 @@ function AddPreserveDialog({
                       setExpiryDate(base.toISOString().slice(0, 10));
                       setExpiryDirty(false);
                     }}
-                    className="ml-1 text-primary underline"
+                    className="ml-1 text-[#c9a84c] underline"
                   >
                     применить
                   </button>
@@ -532,14 +532,14 @@ function AddPreserveDialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
+              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={!name.trim() || add.isPending}
-              className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 h-12 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors"
             >
               {add.isPending ? "Добавляю…" : "Добавить"}
             </button>
