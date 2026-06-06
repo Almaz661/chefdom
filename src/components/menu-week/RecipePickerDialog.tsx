@@ -80,7 +80,7 @@ export function RecipePickerDialog({
           <p className="text-[11px] text-white/40 mb-6">Рецепт рассчитан на {selected.servings} порц.</p>
 
           <div className="flex items-center gap-3 mb-6">
-            <Users size={16} className="text-[#e8b94a] shrink-0" />
+            <Users size={16} className="text-[#c9a84c] shrink-0" />
             <span className="text-sm text-white/70">На сколько порций готовить?</span>
           </div>
 
@@ -92,7 +92,7 @@ export function RecipePickerDialog({
                 onClick={() => setPlannedServings(n)}
                 className={`h-10 rounded-xl text-sm font-bold transition-all ${
                   plannedServings === n
-                    ? 'bg-[#c9953c] text-white'
+                    ? 'bg-[#c9a84c] text-white'
                     : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.10]'
                 }`}
               >
@@ -113,7 +113,7 @@ export function RecipePickerDialog({
               max={100}
               value={plannedServings}
               onChange={(e) => setPlannedServings(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
-              className="flex-1 h-9 rounded-lg bg-[#080c18] border border-white/[0.08] text-white text-center text-sm focus:outline-none focus:border-[#c9953c]/40"
+              className="flex-1 h-9 rounded-lg bg-[#080c18] border border-white/[0.08] text-white text-center text-sm focus:outline-none focus:border-[#c9a84c]/40"
             />
             <button
               onClick={() => setPlannedServings(p => Math.min(100, p + 1))}
@@ -122,7 +122,7 @@ export function RecipePickerDialog({
           </div>
 
           {plannedServings !== selected.servings && (
-            <p className="text-[11px] text-[#e8b94a]/70 mb-4 text-center">
+            <p className="text-[11px] text-[#c9a84c]/70 mb-4 text-center">
               Покупки масштабируются ×{(plannedServings / selected.servings).toFixed(2)}
             </p>
           )}
@@ -130,7 +130,7 @@ export function RecipePickerDialog({
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="w-full h-11 rounded-xl bg-[#c9953c] hover:bg-[#e8b94a] text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full h-11 rounded-xl bg-[#c9a84c] hover:bg-[#c9a84c] text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : null}
             Добавить в меню
@@ -171,7 +171,7 @@ export function RecipePickerDialog({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск рецепта..."
               autoFocus
-              className="w-full h-11 pl-10 pr-4 rounded-xl border border-white/[0.08] bg-[#080c18] text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-[#c9953c]/40 transition-colors"
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-white/[0.08] bg-[#080c18] text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-[#c9a84c]/40 transition-colors"
             />
           </div>
         </div>
@@ -189,7 +189,7 @@ export function RecipePickerDialog({
               </div>
               {suggestionsLoading ? (
                 <div className="flex justify-center py-4">
-                  <Loader2 size={20} className="animate-spin text-[#e8b94a]" />
+                  <Loader2 size={20} className="animate-spin text-[#c9a84c]" />
                 </div>
               ) : hasSuggestions ? (
                 <ul className="space-y-1.5">
@@ -198,7 +198,7 @@ export function RecipePickerDialog({
                       <button
                         onClick={() => handlePickRecipe({ ...s.recipe, servings: 4 })}
                         disabled={loading}
-                        className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#c9953c]/20 hover:bg-white/[0.04] transition-all text-left disabled:opacity-50"
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-[#c9a84c]/20 hover:bg-white/[0.04] transition-all text-left disabled:opacity-50"
                       >
                         {s.recipe.imageUrl ? (
                           <img src={s.recipe.imageUrl} alt="" loading="lazy" className="w-11 h-11 rounded-lg object-cover shrink-0" />
@@ -209,7 +209,7 @@ export function RecipePickerDialog({
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="text-[12px] font-semibold text-white/70 truncate">{s.recipe.title}</p>
-                          <p className="text-[10px] text-[#e8b94a]/70 truncate">{getReasonIcon(s.reasonType)} {s.reason}</p>
+                          <p className="text-[10px] text-[#c9a84c]/70 truncate">{getReasonIcon(s.reasonType)} {s.reason}</p>
                         </div>
                       </button>
                     </li>
@@ -222,7 +222,7 @@ export function RecipePickerDialog({
           )}
 
           {!search.trim() && !showSuggestions && (
-            <button onClick={() => setShowSuggestions(true)} className="mb-3 text-[11px] text-[#e8b94a] hover:underline">
+            <button onClick={() => setShowSuggestions(true)} className="mb-3 text-[11px] text-[#c9a84c] hover:underline">
               Показать рекомендации
             </button>
           )}
@@ -266,7 +266,7 @@ export function RecipePickerDialog({
 
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 size={24} className="animate-spin text-[#e8b94a]" />
+              <Loader2 size={24} className="animate-spin text-[#c9a84c]" />
             </div>
           ) : recipes.length === 0 ? (
             <p className="text-white/30 text-sm text-center py-8">Рецепты не найдены</p>

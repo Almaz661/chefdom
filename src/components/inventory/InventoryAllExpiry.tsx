@@ -1,14 +1,8 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { daysUntilExpiry } from '../../utils/dateUtils';
 import { GlassCard } from '../ui/GlassCard';
 import type { ViewItem } from './InventoryExpiringSection';
 
-function daysUntilExpiry(expiryDate: string | null): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const exp = new Date(expiryDate + 'T00:00:00');
-  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function expiryText(expiryDate: string | null): string {
   const days = daysUntilExpiry(expiryDate);
@@ -38,8 +32,8 @@ export function InventoryAllExpiry({
         onClick={onToggle}
         className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-200 ${
           isOpen
-            ? 'border-[#c9953c]/30 bg-[#c9953c]/[0.06] text-[#e8b94a]'
-            : 'border-white/[0.06] bg-[#080c18]/60 text-white/50 hover:text-[#e8b94a] hover:border-[#c9953c]/20'
+            ? 'border-[#c9a84c]/30 bg-[#c9a84c]/[0.06] text-[#c9a84c]'
+            : 'border-white/[0.06] bg-[#080c18]/60 text-white/50 hover:text-[#c9a84c] hover:border-[#c9a84c]/20'
         }`}
       >
         <span className="text-base font-bold">
@@ -73,7 +67,7 @@ export function InventoryAllExpiry({
                         ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]'
                         : isSoon
                         ? 'bg-[#f97316] shadow-[0_0_6px_rgba(249,115,22,0.5)]'
-                        : 'bg-[#e8b94a]/40'
+                        : 'bg-[#c9a84c]/40'
                     }`}
                   />
                   <div className="flex-1 min-w-0">

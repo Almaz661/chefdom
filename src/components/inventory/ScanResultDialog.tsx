@@ -83,7 +83,7 @@ export function ScanResultDialog({
 
           {isLoading && (
             <div className="flex items-center justify-center py-10">
-              <Loader2 size={28} className="animate-spin text-[#e8b94a]" />
+              <Loader2 size={28} className="animate-spin text-[#c9a84c]" />
               <span className="ml-3 text-white/50 text-sm">Ищу товар…</span>
             </div>
           )}
@@ -114,7 +114,7 @@ export function ScanResultDialog({
                       onClick={() => setStorageType(key)}
                       className={`flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                         storageType === key
-                          ? 'bg-[#c9953c]/20 text-[#e8b94a] border border-[#c9953c]/30'
+                          ? 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
                           : 'text-white/35 hover:text-white/55'
                       }`}
                     >
@@ -133,7 +133,7 @@ export function ScanResultDialog({
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
-                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9953c]/50 transition-colors [color-scheme:dark]"
+                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
                 />
               </label>
 
@@ -150,7 +150,7 @@ export function ScanResultDialog({
                   type="button"
                   onClick={handleAdd}
                   disabled={add.isPending}
-                  className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#c9953c] to-[#e8b94a] text-[#0a0c10] font-semibold shadow-[0_4px_16px_rgba(201,149,60,0.3)] hover:shadow-[0_6px_24px_rgba(201,149,60,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                  className="flex-1 h-12 rounded-xl btn-gold"
                 >
                   {add.isPending ? 'Добавляю…' : 'В инвентарь'}
                 </button>
@@ -175,7 +175,7 @@ export function ScanResultDialog({
                         onClick={() => setStorageType(key)}
                         className={`flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                           storageType === key
-                            ? 'bg-[#c9953c]/20 text-[#e8b94a] border border-[#c9953c]/30'
+                            ? 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
                             : 'text-white/35 hover:text-white/55'
                         }`}
                       >
@@ -191,7 +191,7 @@ export function ScanResultDialog({
                   onChange={(e) => setCustomName(e.target.value)}
                   placeholder="Название продукта"
                   autoFocus
-                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
                 />
                 <div className="flex gap-3">
                   <input
@@ -201,14 +201,14 @@ export function ScanResultDialog({
                     placeholder="Кол-во"
                     step="any"
                     min="0"
-                    className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                    className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
                   />
                   <input
                     type="text"
                     value={customUnit}
                     onChange={(e) => setCustomUnit(e.target.value)}
                     placeholder="Ед."
-                    className="w-24 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9953c]/50 transition-colors"
+                    className="w-24 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
                   />
                 </div>
                 <div>
@@ -216,7 +216,7 @@ export function ScanResultDialog({
                     type="date"
                     value={expiryDate}
                     onChange={(e) => setExpiryDate(e.target.value)}
-                    className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9953c]/50 transition-colors [color-scheme:dark]"
+                    className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
                   />
                   <p className="text-[11px] text-white/25 mt-1.5 ml-1">Срок годности (необязательно)</p>
                 </div>
@@ -234,7 +234,7 @@ export function ScanResultDialog({
                   type="button"
                   onClick={handleAdd}
                   disabled={!customName.trim() || add.isPending}
-                  className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#c9953c] to-[#e8b94a] text-[#0a0c10] font-semibold shadow-[0_4px_16px_rgba(201,149,60,0.3)] hover:shadow-[0_6px_24px_rgba(201,149,60,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                  className="flex-1 h-12 rounded-xl btn-gold"
                 >
                   {add.isPending ? 'Добавляю…' : 'Добавить'}
                 </button>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { daysUntilExpiry } from '../../utils/dateUtils';
 import { Loader2 } from 'lucide-react';
 import { trpc } from '../utils/trpc';
 import { toast } from '../components/ui/Toast';
@@ -14,13 +15,6 @@ import { ScanResultDialog } from '../components/inventory/ScanResultDialog';
 import type { ViewItem } from '../components/inventory/InventoryExpiringSection';
 
 /** Сколько дней до истечения срока */
-function daysUntilExpiry(expiryDate: string | null): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const exp = new Date(expiryDate + 'T00:00:00');
-  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 export function InventoryPage() {
   const [tab, setTab] = useState<'fridge' | 'freezer' | 'pantry'>('fridge');
@@ -194,7 +188,7 @@ export function InventoryPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
+            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
           </div>
         ) : (
           <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto">

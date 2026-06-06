@@ -11,7 +11,7 @@ export function ShoppingKpiRow({
   remaining: number;
 }) {
   const KPI_DATA = [
-    { icon: ShoppingCart, value: String(total), label: 'Всего', accent: '#e8b94a' },
+    { icon: ShoppingCart, value: String(total), label: 'Всего', accent: '#c9a84c' },
     { icon: CheckCircle2, value: String(checked), label: 'Куплено', accent: '#4ade80' },
     { icon: Circle, value: String(remaining), label: 'Осталось', accent: '#60a5fa' },
   ];

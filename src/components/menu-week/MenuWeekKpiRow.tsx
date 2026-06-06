@@ -9,7 +9,7 @@ export function MenuWeekKpiRow({
   totalTime: string;
 }) {
   const KPI_DATA = [
-    { icon: UtensilsCrossed, value: String(totalMeals), label: 'Блюд на неделе', accent: '#e8b94a' },
+    { icon: UtensilsCrossed, value: String(totalMeals), label: 'Блюд на неделе', accent: '#c9a84c' },
     { icon: Clock, value: totalTime || '—', label: 'Время на готовку', accent: '#60a5fa' },
     { icon: Flame, value: totalMeals > 14 ? 'Сбалансировано' : totalMeals > 0 ? 'Частично' : '—', label: 'Пищевая ценность', accent: '#f472b6' },
   ];

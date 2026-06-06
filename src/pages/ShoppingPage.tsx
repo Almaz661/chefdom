@@ -163,7 +163,7 @@ export function ShoppingPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
+            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
           </div>
         ) : total === 0 ? (
           <GlassCard className="p-10 text-center flex-1 flex flex-col items-center justify-center">

@@ -41,7 +41,7 @@ export function MenuWeekGrid({
   if (isLoading) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center rounded-[20px] border border-white/[0.06] bg-[#080c18]/60">
-        <Loader2 size={32} className="animate-spin text-[#e8b94a]" />
+        <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
       </div>
     );
   }
@@ -53,11 +53,11 @@ export function MenuWeekGrid({
         <div />
         {DAYS.map((day, i) => (
           <div key={day} className="text-center py-1">
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${i === todayIdx ? 'text-[#e8b94a]' : 'text-white/40'}`}>
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${i === todayIdx ? 'text-[#c9a84c]' : 'text-white/40'}`}>
               {day}
             </span>
             {i === todayIdx && (
-              <div className="w-1.5 h-1.5 rounded-full bg-[#e8b94a] mx-auto mt-1 shadow-[0_0_8px_rgba(232,185,74,0.7)]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] mx-auto mt-1 shadow-[0_0_8px_rgba(232,185,74,0.7)]" />
             )}
           </div>
         ))}
@@ -108,7 +108,7 @@ export function MenuWeekGrid({
 
 function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9953c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0 relative">
+    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9a84c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0 relative">
       {/* Remove button */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
@@ -135,7 +135,7 @@ function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) 
         {item.recipeTotalTime && (
           <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/[0.06]">
             <div className="flex items-center gap-0.5">
-              <Clock size={8} className="text-[#e8b94a]" />
+              <Clock size={8} className="text-[#c9a84c]" />
               <span className="text-[9px] text-white/80 font-semibold">{item.recipeTotalTime} мин</span>
             </div>
           </div>
@@ -155,10 +155,10 @@ function MealCardEmpty({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9953c]/30 hover:bg-[#c9953c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0 w-full"
+      className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9a84c]/30 hover:bg-[#c9a84c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0 w-full"
     >
-      <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9953c]/40 group-hover:bg-[#c9953c]/10 transition-all duration-300">
-        <Plus size={13} className="text-white/15 group-hover:text-[#e8b94a] transition-colors duration-300" />
+      <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/10 transition-all duration-300">
+        <Plus size={13} className="text-white/15 group-hover:text-[#c9a84c] transition-colors duration-300" />
       </div>
     </button>
   );

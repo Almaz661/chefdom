@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
+import { daysUntilExpiry } from '../../utils/dateUtils';
 import {
   Snowflake,
   Archive,
@@ -40,13 +41,6 @@ function tabConfig(t: PreserveType) {
 }
 
 /** Сколько дней до истечения срока. null — если срок не указан. */
-function daysUntilExpiry(expiryDate: string | null): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const exp = new Date(expiryDate + "T00:00:00");
-  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function expiryText(expiryDate: string | null): string {
   const days = daysUntilExpiry(expiryDate);

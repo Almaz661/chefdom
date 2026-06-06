@@ -57,135 +57,137 @@ export function WhatToCookPage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-3xl lg:text-3xl font-semibold text-ink mb-2">
-        Что приготовить?
-      </h1>
-      <p className="text-ink-soft text-sm mb-6">Из того что есть дома</p>
+    <div className="min-h-screen bg-[#05070A]">
+      <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+        <h1 className="font-serif text-3xl text-white font-extrabold mb-2">
+          Что приготовить?
+        </h1>
+        <p className="text-white/50 text-sm mb-6">Из того что есть дома</p>
 
-      {/* Фильтры */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`h-9 px-4 rounded-full text-base font-semibold transition-colors ${
-              filter === f.key
-                ? "bg-primary text-paper"
-                : "bg-paper border border-line text-ink-soft hover:text-ink"
-            }`}
-          >
-            {f.label}
-            {f.count > 0 && f.key !== "all" && (
-              <span className="ml-1.5 opacity-60">{f.count}</span>
-            )}
-          </button>
-        ))}
+        {/* Фильтры */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`h-9 px-4 rounded-xl text-base font-semibold transition-colors ${
+                filter === f.key
+                  ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                  : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+              }`}
+            >
+              {f.label}
+              {f.count > 0 && f.key !== "all" && (
+                <span className="ml-1.5 opacity-60">{f.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
+          </div>
+        ) : matched.length === 0 ? (
+          <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-xl p-12 text-center">
+            <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
+            <p className="font-serif text-lg text-white mb-2">Рецептов пока нет</p>
+            <p className="text-white/50 text-sm mb-4">
+              Добавьте рецепты чтобы система подбирала блюда
+            </p>
+            <Link
+              to="/recipes"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#c9a84c] text-[#0a0c10] text-base font-semibold hover:bg-[#d4b55a] transition-colors"
+            >
+              <Plus size={16} />
+              Добавить рецепты
+            </Link>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-xl p-12 text-center">
+            <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
+            <p className="font-serif text-lg text-white mb-2">Ничего не подходит</p>
+            <p className="text-white/50 text-sm">
+              По выбранному фильтру нет рецептов. Попробуйте другой.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((r) => {
+              const allHave = r.totalCount > 0 && r.haveCount === r.totalCount;
+              return (
+                <Link
+                  key={r.id}
+                  to={`/recipes/${r.id}`}
+                  className="flex gap-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all"
+                >
+                  {/* Фото */}
+                  <div className="w-20 h-20 rounded-xl bg-white/[0.04] overflow-hidden shrink-0 flex items-center justify-center">
+                    {r.imageUrl ? (
+                      <img
+                        src={r.imageUrl}
+                        alt={r.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <ChefHat size={28} className="text-white/30" strokeWidth={1.5} />
+                    )}
+                  </div>
+
+                  {/* Инфо */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-serif text-base font-semibold text-white truncate mb-1">
+                      {r.title}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-base text-white/80 font-medium mb-2">
+                      {r.totalTime && (
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} />
+                          {r.totalTime} мин
+                        </span>
+                      )}
+                      {r.servings && (
+                        <span className="flex items-center gap-1">
+                          <Users size={12} />
+                          {r.servings} порц.
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {/* Счётчик "X из Y есть" */}
+                      {r.totalCount > 0 && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${
+                            allHave
+                              ? "bg-green-500/10 text-green-400"
+                              : r.haveCount > 0
+                                ? "bg-white/[0.04] text-white/50"
+                                : "bg-white/[0.04] text-white/30"
+                          }`}
+                        >
+                          {allHave && <CheckCircle2 size={11} />}
+                          {r.haveCount} из {r.totalCount} есть
+                        </span>
+                      )}
+                      {/* Tag "истекают" */}
+                      {r.expiringCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                          <AlertTriangle size={11} />
+                          Использует {r.expiringCount} истекающ.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-primary" />
-        </div>
-      ) : matched.length === 0 ? (
-        <div className="bg-paper border border-line border-dashed rounded-2xl p-12 text-center">
-          <ChefHat size={40} className="text-line-strong mx-auto mb-4" strokeWidth={1.5} />
-          <p className="font-serif text-lg text-ink mb-2">Рецептов пока нет</p>
-          <p className="text-ink-soft text-sm mb-4">
-            Добавьте рецепты чтобы система подбирала блюда
-          </p>
-          <Link
-            to="/recipes"
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-primary text-paper text-base font-semibold hover:bg-primary-dark transition-colors"
-          >
-            <Plus size={16} />
-            Добавить рецепты
-          </Link>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-paper border border-line border-dashed rounded-2xl p-12 text-center">
-          <ChefHat size={40} className="text-line-strong mx-auto mb-4" strokeWidth={1.5} />
-          <p className="font-serif text-lg text-ink mb-2">Ничего не подходит</p>
-          <p className="text-ink-soft text-sm">
-            По выбранному фильтру нет рецептов. Попробуйте другой.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((r) => {
-            const allHave = r.totalCount > 0 && r.haveCount === r.totalCount;
-            return (
-              <Link
-                key={r.id}
-                to={`/recipes/${r.id}`}
-                className="flex gap-4 bg-paper border border-line rounded-2xl p-4 hover:border-primary hover:shadow-sm transition-all"
-              >
-                {/* Фото */}
-                <div className="w-20 h-20 rounded-xl bg-surface-elevated overflow-hidden shrink-0 flex items-center justify-center">
-                  {r.imageUrl ? (
-                    <img
-                      src={r.imageUrl}
-                      alt={r.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <ChefHat size={28} className="text-line-strong" strokeWidth={1.5} />
-                  )}
-                </div>
-
-                {/* Инфо */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif text-base font-semibold text-ink truncate mb-1">
-                    {r.title}
-                  </p>
-                  <div className="flex flex-wrap gap-3 text-base text-ink font-medium-muted font-medium mb-2">
-                    {r.totalTime && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {r.totalTime} мин
-                      </span>
-                    )}
-                    {r.servings && (
-                      <span className="flex items-center gap-1">
-                        <Users size={12} />
-                        {r.servings} порц.
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    {/* Счётчик "X из Y есть" */}
-                    {r.totalCount > 0 && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded ${
-                          allHave
-                            ? "bg-green-50 text-green-700"
-                            : r.haveCount > 0
-                              ? "bg-surface-elevated text-ink-soft"
-                              : "bg-surface-elevated text-ink-muted"
-                        }`}
-                      >
-                        {allHave && <CheckCircle2 size={11} />}
-                        {r.haveCount} из {r.totalCount} есть
-                      </span>
-                    )}
-                    {/* Tag "истекают" */}
-                    {r.expiringCount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-warning">
-                        <AlertTriangle size={11} />
-                        Использует {r.expiringCount} истекающ.
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

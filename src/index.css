@@ -1,10 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  /* CHEF'S KITCHEN — #0a0e27 midnight navy + #c9a84c true gold */
+  /* CHEF'S KITCHEN — единая дизайн-система
+     Один gold: #c9a84c (латунь/шампанское).
+     Все компоненты обязаны использовать эти токены.
+     Захардкоженные #c9953c и #e8b94a — алиасы для совместимости. */
   --color-primary: #c9a84c;
+  --color-primary-hover: #d4b55a;       /* +10% light для hover */
   --color-primary-dark: #a8893a;
   --color-primary-light: rgba(201, 168, 76, 0.08);
+  --color-primary-glow: rgba(201, 168, 76, 0.15);
+  --color-primary-border: rgba(201, 168, 76, 0.25);
+
+  /* Алиасы — старые компоненты продолжают работать без изменений кода.
+     Визуально все три цвета унифицированы в #c9a84c. */
+  --color-gold: #c9a84c;
+  --color-gold-bright: #c9a84c;         /* было #e8b94a */
+  --color-gold-deep: #c9a84c;           /* было #c9953c */
 
   --color-cream: #0a0e27;
   --color-paper: #0f1428;
@@ -189,6 +201,52 @@ main { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
   background: radial-gradient(ellipse at 50% -20%, rgba(201, 168, 76, 0.04) 0%, transparent 70%);
   pointer-events: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DARK GLASS SYSTEM — единые компоненты для тёмных страниц
+   Инвентарь, Покупки, Меню, Заготовки используют эти классы.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Золотая кнопка — главное CTA */
+.btn-gold {
+  background: linear-gradient(135deg, #c9a84c, #d4b55a);
+  color: #0a0c10;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.25);
+  transition: all 0.2s ease;
+}
+.btn-gold:hover {
+  box-shadow: 0 6px 24px rgba(201, 168, 76, 0.4);
+  transform: scale(1.02);
+}
+.btn-gold:active { transform: scale(0.98); }
+.btn-gold:disabled { opacity: 0.5; transform: none; }
+
+/* Поля ввода в тёмной теме */
+.input-dark {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  color: white;
+  transition: border-color 0.2s ease;
+}
+.input-dark::placeholder { color: rgba(255, 255, 255, 0.25); }
+.input-dark:focus {
+  outline: none;
+  border-color: rgba(201, 168, 76, 0.5);
+}
+
+/* Активный таб в тёмной теме */
+.tab-gold-active {
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.2), rgba(201, 168, 76, 0.1));
+  color: #c9a84c;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.15);
+}
+
+/* Спиннер загрузки */
+.spinner-gold { color: #c9a84c; }
 
 /* === ФОТО — единый кинематографический стиль === */
 .photo-cinematic {

@@ -104,41 +104,47 @@ export function RecipeDetailPage() {
 
   if (!Number.isFinite(id) || id <= 0) {
     return (
-      <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <Link
-          to="/recipes"
-          className="text-primary inline-flex items-center gap-1"
-        >
-          <ArrowLeft size={18} /> К рецептам
-        </Link>
-        <p className="text-ink-soft mt-6">Некорректный ID рецепта.</p>
+      <div className="min-h-screen bg-[#05070A]">
+        <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+          <Link
+            to="/recipes"
+            className="text-[#c9a84c] inline-flex items-center gap-1"
+          >
+            <ArrowLeft size={18} /> К рецептам
+          </Link>
+          <p className="text-white/50 mt-6">Некорректный ID рецепта.</p>
+        </div>
       </div>
     );
   }
 
   if (query.isLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <div className="text-ink-muted">Загрузка рецепта...</div>
+      <div className="min-h-screen bg-[#05070A]">
+        <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+          <div className="text-white/30">Загрузка рецепта...</div>
+        </div>
       </div>
     );
   }
 
   if (query.error || !query.data) {
     return (
-      <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <Link
-          to="/recipes"
-          className="text-primary inline-flex items-center gap-1 mb-6"
-        >
-          <ArrowLeft size={18} /> К рецептам
-        </Link>
-        <h1 className="font-serif text-3xl font-bold text-ink mb-2">
-          Рецепт не найден
-        </h1>
-        <p className="text-ink-soft">
-          {query.error?.message || "Возможно, он был удалён или неверный URL."}
-        </p>
+      <div className="min-h-screen bg-[#05070A]">
+        <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+          <Link
+            to="/recipes"
+            className="text-[#c9a84c] inline-flex items-center gap-1 mb-6"
+          >
+            <ArrowLeft size={18} /> К рецептам
+          </Link>
+          <h1 className="font-serif text-3xl text-white font-extrabold mb-2">
+            Рецепт не найден
+          </h1>
+          <p className="text-white/50">
+            {query.error?.message || "Возможно, он был удалён или неверный URL."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -161,9 +167,9 @@ export function RecipeDetailPage() {
     .join(" · ");
 
   return (
-    <div className="pb-32">
+    <div className="min-h-screen bg-[#05070A] pb-32">
       {/* Hero — фото на всю ширину контейнера */}
-      <div className="relative aspect-[16/9] bg-surface-elevated max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
+      <div className="relative aspect-[16/9] bg-white/[0.04] max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
         {showImage ? (
           <img
             src={recipe.imageUrl!}
@@ -173,13 +179,13 @@ export function RecipeDetailPage() {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ChefHat size={80} className="text-line-strong" strokeWidth={1.5} />
+            <ChefHat size={80} className="text-white/30" strokeWidth={1.5} />
           </div>
         )}
         <Link
           to="/recipes"
           aria-label="Назад"
-          className="absolute top-4 left-4 w-10 h-10 rounded-full bg-paper/90 backdrop-blur flex items-center justify-center text-ink hover:bg-paper transition-colors"
+          className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/70 backdrop-blur flex items-center justify-center text-white/80 hover:text-white transition-colors"
         >
           <ArrowLeft size={20} />
         </Link>
@@ -188,7 +194,7 @@ export function RecipeDetailPage() {
       <div className="max-w-3xl mx-auto px-6 lg:px-10 mt-6">
         {/* Заголовок + кнопки управления */}
         <div className="flex items-start justify-between gap-4 mb-2">
-          <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink leading-tight">
+          <h1 className="font-serif text-3xl text-white font-extrabold leading-tight">
             {recipe.title}
           </h1>
           <div className="flex gap-2 flex-shrink-0">
@@ -196,7 +202,7 @@ export function RecipeDetailPage() {
               to={`/recipes/${recipe.id}/edit`}
               aria-label="Редактировать"
               title="Редактировать"
-              className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft hover:text-primary hover:border-primary flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
             >
               <Pencil size={18} />
             </Link>
@@ -205,7 +211,7 @@ export function RecipeDetailPage() {
               onClick={() => setShowConfirmDelete(true)}
               aria-label="Удалить"
               title="Удалить"
-              className="w-10 h-10 rounded-lg border border-line bg-paper text-ink-soft hover:text-alert hover:border-alert flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl border border-red-500/30 text-red-400 hover:border-red-500/60 hover:bg-red-500/10 flex items-center justify-center transition-colors"
             >
               <Trash2 size={18} />
             </button>
@@ -215,23 +221,23 @@ export function RecipeDetailPage() {
               disabled={cook.isPending}
               aria-label="Готовить"
               title="Готовить"
-              className="w-10 h-10 rounded-lg bg-primary text-paper hover:bg-primary-dark flex items-center justify-center transition-colors disabled:opacity-50"
+              className="w-10 h-10 rounded-xl bg-[#c9a84c] text-[#0a0c10] hover:bg-[#d4b55a] flex items-center justify-center transition-colors disabled:opacity-50"
             >
               <ChefHat size={18} />
             </button>
           </div>
         </div>
-        {subline && <p className="text-ink-soft mb-2">{subline}</p>}
+        {subline && <p className="text-white/50 mb-2">{subline}</p>}
 
         {/* Источник, если рецепт импортирован */}
         {recipe.sourceUrl && recipe.source && (
-          <p className="text-ink-muted text-sm mb-5">
+          <p className="text-white/30 text-sm mb-5">
             Источник:{" "}
             <a
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-primary"
+              className="underline hover:text-[#c9a84c]"
             >
               {recipe.source}
             </a>
@@ -241,13 +247,13 @@ export function RecipeDetailPage() {
         {/* Факты */}
         <div className="flex flex-wrap gap-x-6 gap-y-2 mb-6 text-sm">
           {recipe.totalTime !== null && (
-            <span className="inline-flex items-center gap-1.5 text-ink">
-              <Clock size={16} className="text-ink-muted" />
+            <span className="inline-flex items-center gap-1.5 text-white/80">
+              <Clock size={16} className="text-white/30" />
               {recipe.totalTime} мин
             </span>
           )}
-          <span className="inline-flex items-center gap-1.5 text-ink">
-            <Users size={16} className="text-ink-muted" />
+          <span className="inline-flex items-center gap-1.5 text-white/80">
+            <Users size={16} className="text-white/30" />
             {currentServings}{" "}
             {currentServings === 1
               ? "порция"
@@ -256,18 +262,18 @@ export function RecipeDetailPage() {
                 : "порций"}
           </span>
           {recipe.calories !== null && (
-            <span className="inline-flex items-center gap-1.5 text-ink">
-              <Flame size={16} className="text-ink-muted" />
+            <span className="inline-flex items-center gap-1.5 text-white/80">
+              <Flame size={16} className="text-white/30" />
               {recipe.calories} ккал/порц.
             </span>
           )}
           {/* F.1 — индикатор активного Wake Lock (экран не гаснет) */}
           {wakeLockActive && (
             <span
-              className="inline-flex items-center gap-1.5 text-ink-soft"
+              className="inline-flex items-center gap-1.5 text-white/50"
               title="Экран не гаснет, пока ты на этом рецепте"
             >
-              <Moon size={16} className="text-primary" />
+              <Moon size={16} className="text-[#c9a84c]" />
               Экран не гаснет
             </span>
           )}
@@ -275,37 +281,37 @@ export function RecipeDetailPage() {
 
         {/* C.1 — КБЖУ на порцию с % дневной нормы */}
         {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
-          <div className="bg-surface-elevated rounded-xl p-4 mb-6">
-            <p className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 mb-6">
+            <p className="text-sm font-bold text-white/30 uppercase tracking-wider mb-3">
               На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
             </p>
             <div className="grid grid-cols-4 gap-3 text-center">
               {recipe.calories && (
                 <div>
-                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(recipe.calories * multiplier)}</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">ккал</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(recipe.calories * multiplier / 2000 * 100)}% нормы</p>
+                  <p className="font-serif text-xl font-semibold text-white">{Math.round(recipe.calories * multiplier)}</p>
+                  <p className="text-base text-white/50 font-medium">ккал</p>
+                  <p className="text-base text-white/50 font-medium">{Math.round(recipe.calories * multiplier / 2000 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.proteinG && (
                 <div>
-                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.proteinG) * multiplier)}г</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">белки</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.proteinG) * multiplier / 50 * 100)}% нормы</p>
+                  <p className="font-serif text-xl font-semibold text-white">{Math.round(parseFloat(recipe.proteinG) * multiplier)}г</p>
+                  <p className="text-base text-white/50 font-medium">белки</p>
+                  <p className="text-base text-white/50 font-medium">{Math.round(parseFloat(recipe.proteinG) * multiplier / 50 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.fatsG && (
                 <div>
-                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.fatsG) * multiplier)}г</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">жиры</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.fatsG) * multiplier / 70 * 100)}% нормы</p>
+                  <p className="font-serif text-xl font-semibold text-white">{Math.round(parseFloat(recipe.fatsG) * multiplier)}г</p>
+                  <p className="text-base text-white/50 font-medium">жиры</p>
+                  <p className="text-base text-white/50 font-medium">{Math.round(parseFloat(recipe.fatsG) * multiplier / 70 * 100)}% нормы</p>
                 </div>
               )}
               {recipe.carbsG && (
                 <div>
-                  <p className="font-serif text-xl font-semibold text-ink">{Math.round(parseFloat(recipe.carbsG) * multiplier)}г</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">углеводы</p>
-                  <p className="text-base text-ink font-medium-muted font-medium">{Math.round(parseFloat(recipe.carbsG) * multiplier / 260 * 100)}% нормы</p>
+                  <p className="font-serif text-xl font-semibold text-white">{Math.round(parseFloat(recipe.carbsG) * multiplier)}г</p>
+                  <p className="text-base text-white/50 font-medium">углеводы</p>
+                  <p className="text-base text-white/50 font-medium">{Math.round(parseFloat(recipe.carbsG) * multiplier / 260 * 100)}% нормы</p>
                 </div>
               )}
             </div>
@@ -314,7 +320,7 @@ export function RecipeDetailPage() {
 
         {/* Описание */}
         {recipe.description && (
-          <p className="font-serif italic text-ink-soft mb-8 leading-relaxed">
+          <p className="font-serif italic text-white/50 mb-8 leading-relaxed">
             {recipe.description}
           </p>
         )}
@@ -322,19 +328,19 @@ export function RecipeDetailPage() {
         {/* Ингредиенты */}
         <section className="mb-10">
           <div className="flex items-baseline justify-between mb-4 gap-3 flex-wrap">
-            <h2 className="font-serif text-xl font-semibold text-ink">
+            <h2 className="text-white/70 font-bold text-lg">
               Ингредиенты
             </h2>
-            <div className="inline-flex bg-paper border border-line rounded-lg p-0.5 gap-0.5">
+            <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-xl p-0.5 gap-0.5">
               {PORTION_OPTIONS.map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMultiplier(m)}
-                  className={`px-3 py-1 rounded-md text-base font-semibold transition-colors ${
+                  className={`px-3 py-1 rounded-xl text-base font-semibold transition-colors ${
                     multiplier === m
-                      ? "bg-primary text-paper"
-                      : "text-ink-soft hover:text-ink"
+                      ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                      : "text-white/50 hover:text-white/80"
                   }`}
                 >
                   ×{m}
@@ -343,13 +349,13 @@ export function RecipeDetailPage() {
             </div>
           </div>
           {ingredients.length === 0 ? (
-            <p className="text-ink-muted text-sm">Ингредиенты не указаны.</p>
+            <p className="text-white/30 text-sm">Ингредиенты не указаны.</p>
           ) : (
             <div className="space-y-5">
               {[...groups.entries()].map(([groupName, list]) => (
                 <div key={groupName || "_default"}>
                   {groupName && (
-                    <h3 className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-2">
+                    <h3 className="text-xs uppercase tracking-wider text-white/30 font-medium mb-2">
                       {groupName}
                     </h3>
                   )}
@@ -360,14 +366,14 @@ export function RecipeDetailPage() {
                       return (
                         <li
                           key={ing.id}
-                          className="flex items-center gap-3 text-ink group"
+                          className="flex items-center gap-3 text-white/80 group"
                         >
                           <span className="font-medium tabular-nums min-w-[80px] self-baseline">
                             {scaled !== null
                               ? `${formatAmount(scaled)}${ing.unit ? " " + ing.unit : ""}`
                               : "по вкусу"}
                           </span>
-                          <span className="text-ink-soft flex-1 self-baseline">
+                          <span className="text-white/50 flex-1 self-baseline">
                             {ing.name}
                           </span>
                           {/* B.3 — кнопка «Чем заменить» */}
@@ -376,7 +382,7 @@ export function RecipeDetailPage() {
                             onClick={() => setSubForIngredient(ing.name)}
                             aria-label={`Чем заменить ${ing.name}`}
                             title="Чем заменить"
-                            className="w-9 h-9 -my-2 rounded-lg text-ink-muted hover:text-primary hover:bg-surface-hover flex items-center justify-center shrink-0 transition-colors"
+                            className="w-9 h-9 -my-2 rounded-xl text-white/30 hover:text-[#c9a84c] hover:bg-white/[0.05] flex items-center justify-center shrink-0 transition-colors"
                           >
                             <Replace size={16} />
                           </button>
@@ -392,20 +398,20 @@ export function RecipeDetailPage() {
 
         {/* Шаги */}
         <section>
-          <h2 className="font-serif text-xl font-semibold text-ink mb-4">
+          <h2 className="text-white/70 font-bold text-lg mb-4">
             Шаги
           </h2>
           {steps.length === 0 ? (
-            <p className="text-ink-muted text-sm">Шаги не указаны.</p>
+            <p className="text-white/30 text-sm">Шаги не указаны.</p>
           ) : (
             <ol className="space-y-6">
               {steps.map((step) => (
                 <li key={step.id} className="flex gap-4">
-                  <span className="font-serif text-3xl font-bold text-primary w-8 flex-shrink-0 leading-none pt-1">
+                  <span className="font-serif text-3xl font-bold text-[#c9a84c] w-8 flex-shrink-0 leading-none pt-1">
                     {step.stepNumber}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-ink leading-relaxed mb-2">
+                    <p className="text-white/80 leading-relaxed mb-2">
                       {step.instruction}
                     </p>
                     {step.imageUrl && (
@@ -413,7 +419,7 @@ export function RecipeDetailPage() {
                         src={step.imageUrl}
                         alt=""
                         loading="lazy"
-                        className="rounded-lg max-w-full mb-2 border border-line"
+                        className="rounded-xl max-w-full mb-2 border border-white/[0.06]"
                       />
                     )}
                     {step.timerMinutes !== null && (
@@ -431,8 +437,8 @@ export function RecipeDetailPage() {
         </section>
       </div>
 
-      {/* Sticky bottom — disabled до Блока 11 */}
-      <div className="fixed bottom-0 lg:bottom-0 inset-x-0 bg-paper border-t border-line p-4 lg:pl-64 z-10">
+      {/* Sticky bottom */}
+      <div className="fixed bottom-0 lg:bottom-0 inset-x-0 bg-black/70 backdrop-blur-sm border-t border-white/[0.06] p-4 lg:pl-64 z-10">
         <div className="max-w-3xl mx-auto">
           <button
             type="button"
@@ -442,7 +448,7 @@ export function RecipeDetailPage() {
                 cook.mutate({ id });
               }
             }}
-            className="w-full bg-primary text-paper py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="w-full bg-[#c9a84c] text-[#0a0c10] py-3 rounded-xl font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50"
           >
             {cook.isPending ? 'Готовлю...' : 'Готовить сейчас'}
           </button>
@@ -460,28 +466,28 @@ export function RecipeDetailPage() {
       {/* Модалка подтверждения удаления */}
       {showConfirmDelete && (
         <div
-          className="fixed inset-0 bg-ink/50 flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50"
           onClick={() => !del.isPending && setShowConfirmDelete(false)}
         >
           <div
-            className="bg-paper rounded-2xl p-6 max-w-sm w-full"
+            className="bg-[#0c1021] border border-white/[0.08] rounded-2xl p-6 max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-serif text-xl font-semibold text-ink mb-2">
+            <h3 className="font-serif text-xl font-semibold text-white mb-2">
               Удалить рецепт?
             </h3>
-            <p className="text-ink-soft mb-6">
+            <p className="text-white/50 mb-6">
               «{recipe.title}» будет удалён. Действие необратимо.
             </p>
             {del.error && (
-              <p className="text-alert text-sm mb-4">{del.error.message}</p>
+              <p className="text-red-400 text-sm mb-4">{del.error.message}</p>
             )}
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
                 disabled={del.isPending}
-                className="px-4 h-11 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>
@@ -489,7 +495,7 @@ export function RecipeDetailPage() {
                 type="button"
                 onClick={() => del.mutate({ id })}
                 disabled={del.isPending}
-                className="px-4 h-11 rounded-lg bg-alert text-paper font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="px-4 h-11 rounded-xl border border-red-500/30 text-red-400 font-medium hover:border-red-500/60 hover:bg-red-500/10 transition-colors disabled:opacity-50"
               >
                 {del.isPending ? "Удаляю..." : "Удалить"}
               </button>

@@ -1,13 +1,7 @@
 import { Trash2, Snowflake } from 'lucide-react';
+import { daysUntilExpiry } from '../../utils/dateUtils';
 import type { ViewItem } from './InventoryExpiringSection';
 
-function daysUntilExpiry(expiryDate: string | null): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const exp = new Date(expiryDate + 'T00:00:00');
-  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function expiryText(expiryDate: string | null): string {
   const days = daysUntilExpiry(expiryDate);
@@ -35,7 +29,7 @@ export function InventoryProductCard({
       <div className="flex-1 min-w-0">
         <p className="text-base font-semibold text-white/90 truncate">
           {item.isBasic && (
-            <span className="text-[#e8b94a]/70 mr-1 text-xs" title="Базовый продукт — не попадает в покупки">📌</span>
+            <span className="text-[#c9a84c]/70 mr-1 text-xs" title="Базовый продукт — не попадает в покупки">📌</span>
           )}
           {item.source === 'preserve' && (
             <Snowflake size={12} className="inline-block mr-1 text-blue-400 align-text-bottom" />
@@ -47,7 +41,7 @@ export function InventoryProductCard({
             </span>
           )}
           {item.minQuantity && (
-            <span className="text-[#e8b94a]/60 ml-1.5 text-xs" title="Мин. остаток для авто-докупки">
+            <span className="text-[#c9a84c]/60 ml-1.5 text-xs" title="Мин. остаток для авто-докупки">
               (мин: {item.minQuantity})
             </span>
           )}
@@ -63,8 +57,8 @@ export function InventoryProductCard({
           onClick={onToggleBasic}
           className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200 shrink-0 ${
             item.isBasic
-              ? 'text-[#e8b94a] bg-[#e8b94a]/10 border border-[#c9953c]/20'
-              : 'text-white/20 hover:text-[#e8b94a] hover:bg-[#e8b94a]/5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+              ? 'text-[#c9a84c] bg-[#c9a84c]/10 border border-[#c9a84c]/20'
+              : 'text-white/20 hover:text-[#c9a84c] hover:bg-[#c9a84c]/5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           }`}
           title={item.isBasic ? 'Убрать из базовых' : 'Пометить как базовый (не попадает в покупки)'}
           aria-label="Базовый продукт"

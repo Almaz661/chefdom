@@ -85,9 +85,9 @@ export function InventoryCategoryCard({
               {items.length} {items.length === 1 ? 'продукт' : items.length < 5 ? 'продукта' : 'продуктов'}
             </p>
           </div>
-          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.06] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[#c9953c]/15 border-[#c9953c]/30' : ''}`}>
+          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.06] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[#c9a84c]/15 border-[#c9a84c]/30' : ''}`}>
             {isOpen ? (
-              <ChevronUp size={16} className="text-[#e8b94a]" />
+              <ChevronUp size={16} className="text-[#c9a84c]" />
             ) : (
               <ChevronDown size={16} className="text-white/40 group-hover:text-white/60" />
             )}

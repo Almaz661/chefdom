@@ -165,250 +165,252 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto p-4 lg:p-8">
-      <h1 className="font-serif text-3xl lg:text-3xl font-semibold text-ink mb-8">
-        Настройки
-      </h1>
+    <div className="min-h-screen bg-[#05070A]">
+      <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+        <h1 className="font-serif text-3xl text-white font-extrabold mb-8">
+          Настройки
+        </h1>
 
-      {/* АККАУНТ */}
-      <section className="mb-6">
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          Аккаунт
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-base font-semibold text-ink">Семья</p>
-              <p className="text-base text-ink font-medium-muted">PIN: ••••</p>
+        {/* АККАУНТ */}
+        <section className="mb-6">
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            Аккаунт
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-base font-semibold text-white/80">Семья</p>
+                <p className="text-base text-white/50">PIN: ••••</p>
+              </div>
+              <button
+                onClick={() => setShowChangePin(true)}
+                className="flex items-center gap-2 h-9 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              >
+                <KeyRound size={16} />
+                Изменить PIN
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ВАЛЮТА */}
+        <section className="mb-6">
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            Валюта
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <Coins
+                size={20}
+                className="text-[#c9a84c] mt-0.5 shrink-0"
+                strokeWidth={2}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-semibold text-white/80">Валюта по умолчанию</p>
+                <p className="text-base text-white/50">
+                  Подставляется в новый чек и используется для отображения цен,
+                  если магазин не распознан.
+                </p>
+              </div>
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Валюта по умолчанию"
+              className="inline-flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5"
+            >
+              {(["EUR", "RUB"] as const).map((c) => {
+                const selected = currency === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => {
+                      if (!selected && !setCurrency.isPending) {
+                        setCurrency.mutate({ currency: c });
+                      }
+                    }}
+                    disabled={
+                      currencyQuery.isLoading ||
+                      (setCurrency.isPending && !selected)
+                    }
+                    className={`px-4 py-2 rounded-xl text-base font-semibold transition-colors ${
+                      selected
+                        ? "bg-[#c9a84c] text-[#0a0c10]"
+                        : "text-white/50 hover:text-white/80"
+                    } disabled:opacity-50`}
+                  >
+                    {c === "EUR" ? "€ EUR" : "₽ RUB"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ДАННЫЕ */}
+        <section className="mb-6">
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            Данные
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <p className="text-base font-semibold text-white/80">Резервная копия</p>
+
+            <button
+              onClick={handleExport}
+              disabled={exportQuery.isFetching}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors"
+            >
+              {exportQuery.isFetching ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Download size={18} />
+              )}
+              Скачать backup (JSON)
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importMutation.isPending}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+            >
+              {importMutation.isPending ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Upload size={18} />
+              )}
+              Восстановить из файла
+            </button>
+
+            {importStatus === "success" && (
+              <div className="flex items-center gap-2 text-sm text-green-400">
+                <CheckCircle2 size={16} />
+                Данные успешно восстановлены
+              </div>
+            )}
+            {importStatus === "error" && (
+              <div className="flex items-center gap-2 text-sm text-red-400">
+                <AlertCircle size={16} />
+                {importError || "Ошибка при восстановлении"}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* КБЖУ */}
+        <section className="mb-6">
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            Калории
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <Calculator
+                size={20}
+                className="text-[#c9a84c] mt-0.5 shrink-0"
+                strokeWidth={2}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-semibold text-white/80">
+                  Пересчитать калории
+                </p>
+                <p className="text-base text-white/50">
+                  Запустит расчёт КБЖУ по справочнику продуктов для всех
+                  сохранённых рецептов. Полезно если у старых рецептов нет
+                  калорий.
+                </p>
+              </div>
             </div>
             <button
-              onClick={() => setShowChangePin(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover transition-colors"
+              onClick={handleRecalcNutrition}
+              disabled={recalcMutation.isPending}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
-              <KeyRound size={16} />
-              Изменить PIN
+              {recalcMutation.isPending ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Считаю…
+                </>
+              ) : (
+                <>
+                  <Calculator size={18} />
+                  Пересчитать все рецепты
+                </>
+              )}
+            </button>
+
+            {recalcStatus.type === "success" && (
+              <div className="flex items-start gap-2 text-sm text-green-400">
+                <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  Готово: обновлено {recalcStatus.updated} из{" "}
+                  {recalcStatus.total} рецептов
+                  {recalcStatus.failed > 0 &&
+                    ` (с ошибкой: ${recalcStatus.failed})`}
+                </span>
+              </div>
+            )}
+            {recalcStatus.type === "error" && (
+              <div className="flex items-start gap-2 text-sm text-red-400">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>{recalcStatus.message}</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* КЭШ ПРИЛОЖЕНИЯ */}
+        <section className="mb-6">
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            Кэш приложения
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-3">
+            <p className="text-base text-white/50">
+              Если приложение «застряло» на старой версии или что-то отображается
+              странно — нажми, чтобы загрузить свежие страницы. Твои данные (рецепты,
+              чеки, инвентарь) не пострадают: они на сервере.
+            </p>
+            <button
+              onClick={handleClearCache}
+              disabled={isClearingCache}
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+            >
+              {isClearingCache ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <RefreshCw size={18} />
+              )}
+              Очистить кэш и перезагрузить
             </button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ВАЛЮТА */}
-      <section className="mb-6">
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          Валюта
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <Coins
-              size={20}
-              className="text-primary mt-0.5 shrink-0"
-              strokeWidth={2}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-ink">Валюта по умолчанию</p>
-              <p className="text-base text-ink font-medium-muted">
-                Подставляется в новый чек и используется для отображения цен,
-                если магазин не распознан.
-              </p>
-            </div>
+        {/* О ПРИЛОЖЕНИИ */}
+        <section>
+          <h2 className="text-white/70 font-bold text-lg mb-3">
+            О приложении
+          </h2>
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-2">
+            <p className="text-base font-semibold text-white/80">ШефДом! версия 1.0</p>
+            <p className="text-base text-white/50">
+              Рецептов в базе: {stats?.recipesCount ?? "—"}
+            </p>
+            <p className="text-base text-white/50">База данных: Neon PostgreSQL</p>
           </div>
-          <div
-            role="radiogroup"
-            aria-label="Валюта по умолчанию"
-            className="inline-flex bg-surface-elevated rounded-lg p-0.5"
-          >
-            {(["EUR", "RUB"] as const).map((c) => {
-              const selected = currency === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => {
-                    if (!selected && !setCurrency.isPending) {
-                      setCurrency.mutate({ currency: c });
-                    }
-                  }}
-                  disabled={
-                    currencyQuery.isLoading ||
-                    (setCurrency.isPending && !selected)
-                  }
-                  className={`px-4 py-2 rounded-md text-base font-semibold transition-colors ${
-                    selected
-                      ? "bg-primary text-paper"
-                      : "text-ink-soft hover:text-ink"
-                  } disabled:opacity-50`}
-                >
-                  {c === "EUR" ? "€ EUR" : "₽ RUB"}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ДАННЫЕ */}
-      <section className="mb-6">
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          Данные
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <p className="text-base font-semibold text-ink">Резервная копия</p>
-
-          <button
-            onClick={handleExport}
-            disabled={exportQuery.isFetching}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
-          >
-            {exportQuery.isFetching ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Download size={18} />
-            )}
-            Скачать backup (JSON)
-          </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importMutation.isPending}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
-          >
-            {importMutation.isPending ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Upload size={18} />
-            )}
-            Восстановить из файла
-          </button>
-
-          {importStatus === "success" && (
-            <div className="flex items-center gap-2 text-sm text-fresh">
-              <CheckCircle2 size={16} />
-              Данные успешно восстановлены
-            </div>
-          )}
-          {importStatus === "error" && (
-            <div className="flex items-center gap-2 text-sm text-alert">
-              <AlertCircle size={16} />
-              {importError || "Ошибка при восстановлении"}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* КБЖУ */}
-      <section className="mb-6">
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          Калории
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <div className="flex items-start gap-3">
-            <Calculator
-              size={20}
-              className="text-primary mt-0.5 shrink-0"
-              strokeWidth={2}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-ink">
-                Пересчитать калории
-              </p>
-              <p className="text-base text-ink font-medium-muted">
-                Запустит расчёт КБЖУ по справочнику продуктов для всех
-                сохранённых рецептов. Полезно если у старых рецептов нет
-                калорий.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleRecalcNutrition}
-            disabled={recalcMutation.isPending}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
-          >
-            {recalcMutation.isPending ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Считаю…
-              </>
-            ) : (
-              <>
-                <Calculator size={18} />
-                Пересчитать все рецепты
-              </>
-            )}
-          </button>
-
-          {recalcStatus.type === "success" && (
-            <div className="flex items-start gap-2 text-sm text-fresh">
-              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
-              <span>
-                Готово: обновлено {recalcStatus.updated} из{" "}
-                {recalcStatus.total} рецептов
-                {recalcStatus.failed > 0 &&
-                  ` (с ошибкой: ${recalcStatus.failed})`}
-              </span>
-            </div>
-          )}
-          {recalcStatus.type === "error" && (
-            <div className="flex items-start gap-2 text-sm text-alert">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <span>{recalcStatus.message}</span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* КЭШ ПРИЛОЖЕНИЯ */}
-      <section className="mb-6">
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          Кэш приложения
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-3">
-          <p className="text-base text-ink font-medium-muted">
-            Если приложение «застряло» на старой версии или что-то отображается
-            странно — нажми, чтобы загрузить свежие страницы. Твои данные (рецепты,
-            чеки, инвентарь) не пострадают: они на сервере.
-          </p>
-          <button
-            onClick={handleClearCache}
-            disabled={isClearingCache}
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-line text-base font-semibold text-ink hover:bg-surface-hover disabled:opacity-50 transition-colors"
-          >
-            {isClearingCache ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <RefreshCw size={18} />
-            )}
-            Очистить кэш и перезагрузить
-          </button>
-        </div>
-      </section>
-
-      {/* О ПРИЛОЖЕНИИ */}
-      <section>
-        <h2 className="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">
-          О приложении
-        </h2>
-        <div className="bg-paper border border-line rounded-xl p-4 space-y-2">
-          <p className="text-base font-semibold text-ink">ШефДом! версия 1.0</p>
-          <p className="text-base text-ink font-medium-muted">
-            Рецептов в базе: {stats?.recipesCount ?? "—"}
-          </p>
-          <p className="text-base text-ink font-medium-muted">База данных: Neon PostgreSQL</p>
-        </div>
-      </section>
-
-      {/* Модалка смены PIN */}
-      {showChangePin && (
-        <ChangePinDialog onClose={() => setShowChangePin(false)} />
-      )}
+        {/* Модалка смены PIN */}
+        {showChangePin && (
+          <ChangePinDialog onClose={() => setShowChangePin(false)} />
+        )}
+      </div>
     </div>
   );
 }
@@ -448,14 +450,14 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 bg-ink/50 flex items-end sm:items-center justify-center z-50"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
     >
       <div
-        className="bg-paper w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        className="bg-[#0c1021] border border-white/[0.08] rounded-2xl w-full sm:max-w-sm p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-serif text-lg font-semibold text-ink mb-4">
+        <h3 className="font-serif text-lg font-semibold text-white mb-4">
           Изменить PIN
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -468,7 +470,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             placeholder="Текущий PIN"
             autoFocus
             required
-            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink text-center tracking-widest text-lg focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
           />
           <input
             type="password"
@@ -478,7 +480,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setNewPin(e.target.value)}
             placeholder="Новый PIN"
             required
-            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink text-center tracking-widest text-lg focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
           />
           <input
             type="password"
@@ -488,11 +490,11 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setConfirmPin(e.target.value)}
             placeholder="Повторите новый PIN"
             required
-            className="w-full h-12 px-4 bg-surface-elevated border border-line rounded-lg text-ink text-center tracking-widest text-lg focus:outline-none focus:border-primary"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
           />
 
           {error && (
-            <p className="text-sm text-alert flex items-center gap-1">
+            <p className="text-sm text-red-400 flex items-center gap-1">
               <AlertCircle size={14} />
               {error}
             </p>
@@ -502,14 +504,14 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
+              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={changePin.isPending}
-              className="flex-1 h-12 rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 h-12 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors"
             >
               {changePin.isPending ? (
                 <Loader2 size={18} className="animate-spin mx-auto" />
