@@ -279,21 +279,25 @@ export function AddRecipePage() {
   // Loading state when editing existing
   if (isEditing && existing.isLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <div className="text-ink-muted">Загрузка рецепта...</div>
+      <div className="min-h-screen bg-[#05070A]">
+        <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+          <div className="text-white/30">Загрузка рецепта...</div>
+        </div>
       </div>
     );
   }
   if (isEditing && existing.error) {
     return (
-      <div className="max-w-3xl mx-auto p-6 lg:p-10">
-        <Link
-          to="/recipes"
-          className="text-primary inline-flex items-center gap-1 mb-4"
-        >
-          <ArrowLeft size={18} /> К рецептам
-        </Link>
-        <p className="text-alert">Не удалось загрузить рецепт для редактирования.</p>
+      <div className="min-h-screen bg-[#05070A]">
+        <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+          <Link
+            to="/recipes"
+            className="text-[#c9a84c] inline-flex items-center gap-1 mb-4"
+          >
+            <ArrowLeft size={18} /> К рецептам
+          </Link>
+          <p className="text-red-400">Не удалось загрузить рецепт для редактирования.</p>
+        </div>
       </div>
     );
   }
@@ -307,405 +311,407 @@ export function AddRecipePage() {
       : "";
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-6 lg:p-10">
-      <Link
-        to={cancelTo}
-        className="text-primary inline-flex items-center gap-1 mb-4 text-sm"
-      >
-        <ArrowLeft size={16} />
-        {isEditing ? "Назад к рецепту" : "К рецептам"}
-      </Link>
+    <div className="min-h-screen bg-[#05070A]">
+      <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
+        <Link
+          to={cancelTo}
+          className="text-[#c9a84c] inline-flex items-center gap-1 mb-4 text-sm"
+        >
+          <ArrowLeft size={16} />
+          {isEditing ? "Назад к рецепту" : "К рецептам"}
+        </Link>
 
-      <h1 className="font-serif text-3xl lg:text-4xl font-semibold text-ink mb-8">
-        {isEditing ? "Редактирование рецепта" : "Новый рецепт"}
-      </h1>
+        <h1 className="font-serif text-3xl text-white font-extrabold mb-8">
+          {isEditing ? "Редактирование рецепта" : "Новый рецепт"}
+        </h1>
 
-      {/* Основное */}
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-4">
-          Основное
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Название <span className="text-alert">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Описание
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full bg-paper border border-line rounded-lg px-4 py-3 text-ink focus:outline-none focus:border-primary transition-colors resize-none"
-              placeholder="Короткое описание блюда — пара предложений"
-            />
-          </div>
-
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Ссылка на фото
-            </label>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => {
-                setImageUrl(e.target.value);
-                setImageError(false);
-              }}
-              placeholder="https://example.com/photo.jpg"
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-            {imageUrl && (
-              <div className="mt-3 aspect-[16/9] max-w-md bg-surface-elevated rounded-lg overflow-hidden border border-line">
-                {imageError ? (
-                  <div className="w-full h-full flex items-center justify-center text-ink-muted text-sm">
-                    Не удалось загрузить превью
-                  </div>
-                ) : (
-                  <img
-                    src={imageUrl}
-                    alt="Превью"
-                    onError={() => setImageError(true)}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Время и порции */}
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-4">
-          Время и порции
-        </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Порций
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={servings}
-              onChange={(e) => setServings(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Подготовка, мин
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={prepTime}
-              onChange={(e) => setPrepTime(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Готовка, мин
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={cookTime}
-              onChange={(e) => setCookTime(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Всего, мин
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={totalTime}
-              onChange={(e) => setTotalTime(e.target.value)}
-              placeholder={totalHint}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-        </div>
-        <div className="mt-4 max-w-xs">
-          <label className="block text-base font-semibold text-ink mb-1.5">
-            Калории на порцию
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
-            className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors"
-          />
-        </div>
-      </section>
-
-      {/* Теги */}
-      <section className="mb-10">
-        <h2 className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-4">
-          Категория, кухня, сложность
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Категория
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
-            >
-              <option value="">— выбрать —</option>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Кухня
-            </label>
-            <select
-              value={cuisine}
-              onChange={(e) => setCuisine(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
-            >
-              <option value="">— выбрать —</option>
-              {CUISINES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-base font-semibold text-ink mb-1.5">
-              Сложность
-            </label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="w-full bg-paper border border-line rounded-lg px-4 h-12 text-ink focus:outline-none focus:border-primary transition-colors appearance-none"
-            >
-              <option value="">— выбрать —</option>
-              {DIFFICULTIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      {/* Ингредиенты */}
-      <section className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xs uppercase tracking-wider text-ink-muted font-medium">
-            Ингредиенты
+        {/* Основное */}
+        <section className="mb-10">
+          <h2 className="text-white/70 font-bold text-lg mb-4">
+            Основное
           </h2>
-          <button
-            type="button"
-            onClick={addIngredient}
-            className="text-primary text-base font-semibold hover:text-primary-dark inline-flex items-center gap-1"
-          >
-            <Plus size={16} /> Добавить
-          </button>
-        </div>
-        <div className="space-y-2">
-          {ingredients.map((ing, idx) => (
-            <div
-              key={idx}
-              className="bg-paper border border-line rounded-lg p-3 flex flex-wrap items-start gap-2"
-            >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Название <span className="text-red-400">*</span>
+              </label>
               <input
                 type="text"
-                inputMode="decimal"
-                value={ing.amount}
-                onChange={(e) => updateIngredient(idx, { amount: e.target.value })}
-                placeholder="Кол-во"
-                className="w-20 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
               />
-              <input
-                type="text"
-                value={ing.unit}
-                onChange={(e) => updateIngredient(idx, { unit: e.target.value })}
-                placeholder="ед."
-                className="w-16 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
-              />
-              <input
-                type="text"
-                value={ing.name}
-                onChange={(e) => updateIngredient(idx, { name: e.target.value })}
-                placeholder="Название (обязательно)"
-                className="flex-1 min-w-[180px] bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
-              />
-              <input
-                type="text"
-                value={ing.groupName}
-                onChange={(e) =>
-                  updateIngredient(idx, { groupName: e.target.value })
-                }
-                placeholder="Группа"
-                className="w-28 bg-surface-elevated border border-line rounded-md px-2 h-10 text-ink text-sm focus:outline-none focus:border-primary"
-              />
-              <div className="flex items-center gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => moveIngredient(idx, -1)}
-                  disabled={idx === 0}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                  aria-label="Выше"
-                >
-                  <ArrowUp size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveIngredient(idx, 1)}
-                  disabled={idx === ingredients.length - 1}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
-                  aria-label="Ниже"
-                >
-                  <ArrowDown size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeIngredient(idx)}
-                  className="w-8 h-10 rounded-md text-ink-muted hover:text-alert hover:bg-surface-hover flex items-center justify-center"
-                  aria-label="Удалить"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
-        <p className="text-ink-muted text-xs mt-2">
-          Кол-во можно с запятой: «1,5». Оставь пустым — будет «по вкусу».
-        </p>
-      </section>
 
-      {/* Шаги */}
-      <section className="mb-10">
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="text-xs uppercase tracking-wider text-ink-muted font-medium">
-            Шаги
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Описание
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors resize-none"
+                placeholder="Короткое описание блюда — пара предложений"
+              />
+            </div>
+
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Ссылка на фото
+              </label>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={(e) => {
+                  setImageUrl(e.target.value);
+                  setImageError(false);
+                }}
+                placeholder="https://example.com/photo.jpg"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              />
+              {imageUrl && (
+                <div className="mt-3 aspect-[16/9] max-w-md bg-white/[0.04] rounded-xl overflow-hidden border border-white/[0.06]">
+                  {imageError ? (
+                    <div className="w-full h-full flex items-center justify-center text-white/30 text-sm">
+                      Не удалось загрузить превью
+                    </div>
+                  ) : (
+                    <img
+                      src={imageUrl}
+                      alt="Превью"
+                      onError={() => setImageError(true)}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Время и порции */}
+        <section className="mb-10">
+          <h2 className="text-white/70 font-bold text-lg mb-4">
+            Время и порции
           </h2>
-          <button
-            type="button"
-            onClick={addStep}
-            className="text-primary text-base font-semibold hover:text-primary-dark inline-flex items-center gap-1"
-          >
-            <Plus size={16} /> Добавить
-          </button>
-        </div>
-        <div className="space-y-3">
-          {steps.map((step, idx) => (
-            <div
-              key={idx}
-              className="bg-paper border border-line rounded-lg p-4"
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Порций
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Подготовка, мин
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={prepTime}
+                onChange={(e) => setPrepTime(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Готовка, мин
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={cookTime}
+                onChange={(e) => setCookTime(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Всего, мин
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={totalTime}
+                onChange={(e) => setTotalTime(e.target.value)}
+                placeholder={totalHint}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              />
+            </div>
+          </div>
+          <div className="mt-4 max-w-xs">
+            <label className="block text-base font-semibold text-white/80 mb-1.5">
+              Калории на порцию
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={calories}
+              onChange={(e) => setCalories(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+            />
+          </div>
+        </section>
+
+        {/* Теги */}
+        <section className="mb-10">
+          <h2 className="text-white/70 font-bold text-lg mb-4">
+            Категория, кухня, сложность
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Категория
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+              >
+                <option value="">— выбрать —</option>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Кухня
+              </label>
+              <select
+                value={cuisine}
+                onChange={(e) => setCuisine(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+              >
+                <option value="">— выбрать —</option>
+                {CUISINES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-base font-semibold text-white/80 mb-1.5">
+                Сложность
+              </label>
+              <select
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+              >
+                <option value="">— выбрать —</option>
+                {DIFFICULTIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Ингредиенты */}
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-white/70 font-bold text-lg">
+              Ингредиенты
+            </h2>
+            <button
+              type="button"
+              onClick={addIngredient}
+              className="text-[#c9a84c] text-base font-semibold hover:text-[#d4b55a] inline-flex items-center gap-1"
             >
-              <div className="flex items-start gap-3 mb-3">
-                <span className="font-serif text-3xl font-bold text-primary leading-none pt-1 w-8 flex-shrink-0">
-                  {idx + 1}
-                </span>
-                <textarea
-                  value={step.instruction}
-                  onChange={(e) =>
-                    updateStep(idx, { instruction: e.target.value })
-                  }
-                  rows={3}
-                  placeholder="Что делать на этом шаге"
-                  className="flex-1 bg-surface-elevated border border-line rounded-md px-3 py-2 text-ink text-sm focus:outline-none focus:border-primary resize-none"
+              <Plus size={16} /> Добавить
+            </button>
+          </div>
+          <div className="space-y-2">
+            {ingredients.map((ing, idx) => (
+              <div
+                key={idx}
+                className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex flex-wrap items-start gap-2"
+              >
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={ing.amount}
+                  onChange={(e) => updateIngredient(idx, { amount: e.target.value })}
+                  placeholder="Кол-во"
+                  className="w-20 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
                 />
-                <div className="flex flex-col gap-0.5">
+                <input
+                  type="text"
+                  value={ing.unit}
+                  onChange={(e) => updateIngredient(idx, { unit: e.target.value })}
+                  placeholder="ед."
+                  className="w-16 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                />
+                <input
+                  type="text"
+                  value={ing.name}
+                  onChange={(e) => updateIngredient(idx, { name: e.target.value })}
+                  placeholder="Название (обязательно)"
+                  className="flex-1 min-w-[180px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                />
+                <input
+                  type="text"
+                  value={ing.groupName}
+                  onChange={(e) =>
+                    updateIngredient(idx, { groupName: e.target.value })
+                  }
+                  placeholder="Группа"
+                  className="w-28 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                />
+                <div className="flex items-center gap-0.5">
                   <button
                     type="button"
-                    onClick={() => moveStep(idx, -1)}
+                    onClick={() => moveIngredient(idx, -1)}
                     disabled={idx === 0}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-8 h-10 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                     aria-label="Выше"
                   >
                     <ArrowUp size={16} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => moveStep(idx, 1)}
-                    disabled={idx === steps.length - 1}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-ink hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    onClick={() => moveIngredient(idx, 1)}
+                    disabled={idx === ingredients.length - 1}
+                    className="w-8 h-10 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                     aria-label="Ниже"
                   >
                     <ArrowDown size={16} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeStep(idx)}
-                    className="w-8 h-8 rounded-md text-ink-muted hover:text-alert hover:bg-surface-hover flex items-center justify-center"
+                    onClick={() => removeIngredient(idx)}
+                    className="w-8 h-10 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center"
                     aria-label="Удалить"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3 pl-11">
-                <input
-                  type="url"
-                  value={step.imageUrl}
-                  onChange={(e) =>
-                    updateStep(idx, { imageUrl: e.target.value })
-                  }
-                  placeholder="Ссылка на фото шага (опционально)"
-                  className="flex-1 min-w-[200px] bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  value={step.timerMinutes}
-                  onChange={(e) =>
-                    updateStep(idx, { timerMinutes: e.target.value })
-                  }
-                  placeholder="Таймер, мин"
-                  className="w-32 bg-surface-elevated border border-line rounded-md px-3 h-10 text-ink text-sm focus:outline-none focus:border-primary"
-                />
+            ))}
+          </div>
+          <p className="text-white/30 text-xs mt-2">
+            Кол-во можно с запятой: «1,5». Оставь пустым — будет «по вкусу».
+          </p>
+        </section>
+
+        {/* Шаги */}
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-white/70 font-bold text-lg">
+              Шаги
+            </h2>
+            <button
+              type="button"
+              onClick={addStep}
+              className="text-[#c9a84c] text-base font-semibold hover:text-[#d4b55a] inline-flex items-center gap-1"
+            >
+              <Plus size={16} /> Добавить
+            </button>
+          </div>
+          <div className="space-y-3">
+            {steps.map((step, idx) => (
+              <div
+                key={idx}
+                className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <span className="font-serif text-3xl font-bold text-[#c9a84c] leading-none pt-1 w-8 flex-shrink-0">
+                    {idx + 1}
+                  </span>
+                  <textarea
+                    value={step.instruction}
+                    onChange={(e) =>
+                      updateStep(idx, { instruction: e.target.value })
+                    }
+                    rows={3}
+                    placeholder="Что делать на этом шаге"
+                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50 resize-none"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => moveStep(idx, -1)}
+                      disabled={idx === 0}
+                      className="w-8 h-8 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      aria-label="Выше"
+                    >
+                      <ArrowUp size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveStep(idx, 1)}
+                      disabled={idx === steps.length - 1}
+                      className="w-8 h-8 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      aria-label="Ниже"
+                    >
+                      <ArrowDown size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeStep(idx)}
+                      className="w-8 h-8 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center"
+                      aria-label="Удалить"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3 pl-11">
+                  <input
+                    type="url"
+                    value={step.imageUrl}
+                    onChange={(e) =>
+                      updateStep(idx, { imageUrl: e.target.value })
+                    }
+                    placeholder="Ссылка на фото шага (опционально)"
+                    className="flex-1 min-w-[200px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    value={step.timerMinutes}
+                    onChange={(e) =>
+                      updateStep(idx, { timerMinutes: e.target.value })
+                    }
+                    placeholder="Таймер, мин"
+                    className="w-32 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Ошибка и кнопки */}
-      {error && (
-        <div className="bg-alert/10 border border-alert text-alert rounded-lg p-4 mb-4">
-          {error}
-        </div>
-      )}
+        {/* Ошибка и кнопки */}
+        {error && (
+          <div className="text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+            {error}
+          </div>
+        )}
 
-      <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-line">
-        <Link
-          to={cancelTo}
-          className="px-5 h-12 inline-flex items-center justify-center rounded-lg border border-line text-ink-soft font-medium hover:bg-surface-hover transition-colors"
-        >
-          Отмена
-        </Link>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-6 h-12 inline-flex items-center justify-center rounded-lg bg-primary text-paper font-medium hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isPending
-            ? "Сохраняю..."
-            : isEditing
-              ? "Сохранить"
-              : "Создать рецепт"}
-        </button>
-      </div>
-    </form>
+        <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-white/[0.06]">
+          <Link
+            to={cancelTo}
+            className="px-5 h-12 inline-flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+          >
+            Отмена
+          </Link>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-6 h-12 inline-flex items-center justify-center rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isPending
+              ? "Сохраняю..."
+              : isEditing
+                ? "Сохранить"
+                : "Создать рецепт"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
