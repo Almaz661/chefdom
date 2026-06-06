@@ -6,7 +6,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { RecipesPage } from "./pages/RecipesPage";
 import { RecipeDetailPage } from "./pages/RecipeDetailPage";
 import { AddRecipePage } from "./pages/AddRecipePage";
-import { MenuPage } from "./pages/MenuPage";
 import { MenuWeekPage } from "./pages/MenuWeekPage";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { InventoryPage } from "./pages/InventoryPage";

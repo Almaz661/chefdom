@@ -1,4 +1,5 @@
 import { AlertTriangle, Trash2, Snowflake } from 'lucide-react';
+import { daysUntilExpiry } from '../../utils/dateUtils';
 import { GlassCard } from '../ui/GlassCard';
 
 export type ViewItem = {
@@ -20,13 +21,6 @@ const EXPIRY_PERIODS = [
   { key: 30, label: '30 дней' },
 ] as const;
 
-function daysUntilExpiry(expiryDate: string | null): number | null {
-  if (!expiryDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const exp = new Date(expiryDate + 'T00:00:00');
-  return Math.floor((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function expiryText(expiryDate: string | null): string {
   const days = daysUntilExpiry(expiryDate);
