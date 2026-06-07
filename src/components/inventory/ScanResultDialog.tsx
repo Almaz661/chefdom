@@ -83,7 +83,7 @@ export function ScanResultDialog({
 
           {isLoading && (
             <div className="flex items-center justify-center py-10">
-              <Loader2 size={28} className="animate-spin text-[#c9a84c]" />
+              <Loader2 size={28} className="animate-spin text-[var(--color-primary)]" />
               <span className="ml-3 text-white/50 text-sm">Ищу товар…</span>
             </div>
           )}
@@ -106,7 +106,7 @@ export function ScanResultDialog({
               {/* Storage selector */}
               <fieldset className="mb-4">
                 <legend className="block text-[11px] text-white/35 mb-2 uppercase tracking-wider font-semibold">Куда положить?</legend>
-                <div className="flex gap-1 p-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+                <div className="flex gap-1 p-1 rounded-xl border border-[var(--color-line)] bg-white/[0.03]">
                   {STORAGE_OPTIONS.map(({ key, label }) => (
                     <button
                       key={key}
@@ -114,7 +114,7 @@ export function ScanResultDialog({
                       onClick={() => setStorageType(key)}
                       className={`flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                         storageType === key
-                          ? 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
+                          ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/30'
                           : 'text-white/35 hover:text-white/55'
                       }`}
                     >
@@ -133,7 +133,7 @@ export function ScanResultDialog({
                   type="date"
                   value={expiryDate}
                   onChange={(e) => setExpiryDate(e.target.value)}
-                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
+                  className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/70 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors [color-scheme:dark]"
                 />
               </label>
 
@@ -142,7 +142,7 @@ export function ScanResultDialog({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+                  className="flex-1 h-12 rounded-xl border border-[var(--color-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
                 >
                   Отмена
                 </button>
@@ -167,7 +167,7 @@ export function ScanResultDialog({
                 {/* Storage selector */}
                 <fieldset>
                   <legend className="block text-[11px] text-white/35 mb-2 uppercase tracking-wider font-semibold">Куда положить?</legend>
-                  <div className="flex gap-1 p-1 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+                  <div className="flex gap-1 p-1 rounded-xl border border-[var(--color-line)] bg-white/[0.03]">
                     {STORAGE_OPTIONS.map(({ key, label }) => (
                       <button
                         key={key}
@@ -175,7 +175,7 @@ export function ScanResultDialog({
                         onClick={() => setStorageType(key)}
                         className={`flex-1 px-2 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                           storageType === key
-                            ? 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
+                            ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border border-[var(--color-primary)]/30'
                             : 'text-white/35 hover:text-white/55'
                         }`}
                       >
@@ -191,7 +191,7 @@ export function ScanResultDialog({
                   onChange={(e) => setCustomName(e.target.value)}
                   placeholder="Название продукта"
                   autoFocus
-                  className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                  className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                 />
                 <div className="flex gap-3">
                   <input
@@ -201,14 +201,14 @@ export function ScanResultDialog({
                     placeholder="Кол-во"
                     step="any"
                     min="0"
-                    className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                    className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                   />
                   <input
                     type="text"
                     value={customUnit}
                     onChange={(e) => setCustomUnit(e.target.value)}
                     placeholder="Ед."
-                    className="w-24 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                    className="w-24 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                   />
                 </div>
                 <div>
@@ -216,7 +216,7 @@ export function ScanResultDialog({
                     type="date"
                     value={expiryDate}
                     onChange={(e) => setExpiryDate(e.target.value)}
-                    className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
+                    className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/70 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors [color-scheme:dark]"
                   />
                   <p className="text-[11px] text-white/25 mt-1.5 ml-1">Срок годности (необязательно)</p>
                 </div>
@@ -226,7 +226,7 @@ export function ScanResultDialog({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+                  className="flex-1 h-12 rounded-xl border border-[var(--color-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
                 >
                   Отмена
                 </button>

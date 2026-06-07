@@ -11,7 +11,7 @@ export function ShoppingKpiRow({
   remaining: number;
 }) {
   const KPI_DATA = [
-    { icon: ShoppingCart, value: String(total), label: 'Всего', accent: '#c9a84c' },
+    { icon: ShoppingCart, value: String(total), label: 'Всего', accent: 'var(--color-primary)' },
     { icon: CheckCircle2, value: String(checked), label: 'Куплено', accent: '#4ade80' },
     { icon: Circle, value: String(remaining), label: 'Осталось', accent: '#60a5fa' },
   ];
@@ -30,7 +30,7 @@ export function ShoppingKpiRow({
             <Icon size={24} style={{ color: accent }} strokeWidth={1.7} />
           </div>
           <div className="min-w-0">
-            <p className="text-white font-extrabold text-3xl leading-tight truncate">{value}</p>
+            <p className="text-white font-semibold text-3xl leading-tight truncate">{value}</p>
             <p className="text-white/40 text-sm font-semibold mt-0.5 truncate">{label}</p>
           </div>
         </GlassCard>

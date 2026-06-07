@@ -62,7 +62,7 @@ export function Dashboard() {
   const shoppingCount = shopping.filter((s) => s.isChecked === 0).length;
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
 
       {/* ════════════════════════════════════════════════════════════
           SECTION 1: GREETING + ALERTS
@@ -91,7 +91,7 @@ export function Dashboard() {
                   <span className="text-white/80 font-medium">{expiringTotal}</span> истекает за 3 дня
                   <span className="text-white/40 ml-2">— {expiringNames.slice(0, 2).join(", ")}</span>
                 </span>
-                <ArrowRight size={12} className="text-white/40 group-hover:text-[#c9a84c] transition-colors" />
+                <ArrowRight size={12} className="text-white/40 group-hover:text-[var(--color-primary)] transition-colors" />
               </Link>
             )}
             {belowMin.length > 0 && (
@@ -104,7 +104,7 @@ export function Dashboard() {
                   <span className="text-white/80 font-medium">{belowMin.length}</span> ниже минимума
                   <span className="text-white/40 ml-2">— {belowMin.slice(0, 2).map(i => i.productName).join(", ")}</span>
                 </span>
-                <ArrowRight size={12} className="text-white/40 group-hover:text-[#c9a84c] transition-colors" />
+                <ArrowRight size={12} className="text-white/40 group-hover:text-[var(--color-primary)] transition-colors" />
               </Link>
             )}
             {stale.length > 0 && (
@@ -116,7 +116,7 @@ export function Dashboard() {
                 <span className="text-base text-white/80 font-medium-muted group-hover:text-white/60 transition-colors flex-1">
                   <span className="text-white/60 font-medium">{stale.length}</span> залежались {">"}30 дней
                 </span>
-                <ArrowRight size={12} className="text-white/40 group-hover:text-[#c9a84c] transition-colors" />
+                <ArrowRight size={12} className="text-white/40 group-hover:text-[var(--color-primary)] transition-colors" />
               </Link>
             )}
           </div>
@@ -152,7 +152,7 @@ export function Dashboard() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             {/* Content on image */}
             <div className="absolute bottom-0 inset-x-0 p-6 lg:p-8">
-              <p className="text-[#c9a84c]/90 text-sm font-bold uppercase tracking-[0.25em] mb-2">
+              <p className="text-[var(--color-primary)]/90 text-sm font-bold uppercase tracking-[0.25em] mb-2">
                 {mealTypeLabel(todayMeal.mealType)}
               </p>
               <h2 className="font-serif text-3xl lg:text-3xl font-semibold text-white leading-tight max-w-md">
@@ -175,7 +175,7 @@ export function Dashboard() {
         ) : (
           <Link
             to="/menu"
-            className="block rounded-2xl border border-dashed border-white/[0.06] py-16 lg:py-20 text-center group hover:border-[#c9a84c]/20 transition-colors"
+            className="block rounded-2xl border border-dashed border-[var(--color-line)] py-16 lg:py-20 text-center group hover:border-[var(--color-primary)]/20 transition-colors"
           >
             <ChefHat size={28} className="text-white/40 mx-auto mb-4" strokeWidth={1} />
             <p className="font-serif text-lg text-white/60 group-hover:text-white/80 transition-colors">
@@ -196,16 +196,16 @@ export function Dashboard() {
       <div className="max-w-3xl mx-auto px-6 pb-12">
         <div className="grid grid-cols-3 gap-6">
           <Link to="/what-to-cook" className="text-center group">
-            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center group-hover:border-[#c9a84c]/40 transition-colors mb-3">
-              <ChefHat size={18} className="text-[#c9a84c]" strokeWidth={1.5} />
+            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-[var(--color-line)] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 transition-colors mb-3">
+              <ChefHat size={18} className="text-[var(--color-primary)]" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-bold text-white/60 group-hover:text-white/80 transition-colors">Что приготовить</p>
           </Link>
           <Link to="/shopping" className="text-center group">
-            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center group-hover:border-[#c9a84c]/40 transition-colors mb-3 relative">
-              <ShoppingCart size={18} className="text-[#c9a84c]" strokeWidth={1.5} />
+            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-[var(--color-line)] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 transition-colors mb-3 relative">
+              <ShoppingCart size={18} className="text-[var(--color-primary)]" strokeWidth={1.5} />
               {shoppingCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#c9a84c] text-[9px] font-bold text-[#0a0c10] flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--color-primary)] text-[9px] font-bold text-[#0a0c10] flex items-center justify-center">
                   {shoppingCount > 9 ? "9+" : shoppingCount}
                 </span>
               )}
@@ -213,8 +213,8 @@ export function Dashboard() {
             <p className="text-sm font-bold text-white/60 group-hover:text-white/80 transition-colors">Покупки</p>
           </Link>
           <Link to="/preserves" className="text-center group">
-            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center group-hover:border-[#c9a84c]/40 transition-colors mb-3">
-              <Snowflake size={18} className="text-[#c9a84c]" strokeWidth={1.5} />
+            <div className="w-12 h-12 mx-auto rounded-full bg-white/[0.03] border border-[var(--color-line)] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 transition-colors mb-3">
+              <Snowflake size={18} className="text-[var(--color-primary)]" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-bold text-white/60 group-hover:text-white/80 transition-colors">Заготовки</p>
           </Link>
@@ -230,13 +230,13 @@ export function Dashboard() {
         {/* Favorite this month */}
         {topRecipe && topRecipe.count >= 2 && (
           <div className="flex items-center gap-4">
-            <div className="w-9 h-9 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-full bg-white/[0.03] border border-[var(--color-line)] flex items-center justify-center shrink-0">
               <span className="text-sm">🏆</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-base text-white/80 font-medium-muted font-medium uppercase tracking-[0.15em] mb-0.5">Фаворит месяца</p>
               {topRecipe.recipeId ? (
-                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-base text-white/80 font-medium hover:text-[#c9a84c] transition-colors truncate block">
+                <Link to={`/recipes/${topRecipe.recipeId}`} className="text-base text-white/80 font-medium hover:text-[var(--color-primary)] transition-colors truncate block">
                   {topRecipe.recipeTitle}
                 </Link>
               ) : (
@@ -252,7 +252,7 @@ export function Dashboard() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <p className="text-base text-white/80 font-medium-muted font-medium uppercase tracking-[0.15em]">Недавно готовили</p>
-              <Link to="/history" className="text-xs text-[#c9a84c] uppercase tracking-wider hover:text-[#d4b55a] transition-colors">
+              <Link to="/history" className="text-xs text-[var(--color-primary)] uppercase tracking-wider hover:brightness-110 transition-colors">
                 Всё
               </Link>
             </div>
@@ -301,7 +301,7 @@ export function Dashboard() {
             <CalendarDays size={10} strokeWidth={1.5} />
             Неделя
           </p>
-          <Link to="/menu" className="text-xs text-[#c9a84c] uppercase tracking-wider hover:text-[#d4b55a] transition-colors">
+          <Link to="/menu" className="text-xs text-[var(--color-primary)] uppercase tracking-wider hover:brightness-110 transition-colors">
             Меню
           </Link>
         </div>
@@ -313,16 +313,16 @@ export function Dashboard() {
             return (
               <Link to="/menu" key={label} className="flex flex-col items-center gap-2 group">
                 <span className={`text-[9px] uppercase tracking-wider transition-colors ${
-                  isToday ? "text-[#c9a84c]" : "text-white/40 group-hover:text-white/60"
+                  isToday ? "text-[var(--color-primary)]" : "text-white/40 group-hover:text-white/60"
                 }`}>
                   {label}
                 </span>
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                   isToday
-                    ? "bg-[#c9a84c] text-[#0a0c10]"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10]"
                     : filled
-                      ? "border border-[#c9a84c]/30 text-[#c9a84c]"
-                      : "border border-white/[0.06] text-white/40 group-hover:border-white/[0.15]"
+                      ? "border border-[var(--color-primary)]/30 text-[var(--color-primary)]"
+                      : "border border-[var(--color-line)] text-white/40 group-hover:border-white/[0.15]"
                 }`}>
                   {isToday ? "●" : filled ? dayMeals.length : ""}
                 </span>

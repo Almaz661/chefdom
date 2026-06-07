@@ -62,7 +62,7 @@ export function InventoryCategoryCard({
   const imageSrc = getCategoryImage(category);
 
   return (
-    <div className="rounded-[20px] border border-white/[0.06] transition-all duration-300 hover:border-white/[0.12]">
+    <div className="rounded-[var(--cd-r-xl,20px)] border border-[var(--color-line)] transition-all duration-300 hover:border-white/[0.12]">
       {/* Category header card */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -75,19 +75,19 @@ export function InventoryCategoryCard({
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/90 via-[#05070A]/50 to-[#05070A]/20 group-hover:from-[#05070A]/85 group-hover:via-[#05070A]/40 transition-all duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-cream)]/90 via-[var(--color-cream)]/50 to-[var(--color-cream)]/20 group-hover:from-[var(--color-cream)]/85 group-hover:via-[var(--color-cream)]/40 transition-all duration-300" />
 
         {/* Content */}
         <div className="relative z-10 flex items-center justify-between w-full">
           <div>
-            <h3 className="text-white font-extrabold text-lg">{category}</h3>
+            <h3 className="text-white font-semibold text-lg">{category}</h3>
             <p className="text-white/40 text-sm font-semibold mt-0.5">
               {items.length} {items.length === 1 ? 'продукт' : items.length < 5 ? 'продукта' : 'продуктов'}
             </p>
           </div>
-          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.06] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[#c9a84c]/15 border-[#c9a84c]/30' : ''}`}>
+          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-[var(--color-line)] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[var(--color-primary)]/15 border-[var(--color-primary)]/30' : ''}`}>
             {isOpen ? (
-              <ChevronUp size={16} className="text-[#c9a84c]" />
+              <ChevronUp size={16} className="text-[var(--color-primary)]" />
             ) : (
               <ChevronDown size={16} className="text-white/40 group-hover:text-white/60" />
             )}
@@ -97,7 +97,7 @@ export function InventoryCategoryCard({
 
       {/* Expanded product list */}
       {isOpen && (
-        <div className="bg-[#0b0f1e]/60 backdrop-blur-xl border-t border-white/[0.04] p-3 space-y-1.5">
+        <div className="bg-[var(--color-paper)]/60 border-t border-[var(--color-line)] p-3 space-y-1.5">
           {items.map((item) => (
             <InventoryProductCard
               key={`${item.source}-${item.id}`}

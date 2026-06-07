@@ -34,13 +34,13 @@ export function ShoppingProgress({
           />
           <defs>
             <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#c9a84c" />
-              <stop offset="100%" stopColor="#c9a84c" />
+              <stop offset="0%" stopColor="var(--color-primary)" />
+              <stop offset="100%" stopColor="var(--color-primary)" />
             </linearGradient>
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-white font-extrabold text-xl">{progress}%</span>
+          <span className="text-white font-semibold text-xl">{progress}%</span>
         </div>
       </div>
 

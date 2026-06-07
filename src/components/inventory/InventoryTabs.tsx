@@ -14,14 +14,14 @@ export function InventoryTabs({
   onChange: (tab: 'fridge' | 'freezer' | 'pantry') => void;
 }) {
   return (
-    <div className="flex gap-1 p-1 rounded-2xl border border-white/[0.06] bg-[#080c18]/60 backdrop-blur-sm shrink-0">
+    <div className="flex gap-1 p-1 rounded-2xl border border-[var(--color-line)] bg-[var(--color-cream)]/60 shrink-0">
       {TABS.map(({ key, label, icon: Icon }) => (
         <button
           key={key}
           onClick={() => onChange(key)}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
             active === key
-              ? 'bg-gradient-to-r from-[#c9a84c]/20 to-[#c9a84c]/10 text-[#c9a84c] border border-[#c9a84c]/30 shadow-[0_0_12px_rgba(201,149,60,0.15)]'
+              ? 'bg-gradient-to-r from-[var(--color-primary)]/20 to-[var(--color-primary)]/10 text-[var(--color-primary)] border border-[var(--color-primary)]/30 shadow-[0_0_12px_rgba(201,149,60,0.15)]'
               : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
           }`}
         >

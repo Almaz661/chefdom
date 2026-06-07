@@ -42,8 +42,8 @@ export function MenuWeekGrid({
 
   if (isLoading) {
     return (
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl flex items-center justify-center py-20">
-        <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
+      <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl flex items-center justify-center py-20">
+        <Loader2 size={32} className="animate-spin text-[var(--color-primary)]" />
       </div>
     );
   }
@@ -51,21 +51,21 @@ export function MenuWeekGrid({
   return (
     <div className="space-y-2">
       {/* ── Desktop table (≥ md) ── */}
-      <div className="hidden md:block bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="hidden md:block bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden">
         {/* Day header row */}
-        <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-white/[0.06]">
+        <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-[var(--color-line)]">
           <div className="px-3 py-3" />
           {DAYS.map((day, i) => (
             <div key={day} className="px-2 py-3 text-center border-l border-white/[0.04]">
               <span
                 className={`text-[11px] font-bold uppercase tracking-wider ${
-                  i === todayIdx ? 'text-[#c9a84c]' : 'text-white/40'
+                  i === todayIdx ? 'text-[var(--color-primary)]' : 'text-white/40'
                 }`}
               >
                 {day}
               </span>
               {i === todayIdx && (
-                <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] mx-auto mt-1 shadow-[0_0_8px_rgba(201,168,76,0.7)]" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] mx-auto mt-1 shadow-[0_0_8px_rgba(201,168,76,0.7)]" />
               )}
             </div>
           ))}
@@ -115,20 +115,20 @@ export function MenuWeekGrid({
       {/* ── Mobile list (< md): day-by-day ── */}
       <div className="md:hidden space-y-4">
         {DAYS.map((dayShort, dayIdx) => (
-          <div key={dayIdx} className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+          <div key={dayIdx} className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden">
             {/* Day header */}
-            <div className={`px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2 ${
-              dayIdx === todayIdx ? 'bg-[#c9a84c]/[0.06]' : ''
+            <div className={`px-4 py-2.5 border-b border-[var(--color-line)] flex items-center gap-2 ${
+              dayIdx === todayIdx ? 'bg-[var(--color-primary)]/[0.06]' : ''
             }`}>
               <span
                 className={`text-xs font-bold uppercase tracking-wider ${
-                  dayIdx === todayIdx ? 'text-[#c9a84c]' : 'text-white/50'
+                  dayIdx === todayIdx ? 'text-[var(--color-primary)]' : 'text-white/50'
                 }`}
               >
                 {DAYS_FULL[dayIdx]}
               </span>
               {dayIdx === todayIdx && (
-                <span className="text-[10px] font-semibold text-[#c9a84c]/70 bg-[#c9a84c]/10 px-1.5 py-0.5 rounded-md">
+                <span className="text-[10px] font-semibold text-[var(--color-primary)]/70 bg-[var(--color-primary)]/10 px-1.5 py-0.5 rounded-md">
                   Сегодня
                 </span>
               )}
@@ -159,9 +159,9 @@ export function MenuWeekGrid({
                       ) : (
                         <button
                           onClick={() => onAddMeal(dayIdx, mealKey)}
-                          className="flex items-center gap-2 text-xs text-white/25 hover:text-[#c9a84c] transition-colors group"
+                          className="flex items-center gap-2 text-xs text-white/25 hover:text-[var(--color-primary)] transition-colors group"
                         >
-                          <div className="w-6 h-6 rounded-lg border border-dashed border-white/[0.12] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/[0.06] transition-all">
+                          <div className="w-6 h-6 rounded-lg border border-dashed border-white/[0.12] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 group-hover:bg-[var(--color-primary)]/[0.06] transition-all">
                             <Plus size={11} />
                           </div>
                           Добавить
@@ -183,7 +183,7 @@ export function MenuWeekGrid({
 
 function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden hover:border-[#c9a84c]/30 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group flex flex-col h-full relative">
+    <div className="rounded-xl border border-[var(--color-line)] bg-white/[0.02] overflow-hidden hover:border-[var(--color-primary)]/30 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group flex flex-col h-full relative">
       {/* Remove */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
@@ -201,14 +201,14 @@ function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#1a2040] to-[#0c1021] flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-[var(--color-surface)] to-[var(--color-paper)] flex items-center justify-center">
             <span className="text-white/20 text-base font-bold">{item.recipeTitle.charAt(0)}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-cream)]/80 via-transparent to-transparent" />
         {item.recipeTotalTime && (
-          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 border border-white/[0.06] flex items-center gap-0.5">
-            <Clock size={8} className="text-[#c9a84c]" />
+          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 border border-[var(--color-line)] flex items-center gap-0.5">
+            <Clock size={8} className="text-[var(--color-primary)]" />
             <span className="text-[9px] text-white/70 font-semibold">{item.recipeTotalTime}м</span>
           </div>
         )}
@@ -228,10 +228,10 @@ function MealCardEmpty({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="w-full h-full min-h-[inherit] rounded-xl border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9a84c]/30 hover:bg-[#c9a84c]/[0.03] transition-all duration-200 group"
+      className="w-full h-full min-h-[inherit] rounded-xl border border-dashed border-[var(--color-line)] flex items-center justify-center hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/[0.03] transition-all duration-200 group"
     >
-      <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/10 transition-all duration-200">
-        <Plus size={13} className="text-white/15 group-hover:text-[#c9a84c] transition-colors" />
+      <div className="w-8 h-8 rounded-full border border-[var(--color-line)] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 group-hover:bg-[var(--color-primary)]/10 transition-all duration-200">
+        <Plus size={13} className="text-white/15 group-hover:text-[var(--color-primary)] transition-colors" />
       </div>
     </button>
   );
@@ -241,13 +241,13 @@ function MealCardEmpty({ onClick }: { onClick: () => void }) {
 
 function MealCardMobile({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2 group hover:border-white/[0.10] transition-all">
+    <div className="flex items-center gap-2 bg-white/[0.03] border border-[var(--color-line)] rounded-lg px-2.5 py-2 group hover:border-white/[0.10] transition-all">
       {/* Thumbnail */}
       <Link to={`/recipes/${item.recipeId}`} className="w-8 h-8 rounded-md overflow-hidden shrink-0">
         {item.recipeImage ? (
           <img src={item.recipeImage} alt={item.recipeTitle} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-[#1a2040] flex items-center justify-center">
+          <div className="w-full h-full bg-[var(--color-surface)] flex items-center justify-center">
             <span className="text-white/30 text-xs font-bold">{item.recipeTitle.charAt(0)}</span>
           </div>
         )}
