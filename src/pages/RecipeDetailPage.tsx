@@ -169,7 +169,7 @@ export function RecipeDetailPage() {
   return (
     <div className="min-h-screen bg-[var(--color-cream)] pb-32">
       {/* Hero — фото на всю ширину контейнера */}
-      <div className="relative aspect-[16/9] bg-white/[0.04] max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
+      <div className="relative aspect-[16/9] img-placeholder max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
         {showImage ? (
           <img
             src={recipe.imageUrl!}

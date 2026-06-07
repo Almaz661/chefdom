@@ -566,7 +566,7 @@ export function AddRecipePage() {
                     type="button"
                     onClick={() => moveIngredient(idx, -1)}
                     disabled={idx === 0}
-                    className="w-8 h-10 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-8 h-10 btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Выше"
                   >
                     <ArrowUp size={16} />
@@ -575,7 +575,7 @@ export function AddRecipePage() {
                     type="button"
                     onClick={() => moveIngredient(idx, 1)}
                     disabled={idx === ingredients.length - 1}
-                    className="w-8 h-10 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-8 h-10 btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
                     aria-label="Ниже"
                   >
                     <ArrowDown size={16} />
@@ -635,7 +635,7 @@ export function AddRecipePage() {
                       type="button"
                       onClick={() => moveStep(idx, -1)}
                       disabled={idx === 0}
-                      className="w-8 h-8 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-8 h-8 btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Выше"
                     >
                       <ArrowUp size={16} />
@@ -644,7 +644,7 @@ export function AddRecipePage() {
                       type="button"
                       onClick={() => moveStep(idx, 1)}
                       disabled={idx === steps.length - 1}
-                      className="w-8 h-8 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-8 h-8 btn-icon disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Ниже"
                     >
                       <ArrowDown size={16} />

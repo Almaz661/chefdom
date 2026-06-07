@@ -105,7 +105,7 @@ export function RecipePickerDialog({
           <div className="flex items-center gap-2 mb-6">
             <button
               onClick={() => setPlannedServings(p => Math.max(1, p - 1))}
-              className="w-9 h-9 rounded-lg bg-white/[0.06] text-white/60 hover:bg-white/[0.12] text-lg font-bold transition-colors"
+              className="btn-icon w-9 h-9 bg-white/[0.06] hover:bg-white/[0.12] text-white/60 text-lg font-bold"
             >−</button>
             <input
               type="number"
@@ -117,7 +117,7 @@ export function RecipePickerDialog({
             />
             <button
               onClick={() => setPlannedServings(p => Math.min(100, p + 1))}
-              className="w-9 h-9 rounded-lg bg-white/[0.06] text-white/60 hover:bg-white/[0.12] text-lg font-bold transition-colors"
+              className="btn-icon w-9 h-9 bg-white/[0.06] hover:bg-white/[0.12] text-white/60 text-lg font-bold"
             >+</button>
           </div>
 
@@ -155,7 +155,7 @@ export function RecipePickerDialog({
           <h3 className="text-lg font-bold text-white">Выберите рецепт</h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.05] transition-colors"
+            className="w-8 h-8 btn-icon"
           >
             <X size={20} />
           </button>
@@ -277,7 +277,7 @@ export function RecipePickerDialog({
                   <button
                     onClick={() => handlePickRecipe(r)}
                     disabled={loading}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors text-left disabled:opacity-50"
+                    className="w-full list-row p-2.5 rounded-xl transition-colors text-left disabled:opacity-50"
                   >
                     {r.imageUrl ? (
                       <img src={r.imageUrl} alt="" loading="lazy" className="w-11 h-11 rounded-lg object-cover shrink-0" />

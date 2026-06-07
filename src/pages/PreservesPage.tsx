@@ -119,7 +119,7 @@ export function PreservesPage() {
       </div>
 
       {/* Табы */}
-      <div className="flex gap-1 bg-white/[0.04] rounded-lg p-1 mb-6">
+      <div className="tab-group rounded-lg mb-6">
         {TABS.map(({ key, shortLabel, icon: Icon }) => (
           <button
             key={key}

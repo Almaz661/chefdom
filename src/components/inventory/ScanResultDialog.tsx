@@ -76,7 +76,7 @@ export function ScanResultDialog({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-colors"
+            className="absolute top-4 right-4 btn-icon w-8 h-8"
           >
             <X size={18} />
           </button>
