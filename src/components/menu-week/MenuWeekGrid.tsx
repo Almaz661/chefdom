@@ -187,9 +187,10 @@ function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) 
       {/* Remove */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
-        className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/60 border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:border-red-400"
+        className="absolute top-1.5 right-1.5 z-10 w-6 h-6 rounded-full bg-black/50 border border-white/15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:border-red-400 active:bg-red-600"
+        title="Удалить из меню"
       >
-        <X size={10} className="text-white" />
+        <X size={11} className="text-white" />
       </button>
 
       {/* Photo */}
@@ -267,9 +268,10 @@ function MealCardMobile({ item, onRemove }: { item: MenuItem; onRemove: () => vo
       {/* Remove */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
-        className="w-6 h-6 rounded-md flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/15 active:bg-red-500/25 transition-all shrink-0 border border-red-500/20 hover:border-red-500/40"
+        title="Удалить из меню"
       >
-        <X size={12} />
+        <X size={15} />
       </button>
     </div>
   );
