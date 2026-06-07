@@ -57,9 +57,9 @@ export function WhatToCookPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
-        <h1 className="font-serif text-3xl text-white font-extrabold mb-2">
+        <h1 className="font-serif text-3xl text-white font-semibold mb-2">
           Что приготовить?
         </h1>
         <p className="text-white/50 text-sm mb-6">Из того что есть дома</p>
@@ -72,8 +72,8 @@ export function WhatToCookPage() {
               onClick={() => setFilter(f.key)}
               className={`h-9 px-4 rounded-xl text-base font-semibold transition-colors ${
                 filter === f.key
-                  ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
-                  : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                  ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
+                  : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
               }`}
             >
               {f.label}
@@ -86,10 +86,10 @@ export function WhatToCookPage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
+            <Loader2 size={32} className="animate-spin text-[var(--color-primary)]" />
           </div>
         ) : matched.length === 0 ? (
-          <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-xl p-12 text-center">
+          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-xl p-12 text-center">
             <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
             <p className="font-serif text-lg text-white mb-2">Рецептов пока нет</p>
             <p className="text-white/50 text-sm mb-4">
@@ -97,14 +97,14 @@ export function WhatToCookPage() {
             </p>
             <Link
               to="/recipes"
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#c9a84c] text-[#0a0c10] text-base font-semibold hover:bg-[#d4b55a] transition-colors"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-base font-semibold hover:brightness-110 transition-colors"
             >
               <Plus size={16} />
               Добавить рецепты
             </Link>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-xl p-12 text-center">
+          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-xl p-12 text-center">
             <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
             <p className="font-serif text-lg text-white mb-2">Ничего не подходит</p>
             <p className="text-white/50 text-sm">
@@ -119,7 +119,7 @@ export function WhatToCookPage() {
                 <Link
                   key={r.id}
                   to={`/recipes/${r.id}`}
-                  className="flex gap-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all"
+                  className="flex gap-4 bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all"
                 >
                   {/* Фото */}
                   <div className="w-20 h-20 rounded-xl bg-white/[0.04] overflow-hidden shrink-0 flex items-center justify-center">

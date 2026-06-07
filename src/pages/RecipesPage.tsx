@@ -8,7 +8,7 @@ import { SectionImportDialog } from "../components/SectionImportDialog";
 // Пустое состояние когда в БД ровно 0 рецептов.
 function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: () => void }) {
   return (
-    <div className="bg-white/[0.02] border border-white/[0.06] border-dashed rounded-2xl p-10 text-center">
+    <div className="bg-white/[0.02] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
       <BookOpen
         size={48}
         className="text-white/30 mx-auto mb-4"
@@ -24,7 +24,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           to="/recipes/add"
-          className="inline-flex items-center gap-2 bg-[#c9a84c] text-[#0a0c10] px-4 py-2.5 rounded-xl font-semibold hover:bg-[#d4b55a] transition-colors"
+          className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-[#0a0c10] px-4 py-2.5 rounded-xl font-semibold hover:brightness-110 transition-colors"
         >
           <Plus size={18} />
           Добавить вручную
@@ -32,7 +32,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
         <button
           type="button"
           onClick={onImport}
-          className="inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+          className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
         >
           <Download size={18} />
           Импорт с сайта
@@ -40,7 +40,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
         <button
           type="button"
           onClick={onSection}
-          className="inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+          className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
         >
           <FolderDown size={18} />
           Импорт раздела
@@ -66,7 +66,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
   return (
     <Link
       to={`/recipes/${r.id}`}
-      className="block bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+      className="block bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
     >
       <div className="aspect-[16/10] bg-white/[0.04] overflow-hidden">
         {showImage ? (
@@ -151,12 +151,12 @@ export function RecipesPage() {
   const categories = cats.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-5xl mx-auto px-5 py-8 lg:py-12">
         {/* Заголовок страницы */}
         <header className="mb-8">
           <div className="flex items-baseline justify-between gap-3">
-            <h1 className="font-serif text-3xl text-white font-extrabold">
+            <h1 className="font-serif text-3xl text-white font-semibold">
               Рецепты
             </h1>
             {!isEmpty && (
@@ -181,12 +181,12 @@ export function RecipesPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Поиск по названию..."
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-10 pr-4 h-12 text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl pl-10 pr-4 h-12 text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
             <Link
               to="/recipes/add"
-              className="inline-flex items-center gap-2 bg-[#c9a84c] text-[#0a0c10] px-4 h-12 rounded-xl font-semibold hover:bg-[#d4b55a] transition-colors"
+              className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-[#0a0c10] px-4 h-12 rounded-xl font-semibold hover:brightness-110 transition-colors"
             >
               <Plus size={18} />
               Добавить
@@ -194,7 +194,7 @@ export function RecipesPage() {
             <button
               type="button"
               onClick={() => setImportOpen(true)}
-              className="inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
             >
               <Download size={18} />
               Импорт
@@ -202,7 +202,7 @@ export function RecipesPage() {
             <button
               type="button"
               onClick={() => setSectionOpen(true)}
-              className="inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
             >
               <FolderDown size={18} />
               Раздел
@@ -226,8 +226,8 @@ export function RecipesPage() {
               onClick={() => setCategory(undefined)}
               className={`px-3 py-1.5 rounded-full text-base font-semibold transition-colors ${
                 category === undefined
-                  ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
-                  : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                  ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
+                  : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
               }`}
             >
               Все
@@ -241,8 +241,8 @@ export function RecipesPage() {
                 }
                 className={`px-3 py-1.5 rounded-full text-base font-semibold transition-colors ${
                   category === c.category
-                    ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
-                    : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
+                    : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
                 }`}
               >
                 {c.category}{" "}
@@ -318,7 +318,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
       onClick={() => !importYt.isPending && onClose()}
     >
       <div
-        className="bg-[#0c1021] border border-white/[0.08] rounded-2xl w-full sm:max-w-md p-6"
+        className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-2xl w-full sm:max-w-md p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-serif text-xl font-semibold text-white mb-2 flex items-center gap-2">
@@ -335,7 +335,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=..."
           autoFocus
-          className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 mb-4 transition-colors"
+          className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 mb-4 transition-colors"
         />
 
         {importYt.error && (
@@ -347,7 +347,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             disabled={importYt.isPending}
-            className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
           >
             Отмена
           </button>
@@ -355,7 +355,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             disabled={!url.trim() || importYt.isPending}
             onClick={() => importYt.mutate({ url: url.trim() })}
-            className="flex-1 h-12 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-2"
+            className="flex-1 h-12 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-2"
           >
             {importYt.isPending ? (
               <>

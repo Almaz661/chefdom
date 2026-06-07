@@ -17,7 +17,7 @@ export function GoldButton({
   const styles =
     variant === 'solid'
       ? 'btn-gold'
-      : 'border border-[#c9a84c]/40 text-[#c9a84c] hover:bg-[#c9a84c]/10 hover:border-[#c9a84c]/60';
+      : 'border border-[var(--color-primary)]/40 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 hover:border-[var(--color-primary)]/60';
 
   return (
     <button onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className}`}>

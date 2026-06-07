@@ -279,7 +279,7 @@ export function AddRecipePage() {
   // Loading state when editing existing
   if (isEditing && existing.isLoading) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <div className="text-white/30">Загрузка рецепта...</div>
         </div>
@@ -288,11 +288,11 @@ export function AddRecipePage() {
   }
   if (isEditing && existing.error) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <Link
             to="/recipes"
-            className="text-[#c9a84c] inline-flex items-center gap-1 mb-4"
+            className="text-[var(--color-primary)] inline-flex items-center gap-1 mb-4"
           >
             <ArrowLeft size={18} /> К рецептам
           </Link>
@@ -311,17 +311,17 @@ export function AddRecipePage() {
       : "";
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
         <Link
           to={cancelTo}
-          className="text-[#c9a84c] inline-flex items-center gap-1 mb-4 text-sm"
+          className="text-[var(--color-primary)] inline-flex items-center gap-1 mb-4 text-sm"
         >
           <ArrowLeft size={16} />
           {isEditing ? "Назад к рецепту" : "К рецептам"}
         </Link>
 
-        <h1 className="font-serif text-3xl text-white font-extrabold mb-8">
+        <h1 className="font-serif text-3xl text-white font-semibold mb-8">
           {isEditing ? "Редактирование рецепта" : "Новый рецепт"}
         </h1>
 
@@ -340,7 +340,7 @@ export function AddRecipePage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
 
@@ -352,7 +352,7 @@ export function AddRecipePage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors resize-none"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 py-3 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors resize-none"
                 placeholder="Короткое описание блюда — пара предложений"
               />
             </div>
@@ -369,10 +369,10 @@ export function AddRecipePage() {
                   setImageError(false);
                 }}
                 placeholder="https://example.com/photo.jpg"
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
               {imageUrl && (
-                <div className="mt-3 aspect-[16/9] max-w-md bg-white/[0.04] rounded-xl overflow-hidden border border-white/[0.06]">
+                <div className="mt-3 aspect-[16/9] max-w-md bg-white/[0.04] rounded-xl overflow-hidden border border-[var(--color-line)]">
                   {imageError ? (
                     <div className="w-full h-full flex items-center justify-center text-white/30 text-sm">
                       Не удалось загрузить превью
@@ -407,7 +407,7 @@ export function AddRecipePage() {
                 max="100"
                 value={servings}
                 onChange={(e) => setServings(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
             <div>
@@ -419,7 +419,7 @@ export function AddRecipePage() {
                 min="0"
                 value={prepTime}
                 onChange={(e) => setPrepTime(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
             <div>
@@ -431,7 +431,7 @@ export function AddRecipePage() {
                 min="0"
                 value={cookTime}
                 onChange={(e) => setCookTime(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
             <div>
@@ -444,7 +444,7 @@ export function AddRecipePage() {
                 value={totalTime}
                 onChange={(e) => setTotalTime(e.target.value)}
                 placeholder={totalHint}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ export function AddRecipePage() {
               min="0"
               value={calories}
               onChange={(e) => setCalories(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
             />
           </div>
         </section>
@@ -475,7 +475,7 @@ export function AddRecipePage() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
@@ -488,7 +488,7 @@ export function AddRecipePage() {
               <select
                 value={cuisine}
                 onChange={(e) => setCuisine(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {CUISINES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
@@ -501,7 +501,7 @@ export function AddRecipePage() {
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[#c9a84c]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {DIFFICULTIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
@@ -519,7 +519,7 @@ export function AddRecipePage() {
             <button
               type="button"
               onClick={addIngredient}
-              className="text-[#c9a84c] text-base font-semibold hover:text-[#d4b55a] inline-flex items-center gap-1"
+              className="text-[var(--color-primary)] text-base font-semibold hover:text-[var(--color-primary)] inline-flex items-center gap-1"
             >
               <Plus size={16} /> Добавить
             </button>
@@ -528,7 +528,7 @@ export function AddRecipePage() {
             {ingredients.map((ing, idx) => (
               <div
                 key={idx}
-                className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 flex flex-wrap items-start gap-2"
+                className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-3 flex flex-wrap items-start gap-2"
               >
                 <input
                   type="text"
@@ -536,21 +536,21 @@ export function AddRecipePage() {
                   value={ing.amount}
                   onChange={(e) => updateIngredient(idx, { amount: e.target.value })}
                   placeholder="Кол-во"
-                  className="w-20 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  className="w-20 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                 />
                 <input
                   type="text"
                   value={ing.unit}
                   onChange={(e) => updateIngredient(idx, { unit: e.target.value })}
                   placeholder="ед."
-                  className="w-16 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  className="w-16 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                 />
                 <input
                   type="text"
                   value={ing.name}
                   onChange={(e) => updateIngredient(idx, { name: e.target.value })}
                   placeholder="Название (обязательно)"
-                  className="flex-1 min-w-[180px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  className="flex-1 min-w-[180px] bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                 />
                 <input
                   type="text"
@@ -559,7 +559,7 @@ export function AddRecipePage() {
                     updateIngredient(idx, { groupName: e.target.value })
                   }
                   placeholder="Группа"
-                  className="w-28 bg-white/[0.04] border border-white/[0.08] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                  className="w-28 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                 />
                 <div className="flex items-center gap-0.5">
                   <button
@@ -606,7 +606,7 @@ export function AddRecipePage() {
             <button
               type="button"
               onClick={addStep}
-              className="text-[#c9a84c] text-base font-semibold hover:text-[#d4b55a] inline-flex items-center gap-1"
+              className="text-[var(--color-primary)] text-base font-semibold hover:text-[var(--color-primary)] inline-flex items-center gap-1"
             >
               <Plus size={16} /> Добавить
             </button>
@@ -615,10 +615,10 @@ export function AddRecipePage() {
             {steps.map((step, idx) => (
               <div
                 key={idx}
-                className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4"
+                className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4"
               >
                 <div className="flex items-start gap-3 mb-3">
-                  <span className="font-serif text-3xl font-bold text-[#c9a84c] leading-none pt-1 w-8 flex-shrink-0">
+                  <span className="font-serif text-3xl font-bold text-[var(--color-primary)] leading-none pt-1 w-8 flex-shrink-0">
                     {idx + 1}
                   </span>
                   <textarea
@@ -628,7 +628,7 @@ export function AddRecipePage() {
                     }
                     rows={3}
                     placeholder="Что делать на этом шаге"
-                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50 resize-none"
+                    className="flex-1 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 py-2 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
                   />
                   <div className="flex flex-col gap-0.5">
                     <button
@@ -667,7 +667,7 @@ export function AddRecipePage() {
                       updateStep(idx, { imageUrl: e.target.value })
                     }
                     placeholder="Ссылка на фото шага (опционально)"
-                    className="flex-1 min-w-[200px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                    className="flex-1 min-w-[200px] bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                   />
                   <input
                     type="number"
@@ -677,7 +677,7 @@ export function AddRecipePage() {
                       updateStep(idx, { timerMinutes: e.target.value })
                     }
                     placeholder="Таймер, мин"
-                    className="w-32 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[#c9a84c]/50"
+                    className="w-32 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
                   />
                 </div>
               </div>
@@ -692,17 +692,17 @@ export function AddRecipePage() {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-white/[0.06]">
+        <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-[var(--color-line)]">
           <Link
             to={cancelTo}
-            className="px-5 h-12 inline-flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="px-5 h-12 inline-flex items-center justify-center rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
           >
             Отмена
           </Link>
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 h-12 inline-flex items-center justify-center rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-6 h-12 inline-flex items-center justify-center rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isPending
               ? "Сохраняю..."

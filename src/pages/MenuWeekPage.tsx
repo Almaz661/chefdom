@@ -81,7 +81,7 @@ export function MenuWeekPage() {
     : `${totalTime} мин`;
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         <MenuWeekHeader
           weekLabel={formatWeekRange(weekStart)}
