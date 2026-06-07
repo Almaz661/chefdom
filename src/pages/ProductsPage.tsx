@@ -58,7 +58,7 @@ function SyncFromReceiptsButton() {
         }
       }}
       disabled={sync.isPending}
-      className="h-10 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-sm font-bold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      className="h-10 px-3 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-sm font-bold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
       title="Загрузить все товары из чеков в каталог"
     >
       {sync.isPending ? '⏳' : '📥'}
@@ -85,7 +85,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
   );
 
   return (
-    <li className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+    <li className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
           <p className="text-base font-semibold text-white/80 truncate">{product.nameRu}</p>
@@ -123,7 +123,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
       </div>
       {/* История цен */}
       {showHistory && historyQuery.data && historyQuery.data.length > 1 && (
-        <div className="mt-2 pt-2 border-t border-white/[0.06]">
+        <div className="mt-2 pt-2 border-t border-[var(--color-line)]">
           <p className="text-sm font-bold text-white/50 mb-1">История цен:</p>
           <div className="space-y-0.5">
             {historyQuery.data.slice(0, 10).map((h, i) => {
@@ -151,7 +151,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
         </div>
       )}
       {showHistory && historyQuery.data && historyQuery.data.length <= 1 && (
-        <div className="mt-2 pt-2 border-t border-white/[0.06]">
+        <div className="mt-2 pt-2 border-t border-[var(--color-line)]">
           <p className="text-base text-white/50 font-medium">Пока только одна покупка. История появится после следующей.</p>
         </div>
       )}
@@ -206,10 +206,10 @@ export function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-serif text-3xl text-white font-extrabold">
+          <h1 className="font-serif text-3xl text-white font-semibold">
             Продукты
           </h1>
           <div className="flex items-center gap-2">
@@ -219,12 +219,12 @@ export function ProductsPage() {
         </div>
 
         {/* Переключатель режимов */}
-        <div className="flex gap-1 bg-white/[0.04] border border-white/[0.08] rounded-xl p-1 mb-6">
+        <div className="flex gap-1 bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-1 mb-6">
           <button
             onClick={() => setMode("search")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-base font-semibold transition-colors ${
               mode === "search"
-                ? "bg-[#c9a84c] text-[#0a0c10]"
+                ? "bg-[var(--color-primary)] text-[#0a0c10]"
                 : "text-white/50 hover:text-white/80"
             }`}
           >
@@ -235,7 +235,7 @@ export function ProductsPage() {
             onClick={() => setMode("barcode")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-base font-semibold transition-colors ${
               mode === "barcode"
-                ? "bg-[#c9a84c] text-[#0a0c10]"
+                ? "bg-[var(--color-primary)] text-[#0a0c10]"
                 : "text-white/50 hover:text-white/80"
             }`}
           >
@@ -251,7 +251,7 @@ export function ProductsPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Найти продукт..."
-              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors mb-4"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors mb-4"
             />
             {searchResults.data && searchResults.data.length > 0 ? (
               <ul className="space-y-2">
@@ -270,7 +270,7 @@ export function ProductsPage() {
                 ))}
               </ul>
             ) : !allProducts.isLoading ? (
-              <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-2xl p-8 text-center">
+              <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
                 <Package size={32} className="text-white/30 mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-white/50 text-sm">Каталог пуст. Товары появятся автоматически после сканирования чеков.</p>
               </div>
@@ -302,13 +302,13 @@ export function ProductsPage() {
                 }}
                 placeholder="Введите штрих-код..."
                 inputMode="numeric"
-                className="w-full h-12 pl-24 pr-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors font-mono"
+                className="w-full h-12 pl-24 pr-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors font-mono"
               />
             </div>
 
             {/* Результат */}
             {barcodeResult.data ? (
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-4">
+              <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-4">
                 <p className="text-base font-medium text-white/80 mb-1">{barcodeResult.data.nameRu}</p>
                 {barcodeResult.data.brand && <p className="text-base text-white/50">{barcodeResult.data.brand}</p>}
                 {barcodeResult.data.packageQuantity && (
@@ -322,7 +322,7 @@ export function ProductsPage() {
                 {!showAddToInventory && !addedSuccess && (
                   <button
                     onClick={() => setShowAddToInventory(true)}
-                    className="mt-3 w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold text-sm hover:bg-[#d4b55a] transition-colors"
+                    className="mt-3 w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold text-sm hover:brightness-110 transition-colors"
                   >
                     <Plus size={18} />
                     Добавить в инвентарь
@@ -339,10 +339,10 @@ export function ProductsPage() {
 
                 {/* Форма выбора места хранения */}
                 {showAddToInventory && (
-                  <div className="mt-3 space-y-3 border-t border-white/[0.06] pt-3">
+                  <div className="mt-3 space-y-3 border-t border-[var(--color-line)] pt-3">
                     <fieldset>
                       <legend className="block text-base text-white/50 font-medium mb-1">Куда положить?</legend>
-                      <div className="inline-flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5 w-full">
+                      <div className="inline-flex bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-0.5 w-full">
                         {STORAGE_OPTIONS.map(({ key, label }) => (
                           <button
                             key={key}
@@ -350,7 +350,7 @@ export function ProductsPage() {
                             onClick={() => setStorageType(key)}
                             className={`flex-1 px-2 py-2 rounded-xl text-sm font-bold transition-colors ${
                               storageType === key
-                                ? "bg-[#c9a84c] text-[#0a0c10]"
+                                ? "bg-[var(--color-primary)] text-[#0a0c10]"
                                 : "text-white/50 hover:text-white/80"
                             }`}
                           >
@@ -365,14 +365,14 @@ export function ProductsPage() {
                         type="date"
                         value={expiryDate}
                         onChange={(e) => setExpiryDate(e.target.value)}
-                        className="w-full h-10 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 text-sm focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                        className="w-full h-10 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                       />
                     </label>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setShowAddToInventory(false)}
-                        className="flex-1 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+                        className="flex-1 h-10 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
                       >
                         Отмена
                       </button>
@@ -380,7 +380,7 @@ export function ProductsPage() {
                         type="button"
                         onClick={handleAddToInventory}
                         disabled={addToInventory.isPending}
-                        className="flex-1 h-10 rounded-xl bg-[#c9a84c] text-[#0a0c10] text-base font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors"
+                        className="flex-1 h-10 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-base font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
                       >
                         {addToInventory.isPending ? "Добавляю…" : "Добавить"}
                       </button>
@@ -393,7 +393,7 @@ export function ProductsPage() {
                 Товар не найден по этому штрих-коду
               </div>
             ) : barcode.length < 4 ? (
-              <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-2xl p-8 text-center">
+              <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
                 <Barcode size={32} className="text-white/30 mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-white/50 text-sm">Сфотографируйте или введите штрих-код</p>
               </div>

@@ -102,7 +102,7 @@ function InventoryItemRow({
   }, [selection.storage, selection.checked]);
 
   return (
-    <li className={`rounded-xl border p-3 transition-colors ${selection.checked ? 'border-[#c9a84c]/40 bg-[#c9a84c]/5' : 'border-white/[0.06] bg-white/[0.03] opacity-60'}`}>
+    <li className={`rounded-xl border p-3 transition-colors ${selection.checked ? 'border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5' : 'border-[var(--color-line)] bg-white/[0.03] opacity-60'}`}>
       {/* Чекбокс + название */}
       <label className="flex items-center gap-3 cursor-pointer mb-2">
         <input
@@ -111,7 +111,7 @@ function InventoryItemRow({
           onChange={(e) => {
             onChange({ ...selection, checked: e.target.checked });
           }}
-          className="w-5 h-5 rounded border-white/[0.08] text-[#c9a84c] focus:ring-[#c9a84c]/50"
+          className="w-5 h-5 rounded border-[var(--color-line)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]/50"
         />
         <span className="font-medium text-white/80 flex-1 min-w-0 truncate">{item.productName}</span>
       </label>
@@ -132,7 +132,7 @@ function InventoryItemRow({
                   expiryDate: '',
                 });
               }}
-              className="w-full h-10 px-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/80 text-sm focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              className="w-full h-10 px-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/80 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
             >
               <option value="fridge">🧊 Холодильник</option>
               <option value="freezer">❄️ Морозилка</option>
@@ -148,7 +148,7 @@ function InventoryItemRow({
               onChange={(e) => {
                 onChange({ ...selection, expiryDate: e.target.value });
               }}
-              className="w-full h-10 px-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/80 text-sm focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+              className="w-full h-10 px-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/80 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
             />
           </div>
         </div>
@@ -248,9 +248,9 @@ export function ReceiptDetailPage() {
 
   if (!Number.isFinite(id) || id <= 0) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
-          <Link to="/receipts" className="text-[#c9a84c] inline-flex items-center gap-1">
+          <Link to="/receipts" className="text-[var(--color-primary)] inline-flex items-center gap-1">
             <ArrowLeft size={18} /> К чекам
           </Link>
           <p className="text-white/50 mt-6">Некорректный ID чека.</p>
@@ -261,7 +261,7 @@ export function ReceiptDetailPage() {
 
   if (query.isLoading) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <p className="text-white/30">Загрузка чека…</p>
         </div>
@@ -271,15 +271,15 @@ export function ReceiptDetailPage() {
 
   if (query.error || !query.data) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <Link
             to="/receipts"
-            className="text-[#c9a84c] inline-flex items-center gap-1 mb-6"
+            className="text-[var(--color-primary)] inline-flex items-center gap-1 mb-6"
           >
             <ArrowLeft size={18} /> К чекам
           </Link>
-          <h1 className="font-serif text-3xl font-extrabold text-white mb-2">
+          <h1 className="font-serif text-3xl font-semibold text-white mb-2">
             Чек не найден
           </h1>
           <p className="text-white/50">{query.error?.message}</p>
@@ -298,13 +298,13 @@ export function ReceiptDetailPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12 space-y-6">
         {/* Шапка */}
         <div>
           <Link
             to="/receipts"
-            className="text-[#c9a84c] inline-flex items-center gap-1 mb-4 hover:text-[#d4b55a] transition-colors"
+            className="text-[var(--color-primary)] inline-flex items-center gap-1 mb-4 hover:text-[var(--color-primary)] transition-colors"
           >
             <ArrowLeft size={18} /> К чекам
           </Link>
@@ -315,7 +315,7 @@ export function ReceiptDetailPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <input
                     autoFocus
-                    className="h-9 px-3 bg-white/[0.04] border border-[#c9a84c]/50 rounded-xl text-white/80 text-lg font-serif focus:outline-none flex-1 transition-colors"
+                    className="h-9 px-3 bg-white/[0.04] border border-[var(--color-primary)]/50 rounded-xl text-white/80 text-lg font-serif focus:outline-none flex-1 transition-colors"
                     value={eStore}
                     onChange={e => setEStore(e.target.value)}
                     placeholder="Название магазина"
@@ -325,20 +325,20 @@ export function ReceiptDetailPage() {
                     }}
                   />
                   <button onClick={() => updateReceipt.mutate({ id, storeName: eStore || null })}
-                    className="w-8 h-8 rounded-xl bg-[#c9a84c] text-[#0a0c10] flex items-center justify-center hover:bg-[#d4b55a] transition-colors">
+                    className="w-8 h-8 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors">
                     <Check size={16} />
                   </button>
                   <button onClick={() => setEditingStore(false)}
-                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
+                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
                     <X size={16} />
                   </button>
                 </div>
               ) : (
                 <h1
-                  className="font-serif text-3xl font-extrabold text-white leading-tight inline-flex items-center gap-3 cursor-pointer group"
+                  className="font-serif text-3xl font-semibold text-white leading-tight inline-flex items-center gap-3 cursor-pointer group"
                   onClick={() => { setEStore(receipt.storeName ?? ""); setEditingStore(true); }}
                 >
-                  <ReceiptIcon size={26} className="text-[#c9a84c]" strokeWidth={2} />
+                  <ReceiptIcon size={26} className="text-[var(--color-primary)]" strokeWidth={2} />
                   {receipt.storeName || <span className="text-white/30">Нажми чтобы добавить магазин</span>}
                   <Pencil size={14} className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h1>
@@ -351,7 +351,7 @@ export function ReceiptDetailPage() {
                     <input
                       autoFocus
                       type="date"
-                      className="h-8 px-2 bg-white/[0.04] border border-[#c9a84c]/50 rounded-xl text-white/80 text-sm focus:outline-none transition-colors"
+                      className="h-8 px-2 bg-white/[0.04] border border-[var(--color-primary)]/50 rounded-xl text-white/80 text-sm focus:outline-none transition-colors"
                       value={eDate}
                       onChange={e => setEDate(e.target.value)}
                       onKeyDown={e => {
@@ -360,17 +360,17 @@ export function ReceiptDetailPage() {
                       }}
                     />
                     <button onClick={() => updateReceipt.mutate({ id, purchaseDate: eDate || null })}
-                      className="w-7 h-7 rounded-xl bg-[#c9a84c] text-[#0a0c10] flex items-center justify-center hover:bg-[#d4b55a] transition-colors">
+                      className="w-7 h-7 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors">
                       <Check size={14} />
                     </button>
                     <button onClick={() => setEditingDate(false)}
-                      className="w-7 h-7 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
+                      className="w-7 h-7 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
                       <X size={14} />
                     </button>
                   </div>
                 ) : (
                   <span
-                    className="text-white/50 cursor-pointer hover:text-[#c9a84c] transition-colors inline-flex items-center gap-1 group"
+                    className="text-white/50 cursor-pointer hover:text-[var(--color-primary)] transition-colors inline-flex items-center gap-1 group"
                     onClick={() => { setEDate(receipt.purchaseDate ?? ""); setEditingDate(true); }}
                   >
                     {receipt.purchaseDate
@@ -426,7 +426,7 @@ export function ReceiptDetailPage() {
               setShowToInventory(true);
             }}
             disabled={items.length === 0}
-            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Package size={18} />
             В инвентарь
@@ -434,7 +434,7 @@ export function ReceiptDetailPage() {
           <button
             type="button"
             onClick={() => setShowAddManual(true)}
-            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
           >
             <Plus size={18} />
             Добавить позицию вручную
@@ -445,7 +445,7 @@ export function ReceiptDetailPage() {
               onClick={() => reparse.mutate({ id })}
               disabled={reparse.isPending}
               title="Распознать заново из сохранённого текста OCR (без нового запроса)"
-              className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 size={18}
@@ -458,7 +458,7 @@ export function ReceiptDetailPage() {
 
         {/* Блок «Показать сырой текст OCR» */}
         {receipt.ocrRaw && (
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl">
+          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl">
             <button
               type="button"
               onClick={() => setShowRaw((s) => !s)}
@@ -468,7 +468,7 @@ export function ReceiptDetailPage() {
               {showRaw ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
             {showRaw && (
-              <div className="px-4 pb-4 border-t border-white/[0.06]">
+              <div className="px-4 pb-4 border-t border-[var(--color-line)]">
                 <div className="flex justify-end pt-3 pb-2">
                   <button
                     type="button"
@@ -480,7 +480,7 @@ export function ReceiptDetailPage() {
                           setTimeout(() => setCopyDone(false), 1500);
                         });
                     }}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-base text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-base text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
                   >
                     {copyDone ? <Check size={14} /> : <Copy size={14} />}
                     {copyDone ? "Скопировано" : "Скопировать"}
@@ -533,7 +533,7 @@ export function ReceiptDetailPage() {
                   return (
                     <li
                       key={it.id}
-                      className="px-4 py-3 bg-white/[0.03] border-2 border-[#c9a84c]/50 rounded-xl"
+                      className="px-4 py-3 bg-white/[0.03] border-2 border-[var(--color-primary)]/50 rounded-xl"
                     >
                       <div className="flex flex-col sm:flex-row gap-2">
                         <input
@@ -541,7 +541,7 @@ export function ReceiptDetailPage() {
                           value={eName}
                           onChange={(e) => setEName(e.target.value)}
                           autoFocus
-                          className="flex-1 h-11 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                          className="flex-1 h-11 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                           placeholder="Название"
                         />
                         <input
@@ -549,7 +549,7 @@ export function ReceiptDetailPage() {
                           inputMode="decimal"
                           value={ePrice}
                           onChange={(e) => setEPrice(e.target.value)}
-                          className="sm:w-28 h-11 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors tabular-nums"
+                          className="sm:w-28 h-11 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors tabular-nums"
                           placeholder="Цена"
                         />
                         <div className="flex gap-2">
@@ -559,7 +559,7 @@ export function ReceiptDetailPage() {
                             disabled={!eName.trim() || updateItem.isPending}
                             aria-label="Сохранить"
                             title="Сохранить"
-                            className="w-11 h-11 rounded-xl bg-[#c9a84c] text-[#0a0c10] hover:bg-[#d4b55a] flex items-center justify-center disabled:opacity-50 transition-colors"
+                            className="w-11 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] hover:brightness-110 flex items-center justify-center disabled:opacity-50 transition-colors"
                           >
                             <Check size={18} />
                           </button>
@@ -568,7 +568,7 @@ export function ReceiptDetailPage() {
                             onClick={() => setEditingId(null)}
                             aria-label="Отмена"
                             title="Отмена"
-                            className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                            className="w-11 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
                           >
                             <X size={18} />
                           </button>
@@ -581,7 +581,7 @@ export function ReceiptDetailPage() {
                 return (
                   <li
                     key={it.id}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-white/80">{it.productName}</p>
@@ -609,7 +609,7 @@ export function ReceiptDetailPage() {
                       }}
                       aria-label="Редактировать"
                       title="Редактировать"
-                      className="w-9 h-9 rounded-xl text-white/30 hover:text-[#c9a84c] hover:bg-white/[0.05] flex items-center justify-center shrink-0 transition-colors"
+                      className="w-9 h-9 rounded-xl text-white/30 hover:text-[var(--color-primary)] hover:bg-white/[0.05] flex items-center justify-center shrink-0 transition-colors"
                     >
                       <Pencil size={16} />
                     </button>
@@ -628,7 +628,7 @@ export function ReceiptDetailPage() {
           )}
 
           {items.length > 0 && (
-            <p className="text-white/30 text-sm text-right mt-4 pt-3 border-t border-white/[0.06]">
+            <p className="text-white/30 text-sm text-right mt-4 pt-3 border-t border-[var(--color-line)]">
               Сумма по строкам:{" "}
               <span className="tabular-nums text-white/80 font-medium">
                 {CURRENCY_SYMBOL[currency] ?? ""}
@@ -644,11 +644,11 @@ export function ReceiptDetailPage() {
         {/* Модалка ручного добавления */}
         {showAddManual && (
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50"
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-6 z-50"
             onClick={() => !addItem.isPending && setShowAddManual(false)}
           >
             <div
-              className="bg-[#0c1021] border border-white/[0.08] rounded-2xl p-6 max-w-md w-full"
+              className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-2xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -659,7 +659,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowAddManual(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -674,7 +674,7 @@ export function ReceiptDetailPage() {
                   value={mName}
                   onChange={(e) => setMName(e.target.value)}
                   placeholder="Молоко"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                 />
               </label>
 
@@ -688,7 +688,7 @@ export function ReceiptDetailPage() {
                     value={mQty}
                     onChange={(e) => setMQty(e.target.value)}
                     step="0.01"
-                    className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                    className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                   />
                 </label>
                 <label className="block">
@@ -700,7 +700,7 @@ export function ReceiptDetailPage() {
                     value={mUnit}
                     onChange={(e) => setMUnit(e.target.value)}
                     placeholder="л, кг, шт"
-                    className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                    className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                   />
                 </label>
               </div>
@@ -714,7 +714,7 @@ export function ReceiptDetailPage() {
                   value={mPrice}
                   onChange={(e) => setMPrice(e.target.value)}
                   step="0.01"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                 />
               </label>
 
@@ -723,7 +723,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowAddManual(false)}
                   disabled={addItem.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
                 >
                   Отмена
                 </button>
@@ -741,7 +741,7 @@ export function ReceiptDetailPage() {
                       },
                     })
                   }
-                  className="px-4 h-11 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50"
+                  className="px-4 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
                 >
                   {addItem.isPending ? "Добавляю…" : "Добавить"}
                 </button>
@@ -753,11 +753,11 @@ export function ReceiptDetailPage() {
         {/* Диалог «В инвентарь» — массовое добавление товаров из чека */}
         {showToInventory && (
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+            className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
             onClick={() => !addBulkToInventory.isPending && setShowToInventory(false)}
           >
             <div
-              className="bg-[#0c1021] border border-white/[0.08] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -768,7 +768,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowToInventory(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -787,7 +787,7 @@ export function ReceiptDetailPage() {
                     Object.keys(sel).forEach(k => { sel[Number(k)].checked = true; });
                     setInvSelections(sel);
                   }}
-                  className="text-xs text-[#c9a84c] hover:underline"
+                  className="text-xs text-[var(--color-primary)] hover:underline"
                 >
                   Выбрать все
                 </button>
@@ -833,7 +833,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowToInventory(false)}
                   disabled={addBulkToInventory.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
                 >
                   Отмена
                 </button>
@@ -859,7 +859,7 @@ export function ReceiptDetailPage() {
                       });
                     addBulkToInventory.mutate({ items: toAdd });
                   }}
-                  className="px-5 h-11 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+                  className="px-5 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
                 >
                   <Package size={16} />
                   {addBulkToInventory.isPending

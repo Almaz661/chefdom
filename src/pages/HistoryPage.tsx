@@ -91,10 +91,10 @@ export function HistoryPage() {
   const total = query.data?.pages[0]?.total ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto p-6 lg:p-10 space-y-6">
         <header>
-          <h1 className="font-serif text-3xl text-white font-extrabold mb-1">
+          <h1 className="font-serif text-3xl text-white font-semibold mb-1">
             История готовки
           </h1>
           <p className="text-white/50">Что и когда готовили</p>
@@ -111,8 +111,8 @@ export function HistoryPage() {
                 onClick={() => setPeriod(value)}
                 className={`px-4 h-10 rounded-full text-base font-semibold border transition-colors ${
                   active
-                    ? "bg-[#c9a84c] text-[#0a0c10] font-bold border-transparent"
-                    : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold border-transparent"
+                    : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
                 }`}
               >
                 {label}
@@ -128,7 +128,7 @@ export function HistoryPage() {
 
         {/* Пустое состояние */}
         {!query.isLoading && items.length === 0 && (
-          <div className="bg-white/[0.02] border border-white/[0.06] border-dashed rounded-2xl p-10 text-center">
+          <div className="bg-white/[0.02] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
             <BookOpen
               size={36}
               className="text-white/30 mx-auto mb-3"
@@ -154,10 +154,10 @@ export function HistoryPage() {
                     const time = formatTime(dt);
                     // Если рецепт удалён (recipeId === null) — без ссылки
                     const content = (
-                      <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+                      <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
                         <ChefHat
                           size={20}
-                          className="text-[#c9a84c] shrink-0"
+                          className="text-[var(--color-primary)] shrink-0"
                           strokeWidth={2}
                         />
                         <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export function HistoryPage() {
               type="button"
               onClick={() => query.fetchNextPage()}
               disabled={query.isFetchingNextPage}
-              className="h-12 px-6 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+              className="h-12 px-6 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
               {query.isFetchingNextPage ? "Загрузка…" : "Показать ещё"}
             </button>
@@ -204,7 +204,7 @@ export function HistoryPage() {
 
         {/* Итог за период */}
         {total > 0 && (
-          <p className="text-center text-white/30 text-sm pt-4 border-t border-white/[0.06]">
+          <p className="text-center text-white/30 text-sm pt-4 border-t border-[var(--color-line)]">
             Всего за период: {pluralizeDishes(total)}
           </p>
         )}

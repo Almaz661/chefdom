@@ -79,7 +79,7 @@ export function ToastContainer() {
       {items.map(item => (
         <div
           key={item.id}
-          className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border backdrop-blur-xl shadow-xl text-white text-sm font-medium max-w-sm pointer-events-auto ${BG[item.type]}`}
+          className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-white text-sm font-medium max-w-sm pointer-events-auto ${BG[item.type]}`}
         >
           {ICONS[item.type]}
           <span className="flex-1">{item.message}</span>

@@ -109,10 +109,10 @@ export function ReceiptsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12 space-y-6">
         <div>
-          <h1 className="font-serif text-3xl text-white font-extrabold mb-1">
+          <h1 className="font-serif text-3xl text-white font-semibold mb-1">
             Чеки
           </h1>
           <p className="text-white/50">Покупки в магазинах</p>
@@ -124,7 +124,7 @@ export function ReceiptsPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={createFromPhoto.isPending}
-            className="w-full inline-flex items-center justify-center gap-2 h-14 px-4 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-60"
+            className="w-full inline-flex items-center justify-center gap-2 h-14 px-4 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-60"
           >
             <Camera size={20} />
             {createFromPhoto.isPending
@@ -142,7 +142,7 @@ export function ReceiptsPage() {
           <button
             type="button"
             onClick={() => setShowManual(true)}
-            className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
           >
             <Plus size={16} />
             Добавить вручную (без фото)
@@ -161,7 +161,7 @@ export function ReceiptsPage() {
         {list.isLoading && <p className="text-white/30">Загрузка…</p>}
 
         {!list.isLoading && list.data && list.data.length === 0 && (
-          <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-2xl p-10 text-center">
+          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
             <ScrollText
               size={36}
               className="text-white/30 mx-auto mb-3"
@@ -181,11 +181,11 @@ export function ReceiptsPage() {
               <li key={r.id}>
                 <Link
                   to={`/receipts/${r.id}`}
-                  className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
                 >
                   <ReceiptIcon
                     size={20}
-                    className="text-[#c9a84c] shrink-0"
+                    className="text-[var(--color-primary)] shrink-0"
                     strokeWidth={2}
                   />
                   <div className="flex-1 min-w-0">
@@ -211,11 +211,11 @@ export function ReceiptsPage() {
         {/* Запасной флоу — ручное создание */}
         {showManual && (
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50"
+            className="fixed inset-0 bg-black/70 flex items-center justify-center p-6 z-50"
             onClick={() => !create.isPending && setShowManual(false)}
           >
             <div
-              className="bg-[#0c1021] border border-white/[0.08] rounded-2xl p-6 max-w-md w-full"
+              className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-2xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -226,7 +226,7 @@ export function ReceiptsPage() {
                   type="button"
                   onClick={() => setShowManual(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -241,7 +241,7 @@ export function ReceiptsPage() {
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   placeholder="Albert Heijn, Пятёрочка…"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                 />
               </label>
 
@@ -253,7 +253,7 @@ export function ReceiptsPage() {
                   type="date"
                   value={purchaseDate}
                   onChange={(e) => setPurchaseDate(e.target.value)}
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
                 />
               </label>
 
@@ -261,7 +261,7 @@ export function ReceiptsPage() {
                 <legend className="block text-base font-semibold text-white/50 mb-1">
                   Валюта
                 </legend>
-                <div className="inline-flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5">
+                <div className="inline-flex bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-0.5">
                   {(["EUR", "RUB"] as const).map((c) => (
                     <button
                       key={c}
@@ -269,7 +269,7 @@ export function ReceiptsPage() {
                       onClick={() => setCurrency(c)}
                       className={`px-4 py-2 rounded-xl text-base font-semibold transition-colors ${
                         currency === c
-                          ? "bg-[#c9a84c] text-[#0a0c10]"
+                          ? "bg-[var(--color-primary)] text-[#0a0c10]"
                           : "text-white/50 hover:text-white/80"
                       }`}
                     >
@@ -284,7 +284,7 @@ export function ReceiptsPage() {
                   type="button"
                   onClick={() => setShowManual(false)}
                   disabled={create.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
                 >
                   Отмена
                 </button>
@@ -298,7 +298,7 @@ export function ReceiptsPage() {
                     })
                   }
                   disabled={create.isPending}
-                  className="px-4 h-11 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50"
+                  className="px-4 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
                 >
                   {create.isPending ? "Создаю…" : "Создать"}
                 </button>

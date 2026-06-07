@@ -104,11 +104,11 @@ export function RecipeDetailPage() {
 
   if (!Number.isFinite(id) || id <= 0) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <Link
             to="/recipes"
-            className="text-[#c9a84c] inline-flex items-center gap-1"
+            className="text-[var(--color-primary)] inline-flex items-center gap-1"
           >
             <ArrowLeft size={18} /> К рецептам
           </Link>
@@ -120,7 +120,7 @@ export function RecipeDetailPage() {
 
   if (query.isLoading) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <div className="text-white/30">Загрузка рецепта...</div>
         </div>
@@ -130,15 +130,15 @@ export function RecipeDetailPage() {
 
   if (query.error || !query.data) {
     return (
-      <div className="min-h-screen bg-[#05070A]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <div className="max-w-3xl mx-auto px-6 py-8 lg:py-12">
           <Link
             to="/recipes"
-            className="text-[#c9a84c] inline-flex items-center gap-1 mb-6"
+            className="text-[var(--color-primary)] inline-flex items-center gap-1 mb-6"
           >
             <ArrowLeft size={18} /> К рецептам
           </Link>
-          <h1 className="font-serif text-3xl text-white font-extrabold mb-2">
+          <h1 className="font-serif text-3xl text-white font-semibold mb-2">
             Рецепт не найден
           </h1>
           <p className="text-white/50">
@@ -167,7 +167,7 @@ export function RecipeDetailPage() {
     .join(" · ");
 
   return (
-    <div className="min-h-screen bg-[#05070A] pb-32">
+    <div className="min-h-screen bg-[var(--color-cream)] pb-32">
       {/* Hero — фото на всю ширину контейнера */}
       <div className="relative aspect-[16/9] bg-white/[0.04] max-w-5xl mx-auto lg:rounded-2xl lg:mt-6 overflow-hidden">
         {showImage ? (
@@ -194,7 +194,7 @@ export function RecipeDetailPage() {
       <div className="max-w-3xl mx-auto px-6 lg:px-10 mt-6">
         {/* Заголовок + кнопки управления */}
         <div className="flex items-start justify-between gap-4 mb-2">
-          <h1 className="font-serif text-3xl text-white font-extrabold leading-tight">
+          <h1 className="font-serif text-3xl text-white font-semibold leading-tight">
             {recipe.title}
           </h1>
           <div className="flex gap-2 flex-shrink-0">
@@ -202,7 +202,7 @@ export function RecipeDetailPage() {
               to={`/recipes/${recipe.id}/edit`}
               aria-label="Редактировать"
               title="Редактировать"
-              className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
             >
               <Pencil size={18} />
             </Link>
@@ -221,7 +221,7 @@ export function RecipeDetailPage() {
               disabled={cook.isPending}
               aria-label="Готовить"
               title="Готовить"
-              className="w-10 h-10 rounded-xl bg-[#c9a84c] text-[#0a0c10] hover:bg-[#d4b55a] flex items-center justify-center transition-colors disabled:opacity-50"
+              className="w-10 h-10 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] hover:brightness-110 flex items-center justify-center transition-colors disabled:opacity-50"
             >
               <ChefHat size={18} />
             </button>
@@ -237,7 +237,7 @@ export function RecipeDetailPage() {
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-[#c9a84c]"
+              className="underline hover:text-[var(--color-primary)]"
             >
               {recipe.source}
             </a>
@@ -273,7 +273,7 @@ export function RecipeDetailPage() {
               className="inline-flex items-center gap-1.5 text-white/50"
               title="Экран не гаснет, пока ты на этом рецепте"
             >
-              <Moon size={16} className="text-[#c9a84c]" />
+              <Moon size={16} className="text-[var(--color-primary)]" />
               Экран не гаснет
             </span>
           )}
@@ -281,7 +281,7 @@ export function RecipeDetailPage() {
 
         {/* C.1 — КБЖУ на порцию с % дневной нормы */}
         {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 mb-6">
+          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 mb-6">
             <p className="text-sm font-bold text-white/30 uppercase tracking-wider mb-3">
               На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
             </p>
@@ -331,7 +331,7 @@ export function RecipeDetailPage() {
             <h2 className="text-white/70 font-bold text-lg">
               Ингредиенты
             </h2>
-            <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-xl p-0.5 gap-0.5">
+            <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-0.5 gap-0.5">
               {PORTION_OPTIONS.map((m) => (
                 <button
                   key={m}
@@ -339,7 +339,7 @@ export function RecipeDetailPage() {
                   onClick={() => setMultiplier(m)}
                   className={`px-3 py-1 rounded-xl text-base font-semibold transition-colors ${
                     multiplier === m
-                      ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                      ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                       : "text-white/50 hover:text-white/80"
                   }`}
                 >
@@ -382,7 +382,7 @@ export function RecipeDetailPage() {
                             onClick={() => setSubForIngredient(ing.name)}
                             aria-label={`Чем заменить ${ing.name}`}
                             title="Чем заменить"
-                            className="w-9 h-9 -my-2 rounded-xl text-white/30 hover:text-[#c9a84c] hover:bg-white/[0.05] flex items-center justify-center shrink-0 transition-colors"
+                            className="w-9 h-9 -my-2 rounded-xl text-white/30 hover:text-[var(--color-primary)] hover:bg-white/[0.05] flex items-center justify-center shrink-0 transition-colors"
                           >
                             <Replace size={16} />
                           </button>
@@ -407,7 +407,7 @@ export function RecipeDetailPage() {
             <ol className="space-y-6">
               {steps.map((step) => (
                 <li key={step.id} className="flex gap-4">
-                  <span className="font-serif text-3xl font-bold text-[#c9a84c] w-8 flex-shrink-0 leading-none pt-1">
+                  <span className="font-serif text-3xl font-bold text-[var(--color-primary)] w-8 flex-shrink-0 leading-none pt-1">
                     {step.stepNumber}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -419,7 +419,7 @@ export function RecipeDetailPage() {
                         src={step.imageUrl}
                         alt=""
                         loading="lazy"
-                        className="rounded-xl max-w-full mb-2 border border-white/[0.06]"
+                        className="rounded-xl max-w-full mb-2 border border-[var(--color-line)]"
                       />
                     )}
                     {step.timerMinutes !== null && (
@@ -438,7 +438,7 @@ export function RecipeDetailPage() {
       </div>
 
       {/* Sticky bottom */}
-      <div className="fixed bottom-0 lg:bottom-0 inset-x-0 bg-black/70 backdrop-blur-sm border-t border-white/[0.06] p-4 lg:pl-64 z-10">
+      <div className="fixed bottom-0 lg:bottom-0 inset-x-0 bg-black/70 border-t border-[var(--color-line)] p-4 lg:pl-64 z-10">
         <div className="max-w-3xl mx-auto">
           <button
             type="button"
@@ -448,7 +448,7 @@ export function RecipeDetailPage() {
                 cook.mutate({ id });
               }
             }}
-            className="w-full bg-[#c9a84c] text-[#0a0c10] py-3 rounded-xl font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-50"
+            className="w-full bg-[var(--color-primary)] text-[#0a0c10] py-3 rounded-xl font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
           >
             {cook.isPending ? 'Готовлю...' : 'Готовить сейчас'}
           </button>
@@ -466,11 +466,11 @@ export function RecipeDetailPage() {
       {/* Модалка подтверждения удаления */}
       {showConfirmDelete && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6 z-50"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center p-6 z-50"
           onClick={() => !del.isPending && setShowConfirmDelete(false)}
         >
           <div
-            className="bg-[#0c1021] border border-white/[0.08] rounded-2xl p-6 max-w-sm w-full"
+            className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-2xl p-6 max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-serif text-xl font-semibold text-white mb-2">
@@ -487,7 +487,7 @@ export function RecipeDetailPage() {
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
                 disabled={del.isPending}
-                className="px-4 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
               >
                 Отмена
               </button>
