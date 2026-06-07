@@ -216,7 +216,7 @@ export function SettingsPage() {
             <div
               role="radiogroup"
               aria-label="Валюта по умолчанию"
-              className="inline-flex bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-0.5"
+              className="inline-flex input-dark p-0.5"
             >
               {(["EUR", "RUB"] as const).map((c) => {
                 const selected = currency === c;
@@ -260,7 +260,7 @@ export function SettingsPage() {
             <button
               onClick={handleExport}
               disabled={exportQuery.isFetching}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
+              className="w-full h-12 flex items-center justify-center gap-2 btn-gold"
             >
               {exportQuery.isFetching ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -470,7 +470,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             placeholder="Текущий PIN"
             autoFocus
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-center tracking-widest text-lg "
           />
           <input
             type="password"
@@ -480,7 +480,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setNewPin(e.target.value)}
             placeholder="Новый PIN"
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+            className="w-full h-12 px-4 input-dark text-white/80 text-center tracking-widest text-lg "
           />
           <input
             type="password"
@@ -490,7 +490,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setConfirmPin(e.target.value)}
             placeholder="Повторите новый PIN"
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-center tracking-widest text-lg placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+            className="w-full h-12 px-4 input-dark text-white/80 text-center tracking-widest text-lg "
           />
 
           {error && (
@@ -504,14 +504,14 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="flex-1 h-12 btn-ghost"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={changePin.isPending}
-              className="flex-1 h-12 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
+              className="flex-1 h-12 btn-gold"
             >
               {changePin.isPending ? (
                 <Loader2 size={18} className="animate-spin mx-auto" />

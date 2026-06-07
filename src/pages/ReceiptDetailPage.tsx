@@ -541,7 +541,7 @@ export function ReceiptDetailPage() {
                           value={eName}
                           onChange={(e) => setEName(e.target.value)}
                           autoFocus
-                          className="flex-1 h-11 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                          className="flex-1 h-11 px-3 input-dark"
                           placeholder="Название"
                         />
                         <input
@@ -549,7 +549,7 @@ export function ReceiptDetailPage() {
                           inputMode="decimal"
                           value={ePrice}
                           onChange={(e) => setEPrice(e.target.value)}
-                          className="sm:w-28 h-11 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors tabular-nums"
+                          className="sm:w-28 h-11 px-3 input-dark tabular-nums"
                           placeholder="Цена"
                         />
                         <div className="flex gap-2">
@@ -674,7 +674,7 @@ export function ReceiptDetailPage() {
                   value={mName}
                   onChange={(e) => setMName(e.target.value)}
                   placeholder="Молоко"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                  className="w-full h-12 px-3 input-dark"
                 />
               </label>
 
@@ -688,7 +688,7 @@ export function ReceiptDetailPage() {
                     value={mQty}
                     onChange={(e) => setMQty(e.target.value)}
                     step="0.01"
-                    className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                    className="w-full h-12 px-3 input-dark"
                   />
                 </label>
                 <label className="block">
@@ -700,7 +700,7 @@ export function ReceiptDetailPage() {
                     value={mUnit}
                     onChange={(e) => setMUnit(e.target.value)}
                     placeholder="л, кг, шт"
-                    className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                    className="w-full h-12 px-3 input-dark"
                   />
                 </label>
               </div>
@@ -714,7 +714,7 @@ export function ReceiptDetailPage() {
                   value={mPrice}
                   onChange={(e) => setMPrice(e.target.value)}
                   step="0.01"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                  className="w-full h-12 px-3 input-dark"
                 />
               </label>
 

@@ -25,7 +25,7 @@ export function ShoppingAddForm({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Добавить продукт..."
-        className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-base font-medium text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+        className="flex-1 h-12 px-4 input-dark text-base font-medium text-white "
       />
       <button
         type="submit"

@@ -191,7 +191,7 @@ export function ScanResultDialog({
                   onChange={(e) => setCustomName(e.target.value)}
                   placeholder="Название продукта"
                   autoFocus
-                  className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                  className="w-full h-12 px-4 input-dark"
                 />
                 <div className="flex gap-3">
                   <input
@@ -201,14 +201,14 @@ export function ScanResultDialog({
                     placeholder="Кол-во"
                     step="any"
                     min="0"
-                    className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                    className="flex-1 h-12 px-4 input-dark"
                   />
                   <input
                     type="text"
                     value={customUnit}
                     onChange={(e) => setCustomUnit(e.target.value)}
                     placeholder="Ед."
-                    className="w-24 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                    className="w-24 h-12 px-4 input-dark"
                   />
                 </div>
                 <div>

@@ -181,7 +181,7 @@ export function RecipesPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Поиск по названию..."
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl pl-10 pr-4 h-12 text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark pl-10 pr-4 h-12 text-white "
               />
             </div>
             <Link
@@ -335,7 +335,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=..."
           autoFocus
-          className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 mb-4 transition-colors"
+          className="w-full h-12 px-4 input-dark mb-4 transition-colors"
         />
 
         {importYt.error && (
