@@ -101,6 +101,14 @@ export function MenuWeekGrid({
                       {cellItems.map((item) => (
                         <MealCard key={item.id} item={item} onRemove={() => onRemoveMeal(item.id)} />
                       ))}
+                      {/* Кнопка добавить ещё одно блюдо в этот слот */}
+                      <button
+                        onClick={() => onAddMeal(dayIdx, mealKey)}
+                        className="w-full rounded-lg border border-dashed border-[var(--color-line)] py-1 flex items-center justify-center hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/[0.04] transition-all group"
+                        title="Добавить ещё блюдо"
+                      >
+                        <Plus size={11} className="text-white/20 group-hover:text-[var(--color-primary)] transition-colors" />
+                      </button>
                     </div>
                   ) : (
                     <MealCardEmpty onClick={() => onAddMeal(dayIdx, mealKey)} />
@@ -155,6 +163,16 @@ export function MenuWeekGrid({
                               onRemove={() => onRemoveMeal(item.id)}
                             />
                           ))}
+                          {/* Добавить ещё блюдо */}
+                          <button
+                            onClick={() => onAddMeal(dayIdx, mealKey)}
+                            className="flex items-center gap-2 text-xs text-white/25 hover:text-[var(--color-primary)] transition-colors group"
+                          >
+                            <div className="w-6 h-6 rounded-lg border border-dashed border-white/[0.12] flex items-center justify-center group-hover:border-[var(--color-primary)]/40 group-hover:bg-[var(--color-primary)]/[0.06] transition-all">
+                              <Plus size={11} />
+                            </div>
+                            Ещё блюдо
+                          </button>
                         </div>
                       ) : (
                         <button
