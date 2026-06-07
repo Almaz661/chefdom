@@ -184,7 +184,7 @@ export function SettingsPage() {
               </div>
               <button
                 onClick={() => setShowChangePin(true)}
-                className="flex items-center gap-2 h-9 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+                className="flex items-center gap-2 h-9 px-4 rounded-xl btn-ghost"
               >
                 <KeyRound size={16} />
                 Изменить PIN
@@ -280,7 +280,7 @@ export function SettingsPage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={importMutation.isPending}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-[var(--color-line-strong)] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
               {importMutation.isPending ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -331,7 +331,7 @@ export function SettingsPage() {
             <button
               onClick={handleRecalcNutrition}
               disabled={recalcMutation.isPending}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-[var(--color-line-strong)] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
               {recalcMutation.isPending ? (
                 <>
@@ -380,7 +380,7 @@ export function SettingsPage() {
             <button
               onClick={handleClearCache}
               disabled={isClearingCache}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-[var(--color-line-strong)] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
               {isClearingCache ? (
                 <Loader2 size={18} className="animate-spin" />

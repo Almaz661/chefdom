@@ -49,7 +49,7 @@ export function MenuWeekHeader({
         {/* Today */}
         <button
           onClick={onToday}
-          className="px-4 py-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-sm font-semibold hover:border-white/[0.15] hover:text-white/80 transition-all duration-200"
+          className="btn-ghost px-4 py-2 text-sm"
         >
           Сегодня
         </button>

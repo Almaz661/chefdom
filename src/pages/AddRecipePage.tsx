@@ -475,7 +475,7 @@ export function AddRecipePage() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full input-dark px-4 h-12 text-white/80 appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
@@ -488,7 +488,7 @@ export function AddRecipePage() {
               <select
                 value={cuisine}
                 onChange={(e) => setCuisine(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full input-dark px-4 h-12 text-white/80 appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {CUISINES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
@@ -501,7 +501,7 @@ export function AddRecipePage() {
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors appearance-none [color-scheme:dark]"
+                className="w-full input-dark px-4 h-12 text-white/80 appearance-none [color-scheme:dark]"
               >
                 <option value="">— выбрать —</option>
                 {DIFFICULTIES.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}

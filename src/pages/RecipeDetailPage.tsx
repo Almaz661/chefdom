@@ -202,7 +202,7 @@ export function RecipeDetailPage() {
               to={`/recipes/${recipe.id}/edit`}
               aria-label="Редактировать"
               title="Редактировать"
-              className="w-10 h-10 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl btn-ghost flex items-center justify-center"
             >
               <Pencil size={18} />
             </Link>

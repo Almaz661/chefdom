@@ -88,7 +88,7 @@ export function ShoppingPreviewDialog({
           <div className="p-4 border-t border-[var(--color-line)] flex gap-3 shrink-0">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl border border-[var(--color-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+              className="btn-ghost flex-1 h-12"
             >
               Отмена
             </button>

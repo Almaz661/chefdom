@@ -146,7 +146,7 @@ export function AnalyticsPage() {
                   {topRecipes.map((recipe, idx) => (
                     <li
                       key={idx}
-                      className="flex items-center gap-3 card-dark px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                      className="flex items-center gap-3 card-dark px-4 py-3 hover:border-[var(--color-line-strong)] hover:bg-white/[0.05] transition-colors"
                     >
                       <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-bold text-[var(--color-primary)] shrink-0">
                         {idx + 1}

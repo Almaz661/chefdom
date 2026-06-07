@@ -27,7 +27,7 @@ export function MenuWeekKpiRow({
       {KPI_DATA.map(({ icon: Icon, value, label, accent }) => (
         <div
           key={label}
-          className="card-dark p-4 flex items-center gap-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all duration-200"
+          className="card-dark p-4 flex items-center gap-4 hover:border-[var(--color-line-strong)] hover:bg-white/[0.05] transition-all duration-200"
         >
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"

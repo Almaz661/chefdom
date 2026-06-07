@@ -195,7 +195,7 @@ export function HistoryPage() {
               type="button"
               onClick={() => query.fetchNextPage()}
               disabled={query.isFetchingNextPage}
-              className="h-12 px-6 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 disabled:opacity-50 transition-colors"
+              className="h-12 px-6 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-[var(--color-line-strong)] hover:text-white/80 disabled:opacity-50 transition-colors"
             >
               {query.isFetchingNextPage ? "Загрузка…" : "Показать ещё"}
             </button>

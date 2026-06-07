@@ -66,7 +66,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
   return (
     <Link
       to={`/recipes/${r.id}`}
-      className="block card-dark overflow-hidden hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+      className="block card-dark overflow-hidden hover:border-[var(--color-line-strong)] hover:bg-white/[0.05] transition-colors"
     >
       <div className="aspect-[16/10] bg-white/[0.04] overflow-hidden">
         {showImage ? (
