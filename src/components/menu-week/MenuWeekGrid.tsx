@@ -2,6 +2,7 @@ import { Plus, Clock, X, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const DAYS_FULL = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 const MEALS: { key: 'breakfast' | 'lunch' | 'dinner'; label: string }[] = [
   { key: 'breakfast', label: 'Завтрак' },
   { key: 'lunch', label: 'Обед' },
@@ -33,117 +34,189 @@ export function MenuWeekGrid({
   onAddMeal: (dayOfWeek: number, mealType: 'breakfast' | 'lunch' | 'dinner') => void;
   onRemoveMeal: (itemId: number) => void;
 }) {
-  // Determine today's day index
   const weekStartDate = new Date(weekStart + 'T00:00:00');
   const todayDate = new Date(todayStr + 'T00:00:00');
-  const todayIdx = Math.floor((todayDate.getTime() - weekStartDate.getTime()) / (1000 * 60 * 60 * 24));
+  const todayIdx = Math.floor(
+    (todayDate.getTime() - weekStartDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (isLoading) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center rounded-[20px] border border-white/[0.06] bg-[#080c18]/60">
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl flex items-center justify-center py-20">
         <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#080c18]/60 backdrop-blur-xl shadow-[0_16px_64px_rgba(0,0,0,0.5)] p-3">
-      {/* Day headers */}
-      <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] gap-1 mb-2 shrink-0">
-        <div />
-        {DAYS.map((day, i) => (
-          <div key={day} className="text-center py-1">
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${i === todayIdx ? 'text-[#c9a84c]' : 'text-white/40'}`}>
-              {day}
-            </span>
-            {i === todayIdx && (
-              <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] mx-auto mt-1 shadow-[0_0_8px_rgba(232,185,74,0.7)]" />
-            )}
+    <div className="space-y-2">
+      {/* ── Desktop table (≥ md) ── */}
+      <div className="hidden md:block bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+        {/* Day header row */}
+        <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-white/[0.06]">
+          <div className="px-3 py-3" />
+          {DAYS.map((day, i) => (
+            <div key={day} className="px-2 py-3 text-center border-l border-white/[0.04]">
+              <span
+                className={`text-[11px] font-bold uppercase tracking-wider ${
+                  i === todayIdx ? 'text-[#c9a84c]' : 'text-white/40'
+                }`}
+              >
+                {day}
+              </span>
+              {i === todayIdx && (
+                <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] mx-auto mt-1 shadow-[0_0_8px_rgba(201,168,76,0.7)]" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Meal rows */}
+        {MEALS.map(({ key: mealKey, label: mealLabel }, mealIdx) => (
+          <div
+            key={mealKey}
+            className={`grid grid-cols-[80px_repeat(7,minmax(0,1fr))] ${
+              mealIdx < MEALS.length - 1 ? 'border-b border-white/[0.04]' : ''
+            }`}
+          >
+            {/* Meal label */}
+            <div className="flex items-center justify-center px-3 py-4 border-r border-white/[0.04]">
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest [writing-mode:vertical-rl] rotate-180">
+                {mealLabel}
+              </span>
+            </div>
+
+            {/* Day cells */}
+            {DAYS.map((_, dayIdx) => {
+              const cellItems = items.filter(
+                (i) => i.dayOfWeek === dayIdx && i.mealType === mealKey,
+              );
+              return (
+                <div
+                  key={`${dayIdx}-${mealKey}`}
+                  className="p-1.5 border-l border-white/[0.04] min-h-[96px]"
+                >
+                  {cellItems.length > 0 ? (
+                    <div className="flex flex-col gap-1 h-full">
+                      {cellItems.map((item) => (
+                        <MealCard key={item.id} item={item} onRemove={() => onRemoveMeal(item.id)} />
+                      ))}
+                    </div>
+                  ) : (
+                    <MealCardEmpty onClick={() => onAddMeal(dayIdx, mealKey)} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
 
-      {/* Grid body */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="grid grid-cols-[36px_repeat(7,minmax(0,1fr))] grid-rows-3 gap-1 h-full">
-          {MEALS.map(({ key: mealKey, label: mealLabel }) => (
-            <div key={mealKey} className="contents">
-              {/* Meal label */}
-              <div className="flex items-center justify-center">
-                <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest [writing-mode:vertical-rl] rotate-180">
-                  {mealLabel}
+      {/* ── Mobile list (< md): day-by-day ── */}
+      <div className="md:hidden space-y-4">
+        {DAYS.map((dayShort, dayIdx) => (
+          <div key={dayIdx} className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+            {/* Day header */}
+            <div className={`px-4 py-2.5 border-b border-white/[0.06] flex items-center gap-2 ${
+              dayIdx === todayIdx ? 'bg-[#c9a84c]/[0.06]' : ''
+            }`}>
+              <span
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  dayIdx === todayIdx ? 'text-[#c9a84c]' : 'text-white/50'
+                }`}
+              >
+                {DAYS_FULL[dayIdx]}
+              </span>
+              {dayIdx === todayIdx && (
+                <span className="text-[10px] font-semibold text-[#c9a84c]/70 bg-[#c9a84c]/10 px-1.5 py-0.5 rounded-md">
+                  Сегодня
                 </span>
-              </div>
+              )}
+            </div>
 
-              {/* Day cells */}
-              {DAYS.map((_, dayIdx) => {
+            {/* Meal slots */}
+            <div className="divide-y divide-white/[0.04]">
+              {MEALS.map(({ key: mealKey, label: mealLabel }) => {
                 const cellItems = items.filter(
                   (i) => i.dayOfWeek === dayIdx && i.mealType === mealKey,
                 );
-
-                return cellItems.length > 0 ? (
-                  <div key={`${dayIdx}-${mealKey}`} className="flex flex-col gap-1 h-full min-w-0">
-                    {cellItems.map((item) => (
-                      <MealCard
-                        key={item.id}
-                        item={item}
-                        onRemove={() => onRemoveMeal(item.id)}
-                      />
-                    ))}
+                return (
+                  <div key={mealKey} className="flex items-start gap-3 px-4 py-3">
+                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest w-14 shrink-0 pt-1">
+                      {mealLabel}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      {cellItems.length > 0 ? (
+                        <div className="space-y-2">
+                          {cellItems.map((item) => (
+                            <MealCardMobile
+                              key={item.id}
+                              item={item}
+                              onRemove={() => onRemoveMeal(item.id)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => onAddMeal(dayIdx, mealKey)}
+                          className="flex items-center gap-2 text-xs text-white/25 hover:text-[#c9a84c] transition-colors group"
+                        >
+                          <div className="w-6 h-6 rounded-lg border border-dashed border-white/[0.12] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/[0.06] transition-all">
+                            <Plus size={11} />
+                          </div>
+                          Добавить
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <MealCardEmpty
-                    key={`${dayIdx}-${mealKey}`}
-                    onClick={() => onAddMeal(dayIdx, mealKey)}
-                  />
                 );
               })}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
+// ── Desktop meal card ──
+
 function MealCard({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="rounded-[14px] border border-white/[0.06] bg-[#0b0f1e]/80 overflow-hidden hover:border-[#c9a84c]/30 hover:shadow-[0_8px_32px_rgba(201,149,60,0.15)] transition-all duration-300 cursor-pointer group flex flex-col h-full min-w-0 relative">
-      {/* Remove button */}
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden hover:border-[#c9a84c]/30 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group flex flex-col h-full relative">
+      {/* Remove */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
-        className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:border-red-400"
+        className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-black/60 border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80 hover:border-red-400"
       >
         <X size={10} className="text-white" />
       </button>
 
-      {/* Photo — 72% */}
-      <Link to={`/recipes/${item.recipeId}`} className="relative flex-[72] min-h-0 overflow-hidden block">
+      {/* Photo */}
+      <Link to={`/recipes/${item.recipeId}`} className="relative block flex-1 overflow-hidden min-h-[56px]">
         {item.recipeImage ? (
           <img
             src={item.recipeImage}
             alt={item.recipeTitle}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#1a2040] to-[#0c1021] flex items-center justify-center">
-            <span className="text-white/20 text-lg font-bold">{item.recipeTitle.charAt(0)}</span>
+            <span className="text-white/20 text-base font-bold">{item.recipeTitle.charAt(0)}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/90 via-transparent to-transparent" />
-        {/* Time badge */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/80 via-transparent to-transparent" />
         {item.recipeTotalTime && (
-          <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/[0.06]">
-            <div className="flex items-center gap-0.5">
-              <Clock size={8} className="text-[#c9a84c]" />
-              <span className="text-[9px] text-white/80 font-semibold">{item.recipeTotalTime} мин</span>
-            </div>
+          <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 border border-white/[0.06] flex items-center gap-0.5">
+            <Clock size={8} className="text-[#c9a84c]" />
+            <span className="text-[9px] text-white/70 font-semibold">{item.recipeTotalTime}м</span>
           </div>
         )}
       </Link>
-      {/* Info — 28% */}
-      <Link to={`/recipes/${item.recipeId}`} className="flex-[28] px-2 py-1.5 flex items-center">
-        <p className="text-[11px] text-white/75 font-semibold leading-tight line-clamp-2 group-hover:text-white transition-colors duration-200">
+
+      {/* Title */}
+      <Link to={`/recipes/${item.recipeId}`} className="px-2 py-1.5">
+        <p className="text-[11px] text-white/70 font-medium leading-tight line-clamp-2 group-hover:text-white transition-colors">
           {item.recipeTitle}
         </p>
       </Link>
@@ -155,11 +228,49 @@ function MealCardEmpty({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-[14px] border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9a84c]/30 hover:bg-[#c9a84c]/[0.04] hover:shadow-[0_4px_16px_rgba(201,149,60,0.08)] transition-all duration-300 cursor-pointer group h-full min-w-0 w-full"
+      className="w-full h-full min-h-[inherit] rounded-xl border border-dashed border-white/[0.07] flex items-center justify-center hover:border-[#c9a84c]/30 hover:bg-[#c9a84c]/[0.03] transition-all duration-200 group"
     >
-      <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/10 transition-all duration-300">
-        <Plus size={13} className="text-white/15 group-hover:text-[#c9a84c] transition-colors duration-300" />
+      <div className="w-8 h-8 rounded-full border border-white/[0.08] flex items-center justify-center group-hover:border-[#c9a84c]/40 group-hover:bg-[#c9a84c]/10 transition-all duration-200">
+        <Plus size={13} className="text-white/15 group-hover:text-[#c9a84c] transition-colors" />
       </div>
     </button>
+  );
+}
+
+// ── Mobile meal card ──
+
+function MealCardMobile({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
+  return (
+    <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2 group hover:border-white/[0.10] transition-all">
+      {/* Thumbnail */}
+      <Link to={`/recipes/${item.recipeId}`} className="w-8 h-8 rounded-md overflow-hidden shrink-0">
+        {item.recipeImage ? (
+          <img src={item.recipeImage} alt={item.recipeTitle} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-[#1a2040] flex items-center justify-center">
+            <span className="text-white/30 text-xs font-bold">{item.recipeTitle.charAt(0)}</span>
+          </div>
+        )}
+      </Link>
+
+      {/* Name + time */}
+      <Link to={`/recipes/${item.recipeId}`} className="flex-1 min-w-0">
+        <p className="text-xs text-white/75 font-medium leading-tight line-clamp-1">{item.recipeTitle}</p>
+        {item.recipeTotalTime && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <Clock size={9} className="text-white/30" />
+            <span className="text-[10px] text-white/30">{item.recipeTotalTime} мин</span>
+          </div>
+        )}
+      </Link>
+
+      {/* Remove */}
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
+        className="w-6 h-6 rounded-md flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0"
+      >
+        <X size={12} />
+      </button>
+    </div>
   );
 }
