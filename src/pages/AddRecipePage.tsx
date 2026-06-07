@@ -528,7 +528,7 @@ export function AddRecipePage() {
             {ingredients.map((ing, idx) => (
               <div
                 key={idx}
-                className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-3 flex flex-wrap items-start gap-2"
+                className="card-dark p-3 flex flex-wrap items-start gap-2"
               >
                 <input
                   type="text"
@@ -615,7 +615,7 @@ export function AddRecipePage() {
             {steps.map((step, idx) => (
               <div
                 key={idx}
-                className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4"
+                className="card-dark p-4"
               >
                 <div className="flex items-start gap-3 mb-3">
                   <span className="font-serif text-3xl font-bold text-[var(--color-primary)] leading-none pt-1 w-8 flex-shrink-0">

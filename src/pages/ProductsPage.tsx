@@ -85,7 +85,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
   );
 
   return (
-    <li className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+    <li className="card-dark px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
           <p className="text-base font-semibold text-white/80 truncate">{product.nameRu}</p>
@@ -219,7 +219,7 @@ export function ProductsPage() {
         </div>
 
         {/* Переключатель режимов */}
-        <div className="flex gap-1 bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-1 mb-6">
+        <div className="tab-group mb-6">
           <button
             onClick={() => setMode("search")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-base font-semibold transition-colors ${
@@ -270,7 +270,7 @@ export function ProductsPage() {
                 ))}
               </ul>
             ) : !allProducts.isLoading ? (
-              <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
+              <div className="card-dark border-dashed rounded-2xl p-8 text-center">
                 <Package size={32} className="text-white/30 mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-white/50 text-sm">Каталог пуст. Товары появятся автоматически после сканирования чеков.</p>
               </div>
@@ -308,7 +308,7 @@ export function ProductsPage() {
 
             {/* Результат */}
             {barcodeResult.data ? (
-              <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-4">
+              <div className="card-dark px-4 py-4">
                 <p className="text-base font-medium text-white/80 mb-1">{barcodeResult.data.nameRu}</p>
                 {barcodeResult.data.brand && <p className="text-base text-white/50">{barcodeResult.data.brand}</p>}
                 {barcodeResult.data.packageQuantity && (
@@ -342,7 +342,7 @@ export function ProductsPage() {
                   <div className="mt-3 space-y-3 border-t border-[var(--color-line)] pt-3">
                     <fieldset>
                       <legend className="block text-base text-white/50 font-medium mb-1">Куда положить?</legend>
-                      <div className="inline-flex bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-0.5 w-full">
+                      <div className="tab-group w-full">
                         {STORAGE_OPTIONS.map(({ key, label }) => (
                           <button
                             key={key}
@@ -365,7 +365,7 @@ export function ProductsPage() {
                         type="date"
                         value={expiryDate}
                         onChange={(e) => setExpiryDate(e.target.value)}
-                        className="w-full h-10 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                        className="w-full h-10 px-3 input-dark text-sm"
                       />
                     </label>
                     <div className="flex gap-2">
@@ -393,7 +393,7 @@ export function ProductsPage() {
                 Товар не найден по этому штрих-коду
               </div>
             ) : barcode.length < 4 ? (
-              <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
+              <div className="card-dark border-dashed rounded-2xl p-8 text-center">
                 <Barcode size={32} className="text-white/30 mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-white/50 text-sm">Сфотографируйте или введите штрих-код</p>
               </div>

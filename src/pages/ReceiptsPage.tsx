@@ -161,7 +161,7 @@ export function ReceiptsPage() {
         {list.isLoading && <p className="text-white/30">Загрузка…</p>}
 
         {!list.isLoading && list.data && list.data.length === 0 && (
-          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
+          <div className="card-dark border-dashed rounded-2xl p-10 text-center">
             <ScrollText
               size={36}
               className="text-white/30 mx-auto mb-3"
@@ -181,7 +181,7 @@ export function ReceiptsPage() {
               <li key={r.id}>
                 <Link
                   to={`/receipts/${r.id}`}
-                  className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                  className="list-row"
                 >
                   <ReceiptIcon
                     size={20}
@@ -261,7 +261,7 @@ export function ReceiptsPage() {
                 <legend className="block text-base font-semibold text-white/50 mb-1">
                   Валюта
                 </legend>
-                <div className="inline-flex bg-white/[0.04] border border-[var(--color-line)] rounded-xl p-0.5">
+                <div className="tab-group">
                   {(["EUR", "RUB"] as const).map((c) => (
                     <button
                       key={c}

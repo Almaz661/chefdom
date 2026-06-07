@@ -240,6 +240,43 @@ main { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 .btn-ghost:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); }
 .btn-ghost:disabled { opacity: 0.5; pointer-events: none; }
 
+/* Карточка — базовая поверхность */
+.card-dark {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+}
+.card-dark:hover {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Строка списка с hover */
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+.list-row:hover {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Таб-группа */
+.tab-group {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
 /* Поля ввода в тёмной теме */
 .input-dark {
   background: rgba(255, 255, 255, 0.04);

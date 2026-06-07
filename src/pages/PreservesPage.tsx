@@ -223,7 +223,7 @@ export function PreservesPage() {
 
           {/* Основной список */}
           {items.length === 0 ? (
-            <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
+            <div className="card-dark border-dashed rounded-2xl p-8 text-center">
               <TabIconComp
                 size={32}
                 className="text-white/[0.06] mx-auto mb-3"

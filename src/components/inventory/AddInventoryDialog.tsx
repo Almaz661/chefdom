@@ -93,7 +93,7 @@ export function AddInventoryDialog({
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/70 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors [color-scheme:dark]"
+                className="w-full h-12 px-4 input-dark [color-scheme:dark]"
               />
               <p className="text-[11px] text-white/25 mt-1.5 ml-1">Срок годности (необязательно)</p>
             </div>

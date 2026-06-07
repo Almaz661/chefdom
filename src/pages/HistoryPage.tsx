@@ -128,7 +128,7 @@ export function HistoryPage() {
 
         {/* Пустое состояние */}
         {!query.isLoading && items.length === 0 && (
-          <div className="bg-white/[0.02] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
+          <div className="card-dark border-dashed rounded-2xl p-10 text-center">
             <BookOpen
               size={36}
               className="text-white/30 mx-auto mb-3"
@@ -154,7 +154,7 @@ export function HistoryPage() {
                     const time = formatTime(dt);
                     // Если рецепт удалён (recipeId === null) — без ссылки
                     const content = (
-                      <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+                      <div className="list-row">
                         <ChefHat
                           size={20}
                           className="text-[var(--color-primary)] shrink-0"
