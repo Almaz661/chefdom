@@ -50,19 +50,19 @@ export function AnalyticsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <div className="max-w-3xl mx-auto p-6 lg:p-10 space-y-6">
-        <h1 className="font-serif text-3xl text-white font-extrabold">
+        <h1 className="font-serif text-3xl text-white font-semibold">
           Аналитика
         </h1>
 
         {/* Вкладки: Готовка / Расходы / Где дешевле */}
-        <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 gap-1">
+        <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-1 gap-1">
           <button
             onClick={() => setTab("cooking")}
             className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
               tab === "cooking"
-                ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                 : "bg-transparent text-white/50 hover:text-white/80"
             }`}
           >
@@ -72,7 +72,7 @@ export function AnalyticsPage() {
             onClick={() => setTab("spending")}
             className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
               tab === "spending"
-                ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                 : "bg-transparent text-white/50 hover:text-white/80"
             }`}
           >
@@ -82,7 +82,7 @@ export function AnalyticsPage() {
             onClick={() => setTab("prices")}
             className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
               tab === "prices"
-                ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                 : "bg-transparent text-white/50 hover:text-white/80"
             }`}
           >
@@ -93,14 +93,14 @@ export function AnalyticsPage() {
         {tab === "cooking" && (
           <>
             {/* Переключатели периода */}
-            <div className="inline-flex bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 gap-1">
+            <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-1 gap-1">
               {PERIOD_LABELS.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setPeriod(key)}
                   className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
                     period === key
-                      ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                      ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                       : "bg-transparent text-white/50 hover:text-white/80"
                   }`}
                 >
@@ -119,7 +119,7 @@ export function AnalyticsPage() {
                   Нет данных за выбранный период. Готовьте рецепты — здесь появится статистика расхода.
                 </p>
               ) : (
-                <ul className="bg-white/[0.03] border border-white/[0.06] rounded-xl divide-y divide-white/[0.06]">
+                <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
                   {consumption.map((item, idx) => (
                     <li key={idx} className="flex items-center justify-between px-4 py-3">
                       <span className="text-base font-semibold text-white/80">{item.name}</span>
@@ -146,9 +146,9 @@ export function AnalyticsPage() {
                   {topRecipes.map((recipe, idx) => (
                     <li
                       key={idx}
-                      className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                      className="flex items-center gap-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
                     >
-                      <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-bold text-[#c9a84c] shrink-0">
+                      <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-bold text-[var(--color-primary)] shrink-0">
                         {idx + 1}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -184,8 +184,8 @@ export function AnalyticsPage() {
                 onClick={() => setSpendingPeriod(currentMonth)}
                 className={`px-4 py-2 rounded-xl text-base font-semibold border transition-colors ${
                   spendingPeriod === currentMonth
-                    ? "bg-[#c9a84c] text-[#0a0c10] font-bold border-transparent"
-                    : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold border-transparent"
+                    : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
                 }`}
               >
                 Этот месяц
@@ -198,8 +198,8 @@ export function AnalyticsPage() {
                 }}
                 className={`px-4 py-2 rounded-xl text-base font-semibold border transition-colors ${
                   spendingPeriod !== currentMonth && spendingPeriod !== currentYear
-                    ? "bg-[#c9a84c] text-[#0a0c10] font-bold border-transparent"
-                    : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold border-transparent"
+                    : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
                 }`}
               >
                 Прошлый месяц
@@ -208,8 +208,8 @@ export function AnalyticsPage() {
                 onClick={() => setSpendingPeriod(currentYear)}
                 className={`px-4 py-2 rounded-xl text-base font-semibold border transition-colors ${
                   spendingPeriod === currentYear
-                    ? "bg-[#c9a84c] text-[#0a0c10] font-bold border-transparent"
-                    : "bg-white/[0.04] border border-white/[0.08] text-white/50 hover:text-white/80"
+                    ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold border-transparent"
+                    : "bg-white/[0.04] border border-[var(--color-line)] text-white/50 hover:text-white/80"
                 }`}
               >
                 Весь {currentYear} год
@@ -225,7 +225,7 @@ export function AnalyticsPage() {
             ) : (
               <>
                 {/* Итого */}
-                <div className="bg-[#c9a84c]/[0.07] border border-[#c9a84c]/20 rounded-2xl p-5 text-center">
+                <div className="bg-[var(--color-primary)]/[0.07] border border-[var(--color-primary)]/20 rounded-2xl p-5 text-center">
                   <p className="text-white/50 text-sm mb-1">{spending.periodLabel}</p>
                   <p className="font-serif text-4xl font-bold text-white">
                     {spending.currency === 'EUR' ? '€' : '₽'}
@@ -242,7 +242,7 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       По магазинам
                     </h2>
-                    <ul className="bg-white/[0.03] border border-white/[0.06] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
                       {spending.byStore.map((store, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <div>
@@ -265,11 +265,11 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       Чаще всего покупали
                     </h2>
-                    <ul className="bg-white/[0.03] border border-white/[0.06] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
                       {spending.topProducts.map((product, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-xs font-bold text-[#c9a84c] shrink-0">
+                            <span className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-xs font-bold text-[var(--color-primary)] shrink-0">
                               {idx + 1}
                             </span>
                             <span className="text-base font-semibold text-white/80">{product.name}</span>
@@ -293,7 +293,7 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       Расходы по месяцам
                     </h2>
-                    <ul className="bg-white/[0.03] border border-white/[0.06] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
                       {spending.byMonth.map((m, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <span className="text-base font-semibold text-white/80">{m.month}</span>
@@ -322,7 +322,7 @@ export function AnalyticsPage() {
               </p>
             ) : (
               priceComparison.map((item) => (
-                <div key={item.productName} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+                <div key={item.productName} className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-white/80">{item.productName}</h3>
                     <span className="text-xs text-green-400 font-medium bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
