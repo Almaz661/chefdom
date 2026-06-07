@@ -24,7 +24,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
       <div className="flex flex-wrap justify-center gap-3">
         <Link
           to="/recipes/add"
-          className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-[#0a0c10] px-4 py-2.5 rounded-xl font-semibold hover:brightness-110 transition-colors"
+          className="inline-flex items-center gap-2 btn-gold px-4 py-2.5"
         >
           <Plus size={18} />
           Добавить вручную
@@ -186,7 +186,7 @@ export function RecipesPage() {
             </div>
             <Link
               to="/recipes/add"
-              className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-[#0a0c10] px-4 h-12 rounded-xl font-semibold hover:brightness-110 transition-colors"
+              className="inline-flex items-center gap-2 btn-gold px-4 h-12"
             >
               <Plus size={18} />
               Добавить
@@ -347,7 +347,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             disabled={importYt.isPending}
-            className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+            className="flex-1 h-12 btn-ghost"
           >
             Отмена
           </button>
@@ -355,7 +355,7 @@ function YouTubeImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             disabled={!url.trim() || importYt.isPending}
             onClick={() => importYt.mutate({ url: url.trim() })}
-            className="flex-1 h-12 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors inline-flex items-center justify-center gap-2"
+            className="flex-1 h-12 btn-gold"
           >
             {importYt.isPending ? (
               <>

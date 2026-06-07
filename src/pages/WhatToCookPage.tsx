@@ -97,7 +97,7 @@ export function WhatToCookPage() {
             </p>
             <Link
               to="/recipes"
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-base font-semibold hover:brightness-110 transition-colors"
+              className="inline-flex items-center gap-2 btn-gold h-10 px-5 text-base"
             >
               <Plus size={16} />
               Добавить рецепты

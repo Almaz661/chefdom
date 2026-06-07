@@ -695,14 +695,14 @@ export function AddRecipePage() {
         <div className="flex flex-wrap gap-3 justify-end pt-4 border-t border-[var(--color-line)]">
           <Link
             to={cancelTo}
-            className="px-5 h-12 inline-flex items-center justify-center rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="px-5 h-12 inline-flex items-center justify-center btn-ghost"
           >
             Отмена
           </Link>
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 h-12 inline-flex items-center justify-center rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center btn-gold px-6 h-12 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isPending
               ? "Сохраняю..."

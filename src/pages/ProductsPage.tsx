@@ -322,7 +322,7 @@ export function ProductsPage() {
                 {!showAddToInventory && !addedSuccess && (
                   <button
                     onClick={() => setShowAddToInventory(true)}
-                    className="mt-3 w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold text-sm hover:brightness-110 transition-colors"
+                    className="mt-3 w-full inline-flex items-center justify-center gap-2 btn-gold h-11 text-sm"
                   >
                     <Plus size={18} />
                     Добавить в инвентарь
@@ -380,7 +380,7 @@ export function ProductsPage() {
                         type="button"
                         onClick={handleAddToInventory}
                         disabled={addToInventory.isPending}
-                        className="flex-1 h-10 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-base font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
+                        className="flex-1 btn-gold h-10 text-base disabled:opacity-50"
                       >
                         {addToInventory.isPending ? "Добавляю…" : "Добавить"}
                       </button>
