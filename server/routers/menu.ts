@@ -1,11 +1,22 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { eq, and, inArray, desc, sql as rawSql, lte, isNotNull } from 'drizzle-orm';
+import { eq, and, inArray, ne, desc, sql as rawSql, lte, isNotNull } from 'drizzle-orm';
 import { router, protectedProcedure } from '../trpc';
 import { db } from '../db/index';
 import { menus, menuItems, recipes, recipeIngredients, purchaseItems, inventory, cookingHistory, preserves } from '../db/schema';
 
 const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
+
+// Упрощённая нормализация для сравнения ингредиентов при удалении из меню.
+// Отрезаем уточнения после тире, убираем скобки, lowercase.
+function normalizeNameSimple(name: string): string {
+  let n = name.toLowerCase().trim();
+  const dashIdx = n.search(/[\u002D\u2010\u2013\u2014]/);
+  if (dashIdx > 0) n = n.slice(0, dashIdx).trim();
+  n = n.replace(/\([^)]*\)/g, '').trim();
+  n = n.replace(/[аяеёиоуыэюь]+$/, '').trim();
+  return n;
+}
 
 export const menuRouter = router({
   // Получить меню недели. Если нет — создать пустое.
@@ -150,17 +161,37 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
       }
 
-      // Получаем название рецепта чтобы удалить связанные покупки
-      let recipeTitle: string | null = null;
+      // Получаем ингредиенты удаляемого рецепта ДО удаления
+      let ingredientsToRemove: string[] = [];
       if (item.recipeId) {
-        const [recipe] = await db
-          .select({ title: recipes.title })
-          .from(recipes)
-          .where(eq(recipes.id, item.recipeId))
-          .limit(1);
-        recipeTitle = recipe?.title ?? null;
+        const ings = await db
+          .select({ name: recipeIngredients.name })
+          .from(recipeIngredients)
+          .where(eq(recipeIngredients.recipeId, item.recipeId));
+        ingredientsToRemove = ings.map(i => i.name);
       }
 
+      // Получаем ингредиенты ОСТАВШИХСЯ рецептов в том же меню
+      // (после удаления этого item)
+      const remainingItems = await db
+        .select({ recipeId: menuItems.recipeId })
+        .from(menuItems)
+        .where(and(eq(menuItems.menuId, menu.id), ne(menuItems.id, input.itemId)));
+
+      const remainingRecipeIds = remainingItems
+        .map(i => i.recipeId)
+        .filter((id): id is number => id !== null);
+
+      let remainingIngNames = new Set<string>();
+      if (remainingRecipeIds.length > 0) {
+        const remainingIngs = await db
+          .select({ name: recipeIngredients.name })
+          .from(recipeIngredients)
+          .where(inArray(recipeIngredients.recipeId, remainingRecipeIds));
+        remainingIngNames = new Set(remainingIngs.map(i => normalizeNameSimple(i.name)));
+      }
+
+      // Удаляем menuItem
       const result = await db
         .delete(menuItems)
         .where(eq(menuItems.id, input.itemId))
@@ -170,22 +201,41 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
       }
 
-      // Удаляем из покупок все некупленные позиции этого рецепта
-      // (isChecked = 0 — ещё не куплено, isChecked = 1 — уже куплено, не трогаем)
+      // Удаляем из покупок ингредиенты которые больше не нужны —
+      // тех что есть в удалённом рецепте, но НЕТ в оставшихся.
+      // Только некупленные (isChecked = 0).
       let removedFromShopping = 0;
-      if (recipeTitle) {
-        const { ilike } = await import('drizzle-orm');
-        const deleted = await db
-          .delete(purchaseItems)
-          .where(
-            and(
+      if (ingredientsToRemove.length > 0) {
+        // Получаем все некупленные покупки пользователя
+        const currentShopping = await db
+          .select({ id: purchaseItems.id, productName: purchaseItems.productName })
+          .from(purchaseItems)
+          .where(and(eq(purchaseItems.userId, ctx.userId), eq(purchaseItems.isChecked, 0)));
+
+        // Находим ID позиций к удалению:
+        // нормализованное имя покупки совпадает с ингредиентом удалённого рецепта
+        // И не совпадает ни с одним ингредиентом оставшихся рецептов
+        const idsToDelete: number[] = [];
+        for (const shopping of currentShopping) {
+          const shoppingNorm = normalizeNameSimple(shopping.productName);
+          const isFromRemovedRecipe = ingredientsToRemove.some(
+            ing => normalizeNameSimple(ing) === shoppingNorm
+          );
+          const isStillNeeded = remainingIngNames.has(shoppingNorm);
+          if (isFromRemovedRecipe && !isStillNeeded) {
+            idsToDelete.push(shopping.id);
+          }
+        }
+
+        if (idsToDelete.length > 0) {
+          await db
+            .delete(purchaseItems)
+            .where(and(
               eq(purchaseItems.userId, ctx.userId),
-              eq(purchaseItems.isChecked, 0),
-              ilike(purchaseItems.recipeSource, recipeTitle),
-            )
-          )
-          .returning({ id: purchaseItems.id });
-        removedFromShopping = deleted.length;
+              inArray(purchaseItems.id, idsToDelete),
+            ));
+          removedFromShopping = idsToDelete.length;
+        }
       }
 
       return { id: input.itemId, removedFromShopping };
