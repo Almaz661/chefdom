@@ -58,7 +58,7 @@ export function InventoryAllExpiry({
                       ? 'bg-red-500/[0.05] border-red-500/15'
                       : isSoon
                       ? 'bg-[#f97316]/[0.04] border-[#f97316]/15'
-                      : 'bg-white/[0.02] border-white/[0.04]'
+                      : 'bg-white/[0.02] border-[var(--color-line)]'
                   }`}
                 >
                   <span
