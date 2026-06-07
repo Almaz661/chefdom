@@ -339,6 +339,15 @@ function AddPreserveDialog({
     },
   });
 
+  // Авто-подстановка +3 дня для типа cooked при изменении preparedAt.
+  useEffect(() => {
+    if (preserveType !== "cooked" || expiryDirty) return;
+    const base = preparedAt ? new Date(preparedAt + "T00:00:00") : new Date();
+    base.setDate(base.getDate() + 3);
+    setExpiryDate(base.toISOString().slice(0, 10));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preparedAt, preserveType]);
+
   // Авто-подстановка срока хранения для типа frozen.
   // Дебаунс 400 мс — не заваливаем сервер при наборе по букве.
   // Срабатывает на изменение name или preparedAt.
@@ -502,6 +511,11 @@ function AddPreserveDialog({
               }}
               className="w-full h-12 px-4 input-dark [color-scheme:dark]"
             />
+            {preserveType === "cooked" && !expiryDirty && (
+              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-white/40">
+                Авто: 3 дня с даты приготовления
+              </span>
+            )}
             {/* Шеф-подсказка: показываем только для frozen и если справочник
                 нашёл совпадение. Если пользователь сам ввёл дату — мягко
                 напоминаем что подсказка проигнорирована (но не давим). */}
