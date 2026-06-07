@@ -62,11 +62,11 @@ export function InventoryCategoryCard({
   const imageSrc = getCategoryImage(category);
 
   return (
-    <div className="rounded-[20px] border border-white/[0.06] transition-all duration-300 hover:border-white/[0.12]">
+    <div className="rounded-[var(--cd-r-xl)] border border-[var(--cd-line)] transition-all duration-300 hover:border-white/[0.12]">
       {/* Category header card */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full relative h-[100px] flex items-end p-5 text-left group cursor-pointer rounded-[20px] overflow-hidden"
+        className="w-full relative h-[100px] flex items-end p-5 text-left group cursor-pointer rounded-[var(--cd-r-xl)] overflow-hidden"
       >
         {/* Background image */}
         <img
@@ -80,14 +80,14 @@ export function InventoryCategoryCard({
         {/* Content */}
         <div className="relative z-10 flex items-center justify-between w-full">
           <div>
-            <h3 className="text-white font-extrabold text-lg">{category}</h3>
+            <h3 className="text-white font-semibold text-lg">{category}</h3>
             <p className="text-white/40 text-sm font-semibold mt-0.5">
               {items.length} {items.length === 1 ? 'продукт' : items.length < 5 ? 'продукта' : 'продуктов'}
             </p>
           </div>
-          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.06] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[#c9a84c]/15 border-[#c9a84c]/30' : ''}`}>
+          <div className={`w-8 h-8 rounded-lg bg-white/[0.08] border border-[var(--cd-line)] flex items-center justify-center transition-all duration-200 ${isOpen ? 'bg-[var(--cd-gold)]/15 border-[var(--cd-gold)]/30' : ''}`}>
             {isOpen ? (
-              <ChevronUp size={16} className="text-[#c9a84c]" />
+              <ChevronUp size={16} className="text-[var(--cd-gold)]" />
             ) : (
               <ChevronDown size={16} className="text-white/40 group-hover:text-white/60" />
             )}
@@ -97,7 +97,7 @@ export function InventoryCategoryCard({
 
       {/* Expanded product list */}
       {isOpen && (
-        <div className="bg-[#0b0f1e]/60 backdrop-blur-xl border-t border-white/[0.04] p-3 space-y-1.5">
+        <div className="bg-[var(--cd-paper)]/60 border-t border-[var(--cd-line)] p-3 space-y-1.5">
           {items.map((item) => (
             <InventoryProductCard
               key={`${item.source}-${item.id}`}

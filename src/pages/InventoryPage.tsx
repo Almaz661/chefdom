@@ -140,7 +140,7 @@ export function InventoryPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-2rem)] w-full bg-[#05070A] p-6 overflow-hidden relative">
+    <div className="h-[calc(100vh-2rem)] w-full bg-[var(--cd-bg)] p-6 overflow-hidden relative">
       {/* Kitchen Atelier background — only on Pantry tab */}
       {tab === 'pantry' && (
         <>
@@ -149,7 +149,7 @@ export function InventoryPage() {
             alt=""
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           />
-          <div className="absolute inset-0 bg-[#05070A]/25 pointer-events-none" />
+          <div className="absolute inset-0 bg-[var(--cd-bg)]/25 pointer-events-none" />
         </>
       )}
       <div className="relative h-full max-w-5xl mx-auto flex flex-col gap-5">
@@ -165,7 +165,7 @@ export function InventoryPage() {
 
         {/* Scanner */}
         {showScanner && (
-          <div className="rounded-2xl border border-white/[0.06] bg-[#080c18]/60 backdrop-blur-xl p-5 shrink-0">
+          <div className="rounded-2xl border border-[var(--cd-line)] bg-[var(--cd-paper)]/60 p-5 shrink-0">
             <BarcodeScanner
               onDetected={(code) => {
                 setScanResult({ found: false, barcode: code });
@@ -188,7 +188,7 @@ export function InventoryPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
+            <Loader2 size={32} className="animate-spin text-[var(--cd-gold)]" />
           </div>
         ) : (
           <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto">

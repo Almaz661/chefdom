@@ -26,7 +26,7 @@ export function InventoryHeader({
     <div className="space-y-1 shrink-0">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[36px] font-extrabold text-white tracking-tight">{TAB_TITLES[tab]}</h1>
+          <h1 className="text-[36px] font-semibold text-white tracking-tight">{TAB_TITLES[tab]}</h1>
           <p className="text-white/40 text-base font-medium mt-0.5">Контроль продуктов, сроков и запасов</p>
         </div>
         <div className="flex items-center gap-2">

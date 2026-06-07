@@ -31,13 +31,13 @@ export function ShoppingPreviewDialog({
 }) {
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
     >
       <div className="relative" onClick={(e) => e.stopPropagation()}>
         <GlassCard className="relative w-full sm:w-[440px] sm:max-w-[95vw] max-h-[80vh] flex flex-col rounded-t-[24px] sm:rounded-[24px] overflow-hidden">
           {/* Header */}
-          <div className="p-5 border-b border-white/[0.06] shrink-0">
+          <div className="p-5 border-b border-[var(--cd-line)] shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Раскладываем по местам</h3>
               <button
@@ -61,14 +61,14 @@ export function ShoppingPreviewDialog({
                 return (
                   <li
                     key={idx}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 bg-white/[0.03] border border-white/[0.06]"
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 bg-white/[0.03] border border-[var(--cd-line)]"
                   >
                     <button
                       onClick={() => onCycleStorage(idx)}
-                      className="w-9 h-9 rounded-lg border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0 hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 transition-all duration-200"
+                      className="w-9 h-9 rounded-lg border border-[var(--cd-line)] bg-white/[0.04] flex items-center justify-center shrink-0 hover:border-[var(--cd-gold)]/40 hover:bg-[var(--cd-gold)]/10 transition-all duration-200"
                       title={`Сейчас: ${storage.label}. Нажми чтобы изменить`}
                     >
-                      <Icon size={18} className="text-[#c9a84c]" />
+                      <Icon size={18} className="text-[var(--cd-gold)]" />
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white/75 truncate">
@@ -85,10 +85,10 @@ export function ShoppingPreviewDialog({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-white/[0.06] flex gap-3 shrink-0">
+          <div className="p-4 border-t border-[var(--cd-line)] flex gap-3 shrink-0">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+              className="flex-1 h-12 rounded-xl border border-[var(--cd-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
             >
               Отмена
             </button>

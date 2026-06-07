@@ -1,5 +1,10 @@
 import { ReactNode } from 'react';
 
+/**
+ * GlassCard → cd-card
+ * Заменяет старый glassmorphism-вариант на чистую карточку из дизайн-системы.
+ * backdrop-blur убран (тормозит на слабых устройствах).
+ */
 export function GlassCard({
   children,
   className = '',
@@ -8,9 +13,7 @@ export function GlassCard({
   className?: string;
 }) {
   return (
-    <div
-      className={`rounded-[20px] border border-white/[0.08] bg-[#0b0f1e]/75 backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.04)] ${className}`}
-    >
+    <div className={`cd-card ${className}`}>
       {children}
     </div>
   );

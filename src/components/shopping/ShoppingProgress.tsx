@@ -40,7 +40,7 @@ export function ShoppingProgress({
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-white font-extrabold text-xl">{progress}%</span>
+          <span className="text-white font-semibold text-xl">{progress}%</span>
         </div>
       </div>
 

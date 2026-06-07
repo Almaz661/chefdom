@@ -13,14 +13,9 @@ export function GoldButton({
   variant?: 'solid' | 'outline';
   className?: string;
 }) {
-  const base = 'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2';
-  const styles =
-    variant === 'solid'
-      ? 'btn-gold'
-      : 'border border-[#c9a84c]/40 text-[#c9a84c] hover:bg-[#c9a84c]/10 hover:border-[#c9a84c]/60';
-
+  const cls = variant === 'solid' ? 'cd-btn-primary' : 'cd-btn-ghost';
   return (
-    <button onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className}`}>
+    <button onClick={onClick} disabled={disabled} className={`${cls} ${className}`}>
       {children}
     </button>
   );
