@@ -132,8 +132,9 @@ export const menuRouter = router({
     .input(z.object({ itemId: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {
       // Проверяем что menuItem принадлежит меню текущего пользователя
+      // Заодно получаем recipeId чтобы найти название рецепта
       const [item] = await db
-        .select({ id: menuItems.id, menuId: menuItems.menuId })
+        .select({ id: menuItems.id, menuId: menuItems.menuId, recipeId: menuItems.recipeId })
         .from(menuItems)
         .where(eq(menuItems.id, input.itemId))
         .limit(1);
@@ -148,6 +149,18 @@ export const menuRouter = router({
       if (!menu) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
       }
+
+      // Получаем название рецепта чтобы удалить связанные покупки
+      let recipeTitle: string | null = null;
+      if (item.recipeId) {
+        const [recipe] = await db
+          .select({ title: recipes.title })
+          .from(recipes)
+          .where(eq(recipes.id, item.recipeId))
+          .limit(1);
+        recipeTitle = recipe?.title ?? null;
+      }
+
       const result = await db
         .delete(menuItems)
         .where(eq(menuItems.id, input.itemId))
@@ -157,7 +170,25 @@ export const menuRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Элемент меню не найден' });
       }
 
-      return { id: input.itemId };
+      // Удаляем из покупок все некупленные позиции этого рецепта
+      // (isChecked = 0 — ещё не куплено, isChecked = 1 — уже куплено, не трогаем)
+      let removedFromShopping = 0;
+      if (recipeTitle) {
+        const { ilike } = await import('drizzle-orm');
+        const deleted = await db
+          .delete(purchaseItems)
+          .where(
+            and(
+              eq(purchaseItems.userId, ctx.userId),
+              eq(purchaseItems.isChecked, 0),
+              ilike(purchaseItems.recipeSource, recipeTitle),
+            )
+          )
+          .returning({ id: purchaseItems.id });
+        removedFromShopping = deleted.length;
+      }
+
+      return { id: input.itemId, removedFromShopping };
     }),
 
   // Блюдо дня: рецепт из меню на сегодня по времени суток
