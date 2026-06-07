@@ -31,7 +31,7 @@ export function MenuWeekHeader({
         <div className="flex items-center gap-1 px-3 py-2 rounded-xl border border-[var(--color-line)] bg-white/[0.03]">
           <button
             onClick={onPrev}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+            className="btn-icon w-7 h-7"
           >
             <ChevronLeft size={16} />
           </button>
@@ -40,7 +40,7 @@ export function MenuWeekHeader({
           </span>
           <button
             onClick={onNext}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+            className="btn-icon w-7 h-7"
           >
             <ChevronRight size={16} />
           </button>

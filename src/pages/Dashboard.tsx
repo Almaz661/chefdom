@@ -134,7 +134,7 @@ export function Dashboard() {
             to={`/recipes/${todayMeal.recipe.id}`}
             className="block rounded-2xl overflow-hidden relative group"
           >
-            <div className="aspect-[16/7] bg-white/[0.03]">
+            <div className="aspect-[16/7] img-placeholder">
               {todayMeal.recipe.imageUrl ? (
                 <img
                   src={todayMeal.recipe.imageUrl}
@@ -260,7 +260,7 @@ export function Dashboard() {
               {recentCooks.map((c) => {
                 const inner = (
                   <div className="w-[100px] shrink-0">
-                    <div className="aspect-[3/4] rounded-lg overflow-hidden bg-white/[0.03] mb-2">
+                    <div className="aspect-[3/4] rounded-lg overflow-hidden img-placeholder mb-2">
                       {c.recipeImage ? (
                         <img
                           src={c.recipeImage}

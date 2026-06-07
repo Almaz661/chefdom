@@ -486,7 +486,7 @@ export function ReceiptDetailPage() {
                     {copyDone ? "Скопировано" : "Скопировать"}
                   </button>
                 </div>
-                <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-white/50 bg-white/[0.04] rounded-xl p-3 max-h-80 overflow-y-auto font-mono">
+                <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words text-white/50 img-placeholder rounded-xl p-3 max-h-80 overflow-y-auto font-mono">
                   {receipt.ocrRaw}
                 </pre>
                 <p className="text-base text-white/30 font-medium mt-2">

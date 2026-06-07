@@ -50,7 +50,7 @@ export function AddInventoryDialog({
             <h3 className="text-lg font-bold text-white">Добавить продукт</h3>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-colors"
+              className="btn-icon w-8 h-8"
             >
               <X size={18} />
             </button>

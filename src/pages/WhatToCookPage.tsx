@@ -122,7 +122,7 @@ export function WhatToCookPage() {
                   className="flex gap-4 card-dark p-4"
                 >
                   {/* Фото */}
-                  <div className="w-20 h-20 rounded-xl bg-white/[0.04] overflow-hidden shrink-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-xl img-placeholder overflow-hidden shrink-0 flex items-center justify-center">
                     {r.imageUrl ? (
                       <img
                         src={r.imageUrl}
@@ -165,8 +165,8 @@ export function WhatToCookPage() {
                             allHave
                               ? "bg-green-500/10 text-green-400"
                               : r.haveCount > 0
-                                ? "bg-white/[0.04] text-white/50"
-                                : "bg-white/[0.04] text-white/30"
+                                ? "img-placeholder text-white/50"
+                                : "img-placeholder text-white/30"
                           }`}
                         >
                           {allHave && <CheckCircle2 size={11} />}
