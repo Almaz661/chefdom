@@ -142,7 +142,7 @@ export function ReceiptsPage() {
           <button
             type="button"
             onClick={() => setShowManual(true)}
-            className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl btn-ghost"
           >
             <Plus size={16} />
             Добавить вручную (без фото)
@@ -226,7 +226,7 @@ export function ReceiptsPage() {
                   type="button"
                   onClick={() => setShowManual(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl btn-ghost flex items-center justify-center"
                 >
                   <X size={18} />
                 </button>

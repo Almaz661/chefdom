@@ -329,7 +329,7 @@ export function ReceiptDetailPage() {
                     <Check size={16} />
                   </button>
                   <button onClick={() => setEditingStore(false)}
-                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
+                    className="w-8 h-8 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-[var(--color-line-strong)] hover:text-white/80 transition-colors">
                     <X size={16} />
                   </button>
                 </div>
@@ -364,7 +364,7 @@ export function ReceiptDetailPage() {
                       <Check size={14} />
                     </button>
                     <button onClick={() => setEditingDate(false)}
-                      className="w-7 h-7 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-white/[0.15] hover:text-white/80 transition-colors">
+                      className="w-7 h-7 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 flex items-center justify-center hover:border-[var(--color-line-strong)] hover:text-white/80 transition-colors">
                       <X size={14} />
                     </button>
                   </div>
@@ -434,7 +434,7 @@ export function ReceiptDetailPage() {
           <button
             type="button"
             onClick={() => setShowAddManual(true)}
-            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl btn-ghost font-semibold"
           >
             <Plus size={18} />
             Добавить позицию вручную
@@ -445,7 +445,7 @@ export function ReceiptDetailPage() {
               onClick={() => reparse.mutate({ id })}
               disabled={reparse.isPending}
               title="Распознать заново из сохранённого текста OCR (без нового запроса)"
-              className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 h-12 px-4 rounded-xl btn-ghost font-semibold"
             >
               <RefreshCw
                 size={18}
@@ -480,7 +480,7 @@ export function ReceiptDetailPage() {
                           setTimeout(() => setCopyDone(false), 1500);
                         });
                     }}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-base text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-base text-white/60 font-medium hover:border-[var(--color-line-strong)] hover:text-white/80 transition-colors"
                   >
                     {copyDone ? <Check size={14} /> : <Copy size={14} />}
                     {copyDone ? "Скопировано" : "Скопировать"}
@@ -568,7 +568,7 @@ export function ReceiptDetailPage() {
                             onClick={() => setEditingId(null)}
                             aria-label="Отмена"
                             title="Отмена"
-                            className="w-11 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                            className="w-11 h-11 rounded-xl btn-ghost flex items-center justify-center"
                           >
                             <X size={18} />
                           </button>
@@ -659,7 +659,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowAddManual(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl btn-ghost flex items-center justify-center"
                 >
                   <X size={18} />
                 </button>
@@ -768,7 +768,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowToInventory(false)}
                   aria-label="Закрыть"
-                  className="w-9 h-9 -m-1 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 hover:border-white/[0.15] hover:text-white/80 flex items-center justify-center transition-colors"
+                  className="w-9 h-9 -m-1 rounded-xl btn-ghost flex items-center justify-center"
                 >
                   <X size={18} />
                 </button>

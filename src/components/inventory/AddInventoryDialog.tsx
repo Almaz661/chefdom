@@ -115,7 +115,7 @@ export function AddInventoryDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 h-12 rounded-xl border border-[var(--color-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+                className="btn-ghost flex-1 h-12"
               >
                 Отмена
               </button>

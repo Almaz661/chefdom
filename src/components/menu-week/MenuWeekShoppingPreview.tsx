@@ -41,7 +41,7 @@ export function MenuWeekShoppingPreview() {
               className={`w-4 h-4 rounded-[5px] border-[1.5px] flex items-center justify-center shrink-0 ${
                 item.isChecked
                   ? 'bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50'
-                  : 'border-white/[0.15]'
+                  : 'border-[var(--color-line-strong)]'
               }`}
             >
               {item.isChecked && (

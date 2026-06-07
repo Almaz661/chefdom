@@ -322,7 +322,7 @@ export function Dashboard() {
                     ? "bg-[var(--color-primary)] text-[#0a0c10]"
                     : filled
                       ? "border border-[var(--color-primary)]/30 text-[var(--color-primary)]"
-                      : "border border-[var(--color-line)] text-white/40 group-hover:border-white/[0.15]"
+                      : "border border-[var(--color-line)] text-white/40 group-hover:border-[var(--color-line-strong)]"
                 }`}>
                   {isToday ? "●" : filled ? dayMeals.length : ""}
                 </span>

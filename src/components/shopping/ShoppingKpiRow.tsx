@@ -21,7 +21,7 @@ export function ShoppingKpiRow({
       {KPI_DATA.map(({ icon: Icon, value, label, accent }) => (
         <GlassCard
           key={label}
-          className="px-5 py-5 flex items-center gap-4 hover:border-white/[0.14] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition-all duration-200"
+          className="px-5 py-5 flex items-center gap-4 hover:border-[var(--color-line-strong)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] transition-all duration-200"
         >
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"

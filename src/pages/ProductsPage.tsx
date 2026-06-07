@@ -58,7 +58,7 @@ function SyncFromReceiptsButton() {
         }
       }}
       disabled={sync.isPending}
-      className="h-10 px-3 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-sm font-bold hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      className="h-10 px-3 rounded-xl btn-ghost font-bold flex items-center gap-1.5"
       title="Загрузить все товары из чеков в каталог"
     >
       {sync.isPending ? '⏳' : '📥'}
@@ -85,7 +85,7 @@ function ProductCard({ product }: { product: { id: number; nameRu: string; brand
   );
 
   return (
-    <li className="card-dark px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+    <li className="card-dark px-4 py-3 hover:border-[var(--color-line-strong)] hover:bg-white/[0.05] transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowHistory(!showHistory)}>
           <p className="text-base font-semibold text-white/80 truncate">{product.nameRu}</p>
@@ -372,7 +372,7 @@ export function ProductsPage() {
                       <button
                         type="button"
                         onClick={() => setShowAddToInventory(false)}
-                        className="flex-1 h-10 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-base font-semibold hover:border-white/[0.15] hover:text-white/80 transition-colors"
+                        className="flex-1 h-10 rounded-xl btn-ghost"
                       >
                         Отмена
                       </button>
