@@ -111,7 +111,7 @@ export function PreservesPage() {
         </h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors"
+          className="w-9 h-9 btn-gold flex items-center justify-center"
           aria-label="Добавить заготовку"
         >
           <Plus size={16} />
@@ -534,14 +534,14 @@ function AddPreserveDialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="flex-1 h-12 btn-ghost"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={!name.trim() || add.isPending}
-              className="flex-1 h-12 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
+              className="flex-1 h-12 btn-gold"
             >
               {add.isPending ? "Добавляю…" : "Добавить"}
             </button>

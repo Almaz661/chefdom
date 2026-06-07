@@ -325,7 +325,7 @@ export function ReceiptDetailPage() {
                     }}
                   />
                   <button onClick={() => updateReceipt.mutate({ id, storeName: eStore || null })}
-                    className="w-8 h-8 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors">
+                    className="w-8 h-8 btn-gold flex items-center justify-center">
                     <Check size={16} />
                   </button>
                   <button onClick={() => setEditingStore(false)}
@@ -360,7 +360,7 @@ export function ReceiptDetailPage() {
                       }}
                     />
                     <button onClick={() => updateReceipt.mutate({ id, purchaseDate: eDate || null })}
-                      className="w-7 h-7 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors">
+                      className="w-7 h-7 btn-gold flex items-center justify-center">
                       <Check size={14} />
                     </button>
                     <button onClick={() => setEditingDate(false)}
@@ -426,7 +426,7 @@ export function ReceiptDetailPage() {
               setShowToInventory(true);
             }}
             disabled={items.length === 0}
-            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 h-12 px-4 btn-gold"
           >
             <Package size={18} />
             В инвентарь
@@ -559,7 +559,7 @@ export function ReceiptDetailPage() {
                             disabled={!eName.trim() || updateItem.isPending}
                             aria-label="Сохранить"
                             title="Сохранить"
-                            className="w-11 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] hover:brightness-110 flex items-center justify-center disabled:opacity-50 transition-colors"
+                            className="w-11 h-11 btn-gold flex items-center justify-center disabled:opacity-50"
                           >
                             <Check size={18} />
                           </button>
@@ -723,7 +723,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowAddManual(false)}
                   disabled={addItem.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 btn-ghost"
                 >
                   Отмена
                 </button>
@@ -741,7 +741,7 @@ export function ReceiptDetailPage() {
                       },
                     })
                   }
-                  className="px-4 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 btn-gold"
                 >
                   {addItem.isPending ? "Добавляю…" : "Добавить"}
                 </button>
@@ -833,7 +833,7 @@ export function ReceiptDetailPage() {
                   type="button"
                   onClick={() => setShowToInventory(false)}
                   disabled={addBulkToInventory.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 btn-ghost"
                 >
                   Отмена
                 </button>
@@ -859,7 +859,7 @@ export function ReceiptDetailPage() {
                       });
                     addBulkToInventory.mutate({ items: toAdd });
                   }}
-                  className="px-5 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+                  className="px-5 h-11 btn-gold inline-flex items-center gap-2"
                 >
                   <Package size={16} />
                   {addBulkToInventory.isPending

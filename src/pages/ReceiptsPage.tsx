@@ -124,7 +124,7 @@ export function ReceiptsPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={createFromPhoto.isPending}
-            className="w-full inline-flex items-center justify-center gap-2 h-14 px-4 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-60"
+            className="w-full inline-flex items-center justify-center gap-2 btn-gold h-14 px-4 disabled:opacity-60"
           >
             <Camera size={20} />
             {createFromPhoto.isPending
@@ -284,7 +284,7 @@ export function ReceiptsPage() {
                   type="button"
                   onClick={() => setShowManual(false)}
                   disabled={create.isPending}
-                  className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 btn-ghost"
                 >
                   Отмена
                 </button>
@@ -298,7 +298,7 @@ export function ReceiptsPage() {
                     })
                   }
                   disabled={create.isPending}
-                  className="px-4 h-11 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
+                  className="px-4 h-11 btn-gold"
                 >
                   {create.isPending ? "Создаю…" : "Создать"}
                 </button>

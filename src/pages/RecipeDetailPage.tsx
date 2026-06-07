@@ -221,7 +221,7 @@ export function RecipeDetailPage() {
               disabled={cook.isPending}
               aria-label="Готовить"
               title="Готовить"
-              className="w-10 h-10 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] hover:brightness-110 flex items-center justify-center transition-colors disabled:opacity-50"
+              className="w-10 h-10 btn-gold"
             >
               <ChefHat size={18} />
             </button>
@@ -448,7 +448,7 @@ export function RecipeDetailPage() {
                 cook.mutate({ id });
               }
             }}
-            className="w-full bg-[var(--color-primary)] text-[#0a0c10] py-3 rounded-xl font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
+            className="w-full btn-gold py-3"
           >
             {cook.isPending ? 'Готовлю...' : 'Готовить сейчас'}
           </button>
@@ -487,7 +487,7 @@ export function RecipeDetailPage() {
                 type="button"
                 onClick={() => setShowConfirmDelete(false)}
                 disabled={del.isPending}
-                className="px-4 h-11 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors disabled:opacity-50"
+                className="px-4 h-11 btn-ghost"
               >
                 Отмена
               </button>

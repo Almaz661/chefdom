@@ -59,7 +59,7 @@ export function MenuWeekHeader({
           <button
             onClick={onToShopping}
             disabled={toShoppingPending}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-60"
+            className="inline-flex items-center gap-2 btn-gold px-4 py-2 text-sm disabled:opacity-60"
           >
             <ShoppingCart size={15} />
             {toShoppingPending ? 'Добавляю...' : 'В покупки'}
