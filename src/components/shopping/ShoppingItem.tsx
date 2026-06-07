@@ -22,7 +22,7 @@ export function ShoppingItem({
   const isChecked = item.isChecked === 1;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-200 group">
+    <div className="flex items-center gap-3 rounded-xl px-4 py-3 border border-[var(--color-line)] bg-white/[0.02] hover:bg-white/[0.04] hover:border-[var(--color-line-strong)] transition-all duration-200 group">
       {/* Checkbox */}
       <button
         onClick={onToggle}

@@ -56,7 +56,7 @@ export function MenuWeekGrid({
         <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-[var(--color-line)]">
           <div className="px-3 py-3" />
           {DAYS.map((day, i) => (
-            <div key={day} className="px-2 py-3 text-center border-l border-white/[0.04]">
+            <div key={day} className="px-2 py-3 text-center border-l border-[var(--color-line)]">
               <span
                 className={`text-[11px] font-bold uppercase tracking-wider ${
                   i === todayIdx ? 'text-[var(--color-primary)]' : 'text-white/40'
@@ -76,11 +76,11 @@ export function MenuWeekGrid({
           <div
             key={mealKey}
             className={`grid grid-cols-[80px_repeat(7,minmax(0,1fr))] ${
-              mealIdx < MEALS.length - 1 ? 'border-b border-white/[0.04]' : ''
+              mealIdx < MEALS.length - 1 ? 'border-b border-[var(--color-line)]' : ''
             }`}
           >
             {/* Meal label */}
-            <div className="flex items-center justify-center px-3 py-4 border-r border-white/[0.04]">
+            <div className="flex items-center justify-center px-3 py-4 border-r border-[var(--color-line)]">
               <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest [writing-mode:vertical-rl] rotate-180">
                 {mealLabel}
               </span>
@@ -94,7 +94,7 @@ export function MenuWeekGrid({
               return (
                 <div
                   key={`${dayIdx}-${mealKey}`}
-                  className="p-1.5 border-l border-white/[0.04] min-h-[96px]"
+                  className="p-1.5 border-l border-[var(--color-line)] min-h-[96px]"
                 >
                   {cellItems.length > 0 ? (
                     <div className="flex flex-col gap-1 h-full">
