@@ -42,7 +42,7 @@ export function MenuWeekGrid({
 
   if (isLoading) {
     return (
-      <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl flex items-center justify-center py-20">
+      <div className="card-dark flex items-center justify-center py-20">
         <Loader2 size={32} className="animate-spin text-[var(--color-primary)]" />
       </div>
     );
@@ -51,7 +51,7 @@ export function MenuWeekGrid({
   return (
     <div className="space-y-2">
       {/* ── Desktop table (≥ md) ── */}
-      <div className="hidden md:block bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden">
+      <div className="hidden md:block card-dark overflow-hidden">
         {/* Day header row */}
         <div className="grid grid-cols-[80px_repeat(7,minmax(0,1fr))] border-b border-[var(--color-line)]">
           <div className="px-3 py-3" />
@@ -115,7 +115,7 @@ export function MenuWeekGrid({
       {/* ── Mobile list (< md): day-by-day ── */}
       <div className="md:hidden space-y-4">
         {DAYS.map((dayShort, dayIdx) => (
-          <div key={dayIdx} className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden">
+          <div key={dayIdx} className="card-dark overflow-hidden">
             {/* Day header */}
             <div className={`px-4 py-2.5 border-b border-[var(--color-line)] flex items-center gap-2 ${
               dayIdx === todayIdx ? 'bg-[var(--color-primary)]/[0.06]' : ''
@@ -241,7 +241,7 @@ function MealCardEmpty({ onClick }: { onClick: () => void }) {
 
 function MealCardMobile({ item, onRemove }: { item: MenuItem; onRemove: () => void }) {
   return (
-    <div className="flex items-center gap-2 bg-white/[0.03] border border-[var(--color-line)] rounded-lg px-2.5 py-2 group hover:border-white/[0.10] transition-all">
+    <div className="list-row gap-2 rounded-lg px-2.5 py-2">
       {/* Thumbnail */}
       <Link to={`/recipes/${item.recipeId}`} className="w-8 h-8 rounded-md overflow-hidden shrink-0">
         {item.recipeImage ? (

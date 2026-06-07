@@ -89,7 +89,7 @@ export function WhatToCookPage() {
             <Loader2 size={32} className="animate-spin text-[var(--color-primary)]" />
           </div>
         ) : matched.length === 0 ? (
-          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-xl p-12 text-center">
+          <div className="card-dark border-dashed rounded-xl p-12 text-center">
             <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
             <p className="font-serif text-lg text-white mb-2">Рецептов пока нет</p>
             <p className="text-white/50 text-sm mb-4">
@@ -104,7 +104,7 @@ export function WhatToCookPage() {
             </Link>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-xl p-12 text-center">
+          <div className="card-dark border-dashed rounded-xl p-12 text-center">
             <ChefHat size={40} className="text-white/30 mx-auto mb-4" strokeWidth={1.5} />
             <p className="font-serif text-lg text-white mb-2">Ничего не подходит</p>
             <p className="text-white/50 text-sm">
@@ -119,7 +119,7 @@ export function WhatToCookPage() {
                 <Link
                   key={r.id}
                   to={`/recipes/${r.id}`}
-                  className="flex gap-4 bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all"
+                  className="flex gap-4 card-dark p-4"
                 >
                   {/* Фото */}
                   <div className="w-20 h-20 rounded-xl bg-white/[0.04] overflow-hidden shrink-0 flex items-center justify-center">

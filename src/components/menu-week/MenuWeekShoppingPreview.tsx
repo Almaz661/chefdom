@@ -10,7 +10,7 @@ export function MenuWeekShoppingPreview() {
   if (shoppingItems.length === 0) return null;
 
   return (
-    <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-5 hover:border-white/[0.10] hover:bg-white/[0.05] transition-all duration-200">
+    <div className="card-dark p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">

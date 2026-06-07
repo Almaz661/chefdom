@@ -458,7 +458,7 @@ export function ReceiptDetailPage() {
 
         {/* Блок «Показать сырой текст OCR» */}
         {receipt.ocrRaw && (
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl">
+          <div className="card-dark">
             <button
               type="button"
               onClick={() => setShowRaw((s) => !s)}
@@ -581,7 +581,7 @@ export function ReceiptDetailPage() {
                 return (
                   <li
                     key={it.id}
-                    className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                    className="list-row"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-white/80">{it.productName}</p>

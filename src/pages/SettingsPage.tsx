@@ -176,7 +176,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             Аккаунт
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-3">
+          <div className="card-dark p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-base font-semibold text-white/80">Семья</p>
@@ -198,7 +198,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             Валюта
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-3">
+          <div className="card-dark p-4 space-y-3">
             <div className="flex items-start gap-3">
               <Coins
                 size={20}
@@ -254,7 +254,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             Данные
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-3">
+          <div className="card-dark p-4 space-y-3">
             <p className="text-base font-semibold text-white/80">Резервная копия</p>
 
             <button
@@ -310,7 +310,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             Калории
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-3">
+          <div className="card-dark p-4 space-y-3">
             <div className="flex items-start gap-3">
               <Calculator
                 size={20}
@@ -371,7 +371,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             Кэш приложения
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-3">
+          <div className="card-dark p-4 space-y-3">
             <p className="text-base text-white/50">
               Если приложение «застряло» на старой версии или что-то отображается
               странно — нажми, чтобы загрузить свежие страницы. Твои данные (рецепты,
@@ -397,7 +397,7 @@ export function SettingsPage() {
           <h2 className="text-white/70 font-bold text-lg mb-3">
             О приложении
           </h2>
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 space-y-2">
+          <div className="card-dark p-4 space-y-2">
             <p className="text-base font-semibold text-white/80">ШефДом! версия 1.0</p>
             <p className="text-base text-white/50">
               Рецептов в базе: {stats?.recipesCount ?? "—"}
@@ -470,7 +470,7 @@ function ChangePinDialog({ onClose }: { onClose: () => void }) {
             placeholder="Текущий PIN"
             autoFocus
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 text-center tracking-widest text-lg "
+            className="w-full h-12 px-4 input-dark text-center tracking-widest text-lg "
           />
           <input
             type="password"

@@ -8,7 +8,7 @@ import { SectionImportDialog } from "../components/SectionImportDialog";
 // Пустое состояние когда в БД ровно 0 рецептов.
 function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: () => void }) {
   return (
-    <div className="bg-white/[0.02] border border-[var(--color-line)] border-dashed rounded-2xl p-10 text-center">
+    <div className="card-dark border-dashed rounded-2xl p-10 text-center">
       <BookOpen
         size={48}
         className="text-white/30 mx-auto mb-4"
@@ -32,7 +32,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
         <button
           type="button"
           onClick={onImport}
-          className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+          className="inline-flex items-center gap-2 btn-ghost px-4 py-2.5"
         >
           <Download size={18} />
           Импорт с сайта
@@ -40,7 +40,7 @@ function EmptyState({ onImport, onSection }: { onImport: () => void; onSection: 
         <button
           type="button"
           onClick={onSection}
-          className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 py-2.5 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+          className="inline-flex items-center gap-2 btn-ghost px-4 py-2.5"
         >
           <FolderDown size={18} />
           Импорт раздела
@@ -66,7 +66,7 @@ function RecipeCard({ r }: { r: RecipeCardData }) {
   return (
     <Link
       to={`/recipes/${r.id}`}
-      className="block bg-white/[0.03] border border-[var(--color-line)] rounded-xl overflow-hidden hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+      className="block card-dark overflow-hidden hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
     >
       <div className="aspect-[16/10] bg-white/[0.04] overflow-hidden">
         {showImage ? (
@@ -194,7 +194,7 @@ export function RecipesPage() {
             <button
               type="button"
               onClick={() => setImportOpen(true)}
-              className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="inline-flex items-center gap-2 btn-ghost px-4 h-12"
             >
               <Download size={18} />
               Импорт
@@ -202,7 +202,7 @@ export function RecipesPage() {
             <button
               type="button"
               onClick={() => setSectionOpen(true)}
-              className="inline-flex items-center gap-2 bg-white/[0.04] border border-[var(--color-line)] text-white/60 px-4 h-12 rounded-xl font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="inline-flex items-center gap-2 btn-ghost px-4 h-12"
             >
               <FolderDown size={18} />
               Раздел

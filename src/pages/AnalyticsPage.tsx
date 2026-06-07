@@ -57,7 +57,7 @@ export function AnalyticsPage() {
         </h1>
 
         {/* Вкладки: Готовка / Расходы / Где дешевле */}
-        <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-1 gap-1">
+        <div className="inline-flex card-dark p-1 gap-1">
           <button
             onClick={() => setTab("cooking")}
             className={`px-4 py-2 rounded-lg text-base font-semibold transition-colors ${
@@ -93,7 +93,7 @@ export function AnalyticsPage() {
         {tab === "cooking" && (
           <>
             {/* Переключатели периода */}
-            <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-1 gap-1">
+            <div className="inline-flex card-dark p-1 gap-1">
               {PERIOD_LABELS.map(({ key, label }) => (
                 <button
                   key={key}
@@ -119,7 +119,7 @@ export function AnalyticsPage() {
                   Нет данных за выбранный период. Готовьте рецепты — здесь появится статистика расхода.
                 </p>
               ) : (
-                <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
+                <ul className="card-dark divide-y divide-white/[0.06]">
                   {consumption.map((item, idx) => (
                     <li key={idx} className="flex items-center justify-between px-4 py-3">
                       <span className="text-base font-semibold text-white/80">{item.name}</span>
@@ -146,7 +146,7 @@ export function AnalyticsPage() {
                   {topRecipes.map((recipe, idx) => (
                     <li
                       key={idx}
-                      className="flex items-center gap-3 bg-white/[0.03] border border-[var(--color-line)] rounded-xl px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
+                      className="flex items-center gap-3 card-dark px-4 py-3 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors"
                     >
                       <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-sm font-bold text-[var(--color-primary)] shrink-0">
                         {idx + 1}
@@ -242,7 +242,7 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       По магазинам
                     </h2>
-                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="card-dark divide-y divide-white/[0.06]">
                       {spending.byStore.map((store, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <div>
@@ -265,7 +265,7 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       Чаще всего покупали
                     </h2>
-                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="card-dark divide-y divide-white/[0.06]">
                       {spending.topProducts.map((product, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ export function AnalyticsPage() {
                     <h2 className="font-serif text-xl font-semibold text-white mb-3">
                       Расходы по месяцам
                     </h2>
-                    <ul className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl divide-y divide-white/[0.06]">
+                    <ul className="card-dark divide-y divide-white/[0.06]">
                       {spending.byMonth.map((m, idx) => (
                         <li key={idx} className="flex items-center justify-between px-4 py-3">
                           <span className="text-base font-semibold text-white/80">{m.month}</span>
@@ -322,7 +322,7 @@ export function AnalyticsPage() {
               </p>
             ) : (
               priceComparison.map((item) => (
-                <div key={item.productName} className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 hover:border-white/[0.10] hover:bg-white/[0.05] transition-colors">
+                <div key={item.productName} className="card-dark p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-white/80">{item.productName}</h3>
                     <span className="text-xs text-green-400 font-medium bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">

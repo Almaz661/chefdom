@@ -281,7 +281,7 @@ export function RecipeDetailPage() {
 
         {/* C.1 — КБЖУ на порцию с % дневной нормы */}
         {(recipe.calories || recipe.proteinG || recipe.fatsG || recipe.carbsG) && (
-          <div className="bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-4 mb-6">
+          <div className="card-dark p-4 mb-6">
             <p className="text-sm font-bold text-white/30 uppercase tracking-wider mb-3">
               На порцию ({currentServings} {currentServings === 1 ? "порция" : currentServings < 5 ? "порции" : "порций"})
             </p>
@@ -331,7 +331,7 @@ export function RecipeDetailPage() {
             <h2 className="text-white/70 font-bold text-lg">
               Ингредиенты
             </h2>
-            <div className="inline-flex bg-white/[0.03] border border-[var(--color-line)] rounded-xl p-0.5 gap-0.5">
+            <div className="inline-flex card-dark p-0.5 gap-0.5">
               {PORTION_OPTIONS.map((m) => (
                 <button
                   key={m}
