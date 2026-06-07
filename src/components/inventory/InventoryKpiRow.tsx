@@ -30,7 +30,7 @@ export function InventoryKpiRow({
             <Icon size={24} style={{ color: accent }} strokeWidth={1.7} />
           </div>
           <div className="min-w-0">
-            <p className="text-white font-extrabold text-3xl leading-tight truncate">{value}</p>
+            <p className="text-white font-semibold text-3xl leading-tight truncate">{value}</p>
             <p className="text-white/40 text-sm font-semibold mt-0.5 truncate">{label}</p>
           </div>
         </GlassCard>

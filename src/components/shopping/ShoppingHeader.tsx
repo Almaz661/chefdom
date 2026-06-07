@@ -14,7 +14,7 @@ export function ShoppingHeader({
     <div className="space-y-1 shrink-0">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[36px] font-extrabold text-white tracking-tight">Покупки</h1>
+          <h1 className="text-[36px] font-semibold text-white tracking-tight">Покупки</h1>
           <p className="text-white/40 text-base font-medium mt-0.5">Список продуктов для похода в магазин</p>
         </div>
         <div className="flex items-center gap-2">

@@ -1,330 +1,502 @@
 @import "tailwindcss";
 
-@theme {
-  /* CHEF'S KITCHEN — единая дизайн-система
-     Один gold: #c9a84c (латунь/шампанское).
-     Все компоненты обязаны использовать эти токены.
-     Захардкоженные #c9953c и #e8b94a — алиасы для совместимости. */
-  --color-primary: #c9a84c;
-  --color-primary-hover: #d4b55a;       /* +10% light для hover */
-  --color-primary-dark: #a8893a;
-  --color-primary-light: rgba(201, 168, 76, 0.08);
-  --color-primary-glow: rgba(201, 168, 76, 0.15);
-  --color-primary-border: rgba(201, 168, 76, 0.25);
+/* ══════════════════════════════════════════════════════════
+   CHEFDOM DESIGN SYSTEM — единые токены
+   Хардкод hex в компонентах ЗАПРЕЩЁН.
+   Используй только var(--cd-*)
+   ══════════════════════════════════════════════════════════ */
 
-  /* Алиасы — старые компоненты продолжают работать без изменений кода.
-     Визуально все три цвета унифицированы в #c9a84c. */
-  --color-gold: #c9a84c;
-  --color-gold-bright: #c9a84c;         /* было #e8b94a */
-  --color-gold-deep: #c9a84c;           /* было #c9953c */
+:root {
+  /* ── ЦВЕТА ── */
+  --cd-bg:           #0a0e27;
+  --cd-paper:        #0f1428;
+  --cd-surface:      #1a1f3a;
+  --cd-surface-hover:#252d4a;
 
-  --color-cream: #0a0e27;
-  --color-paper: #0f1428;
-  --color-surface: #1a1f3a;
-  --color-surface-elevated: #1a1f3a;
-  --color-surface-hover: #252d4a;
+  --cd-gold:         #c9a84c;
+  --cd-gold-dark:    #a8893a;
+  --cd-gold-light:   rgba(201,168,76,.10);
 
-  --color-ink: #ffffff;
-  --color-ink-soft: #a0a8c0;
-  --color-ink-muted: #6b7280;
+  --cd-ink:          #ffffff;
+  --cd-ink-soft:     #a0a8c0;
+  --cd-ink-muted:    #6b7280;
 
-  --color-fresh: #10b981;
-  --color-warning: #f59e0b;
-  --color-alert: #ef4444;
-  --color-cool: #7aafc4;
+  --cd-line:         #2d3548;
+  --cd-line-strong:  #3d4560;
 
-  --color-line: #2d3548;
-  --color-line-strong: #3d4560;
+  --cd-fresh:        #10b981;
+  --cd-warning:      #f59e0b;
+  --cd-alert:        #ef4444;
 
-  --font-serif: "Lora", Georgia, serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* ── РАДИУСЫ ── */
+  --cd-r-xs: 6px;
+  --cd-r-sm: 8px;
+  --cd-r-md: 10px;
+  --cd-r-lg: 12px;
+  --cd-r-xl: 16px;
+
+  /* ── ВЫСОТЫ ── */
+  --cd-h-sm: 36px;
+  --cd-h-md: 44px;
+  --cd-h-lg: 48px;
+
+  /* ── ШРИФТЫ ── */
+  --cd-font-serif: "Lora", Georgia, serif;
+  --cd-font-sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
+
+/* ── Tailwind алиасы (обратная совместимость) ── */
+@theme {
+  --color-primary:        #c9a84c;
+  --color-primary-hover:  #d4b55a;
+  --color-primary-dark:   #a8893a;
+  --color-primary-light:  rgba(201,168,76,0.10);
+  --color-gold:           #c9a84c;
+  --color-gold-bright:    #c9a84c;
+  --color-gold-deep:      #c9a84c;
+  --color-cream:          #0a0e27;
+  --color-paper:          #0f1428;
+  --color-surface:        #1a1f3a;
+  --color-surface-elevated:#1a1f3a;
+  --color-surface-hover:  #252d4a;
+  --color-ink:            #ffffff;
+  --color-ink-soft:       #a0a8c0;
+  --color-ink-muted:      #6b7280;
+  --color-fresh:          #10b981;
+  --color-warning:        #f59e0b;
+  --color-alert:          #ef4444;
+  --color-cool:           #7aafc4;
+  --color-line:           #2d3548;
+  --color-line-strong:    #3d4560;
+  --font-serif: "Lora", Georgia, serif;
+  --font-sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════ */
 
 html, body, #root { height: 100%; }
 
 body {
-  background-color: #0a0e27;
-  color: #ffffff;
-  font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 600;
+  background-color: var(--cd-bg);
+  color: var(--cd-ink);
+  font-family: var(--cd-font-sans);
+  font-size: 15px;
+  font-weight: 500;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-button { font-family: inherit; font-size: inherit; }
-
-a, button, input, select, textarea {
-  transition: all 0.3s ease;
+button, input, select, textarea {
   font-family: inherit;
   font-size: inherit;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--cd-line); border-radius: 3px; }
 
-::selection { background: rgba(201, 168, 76, 0.25); color: #fff; }
-:focus-visible { outline: 2px solid #c9a84c; outline-offset: 2px; }
+::selection { background: var(--cd-gold-light); color: var(--cd-ink); }
+:focus-visible { outline: 2px solid var(--cd-gold); outline-offset: 2px; }
 
-.card-lift { transition: all 0.3s ease; }
-.card-lift:hover {
-  border-color: #c9a84c !important;
-  box-shadow: 0 8px 24px rgba(201, 168, 76, 0.15);
-  transform: translateY(-4px);
+/* ══════════════════════════════════════════════════════════
+   ТИПОГРАФИКА
+   ══════════════════════════════════════════════════════════ */
+
+.cd-h1 {
+  font-family: var(--cd-font-serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--cd-ink);
+  line-height: 1.2;
 }
+.cd-h2 {
+  font-family: var(--cd-font-serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--cd-ink);
+  line-height: 1.3;
+}
+.cd-h3 {
+  font-family: var(--cd-font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--cd-ink);
+  line-height: 1.4;
+}
+.cd-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cd-ink-muted);
+}
+
+/* ══════════════════════════════════════════════════════════
+   КНОПКИ
+   ══════════════════════════════════════════════════════════ */
+
+/* Primary */
+.cd-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--cd-h-md);
+  padding: 0 20px;
+  border-radius: var(--cd-r-lg);
+  background: var(--cd-gold);
+  color: #0a0c10;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.cd-btn-primary:hover  { background: var(--cd-gold-dark); }
+.cd-btn-primary:active { transform: translateY(1px); }
+.cd-btn-primary:disabled { opacity: 0.4; pointer-events: none; }
+
+/* Ghost */
+.cd-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--cd-h-md);
+  padding: 0 20px;
+  border-radius: var(--cd-r-lg);
+  background: transparent;
+  color: var(--cd-ink-soft);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--cd-line);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.cd-btn-ghost:hover  { border-color: var(--cd-gold); color: var(--cd-gold); }
+.cd-btn-ghost:disabled { opacity: 0.4; pointer-events: none; }
+
+/* Danger */
+.cd-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--cd-h-md);
+  padding: 0 20px;
+  border-radius: var(--cd-r-lg);
+  background: transparent;
+  color: var(--cd-alert);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--cd-alert) 40%, transparent);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.cd-btn-danger:hover  { background: color-mix(in srgb, var(--cd-alert) 10%, transparent); }
+.cd-btn-danger:disabled { opacity: 0.4; pointer-events: none; }
+
+/* Icon */
+.cd-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--cd-h-sm);
+  height: var(--cd-h-sm);
+  border-radius: var(--cd-r-sm);
+  background: transparent;
+  color: var(--cd-ink-muted);
+  border: 1px solid var(--cd-line);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.cd-btn-icon:hover { color: var(--cd-ink); border-color: var(--cd-line-strong); }
+
+/* Subtle (фильтры, табы) */
+.cd-btn-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--cd-h-sm);
+  padding: 0 14px;
+  border-radius: var(--cd-r-md);
+  background: transparent;
+  color: var(--cd-ink-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--cd-line);
+  transition: all 0.2s ease;
+}
+.cd-btn-subtle:hover        { color: var(--cd-ink-soft); border-color: var(--cd-line-strong); }
+.cd-btn-subtle.active,
+.cd-btn-subtle[aria-selected="true"] {
+  background: var(--cd-gold-light);
+  color: var(--cd-gold);
+  border-color: var(--cd-gold);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ПОЛЯ ВВОДА
+   ══════════════════════════════════════════════════════════ */
+
+.cd-input {
+  width: 100%;
+  height: var(--cd-h-md);
+  padding: 0 14px;
+  border-radius: var(--cd-r-md);
+  background: var(--cd-paper);
+  color: var(--cd-ink);
+  border: 1px solid var(--cd-line);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.cd-input::placeholder { color: var(--cd-ink-muted); }
+.cd-input:focus        { border-color: var(--cd-gold); }
+.cd-input.error        { border-color: var(--cd-alert); }
+
+.cd-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--cd-r-md);
+  background: var(--cd-paper);
+  color: var(--cd-ink);
+  border: 1px solid var(--cd-line);
+  font-size: 15px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+.cd-textarea::placeholder { color: var(--cd-ink-muted); }
+.cd-textarea:focus        { border-color: var(--cd-gold); }
+
+/* ══════════════════════════════════════════════════════════
+   КАРТОЧКИ
+   ══════════════════════════════════════════════════════════ */
+
+/* Базовая карточка (заменяет GlassCard) */
+.cd-card {
+  background: var(--cd-paper);
+  border: 1px solid var(--cd-line);
+  border-radius: var(--cd-r-xl);
+}
+
+/* Карточка с hover (списки, рецепты) */
+.cd-card-interactive {
+  background: var(--cd-paper);
+  border: 1px solid var(--cd-line);
+  border-radius: var(--cd-r-xl);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+.cd-card-interactive:hover {
+  border-color: var(--cd-line-strong);
+  transform: translateY(-2px);
+}
+
+/* List item */
+.cd-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--cd-paper);
+  border: 1px solid var(--cd-line);
+  border-radius: var(--cd-r-lg);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.cd-list-item:hover {
+  background: var(--cd-surface);
+  border-color: var(--cd-line-strong);
+}
+
+/* ══════════════════════════════════════════════════════════
+   BADGES
+   ══════════════════════════════════════════════════════════ */
+
+.cd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--cd-r-xs);
+  font-size: 12px;
+  font-weight: 500;
+}
+.cd-badge-warning { background: color-mix(in srgb, var(--cd-warning) 15%, transparent); color: var(--cd-warning); }
+.cd-badge-alert   { background: color-mix(in srgb, var(--cd-alert)   15%, transparent); color: var(--cd-alert); }
+.cd-badge-fresh   { background: color-mix(in srgb, var(--cd-fresh)   15%, transparent); color: var(--cd-fresh); }
+.cd-badge-gold    { background: var(--cd-gold-light); color: var(--cd-gold); }
+
+/* ══════════════════════════════════════════════════════════
+   МОДАЛКИ
+   ══════════════════════════════════════════════════════════ */
+
+.cd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+}
+@media (min-width: 640px) {
+  .cd-modal-overlay { align-items: center; }
+}
+.cd-modal {
+  background: var(--cd-paper);
+  border: 1px solid var(--cd-line);
+  border-radius: var(--cd-r-xl) var(--cd-r-xl) 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+}
+@media (min-width: 640px) {
+  .cd-modal { border-radius: var(--cd-r-xl); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   НАВИГАЦИЯ
+   ══════════════════════════════════════════════════════════ */
+
+.cd-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--cd-r-lg);
+  color: var(--cd-ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease, background 0.2s ease;
+  text-decoration: none;
+}
+.cd-nav-item:hover { color: var(--cd-ink); background: var(--cd-surface); }
+.cd-nav-item.active {
+  color: var(--cd-gold);
+  background: var(--cd-gold-light);
+}
+
+/* ══════════════════════════════════════════════════════════
+   УВЕДОМЛЕНИЯ
+   ══════════════════════════════════════════════════════════ */
+
+.cd-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--cd-r-lg);
+  font-size: 14px;
+  font-weight: 500;
+}
+.cd-alert-banner.success { background: color-mix(in srgb, var(--cd-fresh)   12%, transparent); color: var(--cd-fresh);   border: 1px solid color-mix(in srgb, var(--cd-fresh)   30%, transparent); }
+.cd-alert-banner.warning { background: color-mix(in srgb, var(--cd-warning) 12%, transparent); color: var(--cd-warning); border: 1px solid color-mix(in srgb, var(--cd-warning) 30%, transparent); }
+.cd-alert-banner.error   { background: color-mix(in srgb, var(--cd-alert)   12%, transparent); color: var(--cd-alert);   border: 1px solid color-mix(in srgb, var(--cd-alert)   30%, transparent); }
+.cd-alert-banner.info    { background: color-mix(in srgb, var(--cd-ink-soft) 8%, transparent); color: var(--cd-ink-soft); border: 1px solid var(--cd-line); }
+
+/* ══════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ══════════════════════════════════════════════════════════ */
+
+.cd-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cd-surface);
+  overflow: hidden;
+}
+.cd-progress-bar {
+  height: 100%;
+  background: var(--cd-gold);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ══════════════════════════════════════════════════════════
+   EMPTY STATE
+   ══════════════════════════════════════════════════════════ */
+
+.cd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  border: 1px dashed var(--cd-line);
+  border-radius: var(--cd-r-xl);
+  text-align: center;
+  gap: 12px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   УТИЛИТЫ
+   ══════════════════════════════════════════════════════════ */
+
+/* Старые классы для обратной совместимости */
+.btn-gold {
+  background: var(--cd-gold);
+  color: #0a0c10;
+  font-weight: 600;
+  border-radius: var(--cd-r-lg);
+  transition: background 0.2s ease;
+}
+.btn-gold:hover    { background: var(--cd-gold-dark); }
+.btn-gold:disabled { opacity: 0.4; pointer-events: none; }
+
+.card-lift { transition: transform 0.2s ease, border-color 0.2s ease; }
+.card-lift:hover {
+  border-color: var(--cd-gold) !important;
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════════════
+   АНИМАЦИИ
+   ══════════════════════════════════════════════════════════ */
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.animate-in { opacity: 0; animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-in:nth-child(1) { animation-delay: 0ms; }
-.animate-in:nth-child(2) { animation-delay: 80ms; }
-.animate-in:nth-child(3) { animation-delay: 160ms; }
-.animate-in:nth-child(4) { animation-delay: 240ms; }
-.animate-in:nth-child(5) { animation-delay: 320ms; }
-.animate-in:nth-child(6) { animation-delay: 400ms; }
-.animate-in:nth-child(7) { animation-delay: 480ms; }
+.animate-in { opacity: 0; animation: fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-in:nth-child(1) { animation-delay:   0ms; }
+.animate-in:nth-child(2) { animation-delay:  60ms; }
+.animate-in:nth-child(3) { animation-delay: 120ms; }
+.animate-in:nth-child(4) { animation-delay: 180ms; }
+.animate-in:nth-child(5) { animation-delay: 240ms; }
+.animate-in:nth-child(6) { animation-delay: 300ms; }
 
-main { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-reveal { opacity: 0; animation: reveal 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
 
+main { animation: fadeUp 0.3s cubic-bezier(0.16,1,0.3,1); }
 
-/* ══════════════════════════════════════════════════════════════
-   ATMOSPHERE — среда, глубина, свет
-   Каждый раздел = своё пространство, не набор карточек
-   ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   АТМОСФЕРА (совместимость)
+   ══════════════════════════════════════════════════════════ */
 
-/* === МОРОЗИЛКА — глубокий холод === */
-.atmosphere-freezer {
-  background: linear-gradient(180deg, #060d1f 0%, #0a1428 40%, #0d1a35 100%);
-  position: relative;
-}
-.atmosphere-freezer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(100, 180, 255, 0.04) 0%, transparent 60%);
-  pointer-events: none;
-}
-.atmosphere-freezer .item-card {
-  background: rgba(15, 25, 50, 0.7);
-  border: 1px solid rgba(100, 160, 220, 0.12);
-  box-shadow: 0 0 20px rgba(80, 140, 200, 0.05), inset 0 1px 0 rgba(150, 200, 255, 0.04);
-  backdrop-filter: blur(4px);
-}
-.atmosphere-freezer .item-card:hover {
-  border-color: rgba(100, 180, 255, 0.25);
-  box-shadow: 0 4px 24px rgba(80, 140, 220, 0.12);
-}
-.atmosphere-freezer img {
-  filter: brightness(0.92) contrast(1.05) saturate(0.85) hue-rotate(-5deg);
-}
-
-/* Анимированные морозные частицы */
-@keyframes frost-drift {
-  0% { transform: translateY(0) translateX(0); opacity: 0.3; }
-  50% { opacity: 0.6; }
-  100% { transform: translateY(-40px) translateX(10px); opacity: 0; }
-}
-.frost-particles::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(180, 220, 255, 0.4), transparent),
-    radial-gradient(1px 1px at 70% 60%, rgba(180, 220, 255, 0.3), transparent),
-    radial-gradient(1.5px 1.5px at 40% 80%, rgba(200, 230, 255, 0.3), transparent),
-    radial-gradient(1px 1px at 85% 20%, rgba(180, 220, 255, 0.35), transparent);
-  animation: frost-drift 8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* === ХОЛОДИЛЬНИК — свежесть === */
-.atmosphere-fridge {
-  background: linear-gradient(180deg, #0a0e27 0%, #0c1225 50%, #0a0e27 100%);
-  position: relative;
-}
-.atmosphere-fridge::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
-  pointer-events: none;
-}
-.atmosphere-fridge .item-card {
-  background: rgba(20, 28, 50, 0.6);
-  border: 1px solid rgba(200, 220, 240, 0.08);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-.atmosphere-fridge .item-card:hover {
-  border-color: rgba(200, 230, 255, 0.15);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.atmosphere-fridge img {
-  filter: brightness(1.02) contrast(1.08) saturate(1.15);
-}
-
-/* === КЛАДОВАЯ — тепло и порядок === */
-.atmosphere-pantry {
-  background: linear-gradient(180deg, #0f0e20 0%, #14122a 50%, #110f22 100%);
-  position: relative;
-}
-.atmosphere-pantry::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 30% 20%, rgba(201, 168, 76, 0.03) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(180, 120, 50, 0.02) 0%, transparent 40%);
-  pointer-events: none;
-}
-.atmosphere-pantry .item-card {
-  background: rgba(25, 22, 40, 0.7);
-  border: 1px solid rgba(201, 168, 76, 0.10);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(201, 168, 76, 0.03);
-}
-.atmosphere-pantry .item-card:hover {
-  border-color: rgba(201, 168, 76, 0.2);
-  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.08);
-}
-.atmosphere-pantry img {
-  filter: brightness(0.95) contrast(1.05) saturate(1.1) sepia(0.08);
-}
-
-/* === ГЛАВНАЯ — утренний свет === */
-.atmosphere-home {
-  position: relative;
-}
+.atmosphere-home { position: relative; }
 .atmosphere-home::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 300px;
-  background: radial-gradient(ellipse at 50% -20%, rgba(201, 168, 76, 0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% -20%, rgba(201,168,76,0.04) 0%, transparent 70%);
   pointer-events: none;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   DARK GLASS SYSTEM — единые компоненты для тёмных страниц
-   Инвентарь, Покупки, Меню, Заготовки используют эти классы.
-   ══════════════════════════════════════════════════════════════ */
-
-/* Золотая кнопка — главное CTA */
-.btn-gold {
-  background: linear-gradient(135deg, #c9a84c, #d4b55a);
-  color: #0a0c10;
-  font-weight: 600;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.25);
-  transition: all 0.2s ease;
-}
-.btn-gold:hover {
-  box-shadow: 0 6px 24px rgba(201, 168, 76, 0.4);
-  transform: scale(1.02);
-}
-.btn-gold:active { transform: scale(0.98); }
-.btn-gold:disabled { opacity: 0.5; transform: none; }
-
-/* Поля ввода в тёмной теме */
-.input-dark {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  color: white;
-  transition: border-color 0.2s ease;
-}
-.input-dark::placeholder { color: rgba(255, 255, 255, 0.25); }
-.input-dark:focus {
-  outline: none;
-  border-color: rgba(201, 168, 76, 0.5);
-}
-
-/* Активный таб в тёмной теме */
-.tab-gold-active {
-  background: linear-gradient(135deg, rgba(201, 168, 76, 0.2), rgba(201, 168, 76, 0.1));
-  color: #c9a84c;
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  box-shadow: 0 0 12px rgba(201, 168, 76, 0.15);
-}
-
-/* Спиннер загрузки */
-.spinner-gold { color: #c9a84c; }
-
-/* === ФОТО — единый кинематографический стиль === */
 .photo-cinematic {
-  filter: brightness(0.95) contrast(1.1) saturate(0.9);
-  transition: filter 0.5s ease, transform 0.5s ease;
+  filter: brightness(0.95) contrast(1.05) saturate(0.9);
+  transition: filter 0.4s ease, transform 0.4s ease;
 }
 .photo-cinematic:hover {
-  filter: brightness(1.0) contrast(1.05) saturate(1.0);
-}
-
-/* === ГЛУБИНА — слои пространства === */
-.depth-bg {
-  position: relative;
-  z-index: 0;
-}
-.depth-mid {
-  position: relative;
-  z-index: 1;
-}
-.depth-front {
-  position: relative;
-  z-index: 2;
-}
-
-/* Атмосферная дымка между слоями */
-@keyframes haze-drift {
-  0%, 100% { opacity: 0.3; transform: translateX(0); }
-  50% { opacity: 0.5; transform: translateX(20px); }
-}
-.atmospheric-haze {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(100, 140, 200, 0.015) 50%, transparent 100%);
-  animation: haze-drift 15s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* === СВЕТ как часть интерфейса === */
-.light-spot {
-  position: relative;
-}
-.light-spot::after {
-  content: '';
-  position: absolute;
-  top: -30%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(ellipse, rgba(201, 168, 76, 0.03) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* === МИКРОАНИМАЦИИ — медленные, дорогие === */
-@keyframes slow-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-.animate-float {
-  animation: slow-float 5s ease-in-out infinite;
-}
-
-@keyframes gentle-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-.animate-breathe {
-  animation: gentle-pulse 4s ease-in-out infinite;
-}
-
-/* Плавное появление карточек при скролле */
-@keyframes reveal {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-reveal {
-  opacity: 0;
-  animation: reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  filter: brightness(1.0) contrast(1.0) saturate(1.0);
 }

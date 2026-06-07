@@ -40,7 +40,7 @@ export function AddInventoryDialog({
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+      className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
       onClick={onClose}
     >
       <div onClick={(e) => e.stopPropagation()}>
@@ -65,7 +65,7 @@ export function AddInventoryDialog({
                 placeholder="Название продукта"
                 autoFocus
                 required
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--cd-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--cd-gold)]/50 transition-colors"
               />
             </div>
 
@@ -77,14 +77,14 @@ export function AddInventoryDialog({
                 placeholder="Кол-во"
                 step="any"
                 min="0"
-                className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--cd-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--cd-gold)]/50 transition-colors"
               />
               <input
                 type="text"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 placeholder="Ед. (кг, л, шт)"
-                className="w-28 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-28 h-12 px-4 bg-white/[0.04] border border-[var(--cd-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--cd-gold)]/50 transition-colors"
               />
             </div>
 
@@ -93,7 +93,7 @@ export function AddInventoryDialog({
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/70 focus:outline-none focus:border-[#c9a84c]/50 transition-colors [color-scheme:dark]"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--cd-line)] rounded-xl text-white/70 focus:outline-none focus:border-[var(--cd-gold)]/50 transition-colors [color-scheme:dark]"
               />
               <p className="text-[11px] text-white/25 mt-1.5 ml-1">Срок годности (необязательно)</p>
             </div>
@@ -106,7 +106,7 @@ export function AddInventoryDialog({
                 placeholder="Мин. остаток (авто-докупка)"
                 step="any"
                 min="0"
-                className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 transition-colors"
+                className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--cd-line)] rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-[var(--cd-gold)]/50 transition-colors"
               />
               <p className="text-[11px] text-white/25 mt-1.5 ml-1">Когда остаток ниже — автоматически в покупки</p>
             </div>
@@ -115,7 +115,7 @@ export function AddInventoryDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 h-12 rounded-xl border border-white/[0.08] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
+                className="flex-1 h-12 rounded-xl border border-[var(--cd-line)] text-white/50 font-medium hover:bg-white/[0.04] transition-colors"
               >
                 Отмена
               </button>

@@ -47,7 +47,7 @@ export function InventoryExpiringSection({
   return (
     <GlassCard className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-extrabold text-[#f97316] uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-[#f97316] uppercase tracking-wider flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-[#f97316]/15 flex items-center justify-center">
             <AlertTriangle size={14} className="text-[#f97316]" />
           </div>
@@ -102,7 +102,7 @@ export function InventoryExpiringSection({
                     </span>
                   )}
                   {item.minQuantity && (
-                    <span className="text-[#c9a84c]/60 ml-1.5 text-sm font-normal" title="Мин. остаток для авто-докупки">
+                    <span className="text-[var(--cd-gold)]/60 ml-1.5 text-sm font-normal" title="Мин. остаток для авто-докупки">
                       (мин: {item.minQuantity})
                     </span>
                   )}

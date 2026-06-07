@@ -67,12 +67,12 @@ function WeekShoppingList() {
     <GlassCard className="p-7">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#c9a84c]/15 flex items-center justify-center">
-            <ShoppingCart size={14} className="text-[#c9a84c]" />
+          <div className="w-7 h-7 rounded-lg bg-[var(--cd-gold)]/15 flex items-center justify-center">
+            <ShoppingCart size={14} className="text-[var(--cd-gold)]" />
           </div>
           <h3 className="text-xs font-bold text-white/50 uppercase tracking-wider">Покупки</h3>
         </div>
-        <span className="text-[11px] text-[#c9a84c]/60 font-semibold">{unchecked} позиций</span>
+        <span className="text-[11px] text-[var(--cd-gold)]/60 font-semibold">{unchecked} позиций</span>
       </div>
       {displayItems.length === 0 ? (
         <p className="text-[11px] text-white/30 text-center py-3">Список пуст</p>
@@ -81,7 +81,7 @@ function WeekShoppingList() {
           {displayItems.map((item: any) => (
             <li key={item.id} className="flex items-center gap-3 py-1">
               <div className={`w-4 h-4 rounded-[5px] border-[1.5px] flex items-center justify-center shrink-0 ${
-                item.isChecked ? 'bg-[#c9a84c]/25 border-[#c9a84c]/60' : 'border-white/20'
+                item.isChecked ? 'bg-[var(--cd-gold)]/25 border-[var(--cd-gold)]/60' : 'border-white/20'
               }`}>
                 {item.isChecked && (
                   <svg width="9" height="9" viewBox="0 0 8 8" fill="none">
@@ -99,7 +99,7 @@ function WeekShoppingList() {
           ))}
         </ul>
       )}
-      <a href="/shopping" className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-white/[0.08] text-[11px] text-white/35 hover:text-[#c9a84c] hover:border-[#c9a84c]/30 transition-all duration-200">
+      <a href="/shopping" className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[var(--cd-line)] text-[11px] text-white/35 hover:text-[var(--cd-gold)] hover:border-[var(--cd-gold)]/30 transition-all duration-200">
         Открыть все <ChevronRight size={13} />
       </a>
     </GlassCard>
@@ -117,15 +117,15 @@ function WeekTips() {
   return (
     <GlassCard className="p-7">
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-7 h-7 rounded-lg bg-[#c9a84c]/15 flex items-center justify-center">
-          <Lightbulb size={14} className="text-[#c9a84c]" />
+        <div className="w-7 h-7 rounded-lg bg-[var(--cd-gold)]/15 flex items-center justify-center">
+          <Lightbulb size={14} className="text-[var(--cd-gold)]" />
         </div>
         <h3 className="text-xs font-bold text-white/50 uppercase tracking-wider">Советы</h3>
       </div>
       <ul className="space-y-3.5">
         {TIPS.map((tip, i) => (
           <li key={i} className="flex gap-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c]/60 mt-2 shrink-0 shadow-[0_0_4px_rgba(232,185,74,0.4)]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--cd-gold)]/60 mt-2 shrink-0 shadow-[0_0_4px_rgba(232,185,74,0.4)]" />
             <p className="text-[12px] text-white/50 leading-relaxed">{tip}</p>
           </li>
         ))}

@@ -22,14 +22,14 @@ export function ShoppingItem({
   const isChecked = item.isChecked === 1;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl px-4 py-3 border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-200 group">
+    <div className="flex items-center gap-3 rounded-xl px-4 py-3 border border-[var(--cd-line)] bg-white/[0.02] hover:bg-white/[0.04] hover:border-[var(--cd-line)] transition-all duration-200 group">
       {/* Checkbox */}
       <button
         onClick={onToggle}
         className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${
           isChecked
-            ? 'bg-gradient-to-r from-[#c9a84c] to-[#c9a84c] border-[#c9a84c] shadow-[0_0_8px_rgba(201,149,60,0.3)]'
-            : 'border-white/20 hover:border-[#c9a84c]/60'
+            ? 'bg-gradient-to-r from-[#c9a84c] to-[#c9a84c] border-[var(--cd-gold)] shadow-[0_0_8px_rgba(201,149,60,0.3)]'
+            : 'border-white/20 hover:border-[var(--cd-gold)]/60'
         }`}
         aria-label={isChecked ? 'Отметить как не купленное' : 'Отметить как купленное'}
       >
