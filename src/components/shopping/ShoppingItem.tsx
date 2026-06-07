@@ -65,10 +65,10 @@ export function ShoppingItem({
         )}
       </div>
 
-      {/* Delete */}
+      {/* Delete — всегда видна */}
       <button
         onClick={onRemove}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-white/15 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        className="w-8 h-8 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/20 transition-all duration-200 shrink-0"
         aria-label="Удалить"
       >
         <Trash2 size={15} />

@@ -202,16 +202,31 @@ export function ShoppingPage() {
               />
             ))}
 
-            {/* Clear checked */}
-            {checked > 0 && (
-              <div className="shrink-0 pt-2 pb-4">
-                <button
-                  onClick={() => clearChecked.mutate()}
-                  disabled={clearChecked.isPending || addBulkSmart.isPending}
-                  className="text-sm text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"
-                >
-                  Очистить отмеченные ({checked})
-                </button>
+            {/* Clear buttons */}
+            {(checked > 0 || total > 0) && (
+              <div className="shrink-0 pt-2 pb-4 flex items-center gap-4">
+                {checked > 0 && (
+                  <button
+                    onClick={() => clearChecked.mutate()}
+                    disabled={clearChecked.isPending || addBulkSmart.isPending}
+                    className="text-sm text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"
+                  >
+                    Очистить отмеченные ({checked})
+                  </button>
+                )}
+                {total > 0 && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Удалить все ${total} позиций из списка покупок?`)) {
+                        items.forEach(item => remove.mutate({ id: item.id }));
+                      }
+                    }}
+                    disabled={remove.isPending}
+                    className="text-sm text-white/20 hover:text-red-400 transition-colors disabled:opacity-50"
+                  >
+                    Очистить всё ({total})
+                  </button>
+                )}
               </div>
             )}
           </div>
