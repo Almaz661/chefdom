@@ -241,7 +241,7 @@ export function ReceiptsPage() {
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   placeholder="Albert Heijn, Пятёрочка…"
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                  className="w-full h-12 px-3 input-dark"
                 />
               </label>
 
@@ -253,7 +253,7 @@ export function ReceiptsPage() {
                   type="date"
                   value={purchaseDate}
                   onChange={(e) => setPurchaseDate(e.target.value)}
-                  className="w-full h-12 px-3 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                  className="w-full h-12 px-3 input-dark"
                 />
               </label>
 

@@ -447,7 +447,7 @@ function AddPreserveDialog({
             placeholder={namePlaceholder}
             autoFocus
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
+            className="w-full h-12 px-4 input-dark"
           />
           <div className="flex gap-2">
             <input
@@ -457,14 +457,14 @@ function AddPreserveDialog({
               placeholder="Кол-во"
               step="any"
               min="0"
-              className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="flex-1 h-12 px-4 input-dark"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Ед. (кг, г, шт)"
-              className="w-28 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="w-28 h-12 px-4 input-dark"
             />
           </div>
           {(preserveType === "frozen" || preserveType === "cooked") && (
@@ -475,7 +475,7 @@ function AddPreserveDialog({
               placeholder="Порций (необязательно)"
               step="1"
               min="1"
-              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="w-full h-12 px-4 input-dark"
             />
           )}
           <label className="block">
@@ -486,7 +486,7 @@ function AddPreserveDialog({
               type="date"
               value={preparedAt}
               onChange={(e) => setPreparedAt(e.target.value)}
-              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 [color-scheme:dark]"
+              className="w-full h-12 px-4 input-dark [color-scheme:dark]"
             />
           </label>
           <label className="block">
@@ -500,7 +500,7 @@ function AddPreserveDialog({
                 setExpiryDate(e.target.value);
                 setExpiryDirty(true);
               }}
-              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 [color-scheme:dark]"
+              className="w-full h-12 px-4 input-dark [color-scheme:dark]"
             />
             {/* Шеф-подсказка: показываем только для frozen и если справочник
                 нашёл совпадение. Если пользователь сам ввёл дату — мягко

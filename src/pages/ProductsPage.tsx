@@ -251,7 +251,7 @@ export function ProductsPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Найти продукт..."
-              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors mb-4"
+              className="w-full h-12 px-4 input-dark mb-4"
             />
             {searchResults.data && searchResults.data.length > 0 ? (
               <ul className="space-y-2">
@@ -302,7 +302,7 @@ export function ProductsPage() {
                 }}
                 placeholder="Введите штрих-код..."
                 inputMode="numeric"
-                className="w-full h-12 pl-24 pr-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors font-mono"
+                className="w-full h-12 pl-24 pr-4 input-dark font-mono"
               />
             </div>
 

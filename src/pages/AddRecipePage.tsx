@@ -340,7 +340,7 @@ export function AddRecipePage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
             </div>
 
@@ -352,7 +352,7 @@ export function AddRecipePage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 py-3 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors resize-none"
+                className="w-full input-dark px-4 py-3 text-white/80  resize-none"
                 placeholder="Короткое описание блюда — пара предложений"
               />
             </div>
@@ -369,7 +369,7 @@ export function AddRecipePage() {
                   setImageError(false);
                 }}
                 placeholder="https://example.com/photo.jpg"
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
               {imageUrl && (
                 <div className="mt-3 aspect-[16/9] max-w-md bg-white/[0.04] rounded-xl overflow-hidden border border-[var(--color-line)]">
@@ -407,7 +407,7 @@ export function AddRecipePage() {
                 max="100"
                 value={servings}
                 onChange={(e) => setServings(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
             </div>
             <div>
@@ -419,7 +419,7 @@ export function AddRecipePage() {
                 min="0"
                 value={prepTime}
                 onChange={(e) => setPrepTime(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
             </div>
             <div>
@@ -431,7 +431,7 @@ export function AddRecipePage() {
                 min="0"
                 value={cookTime}
                 onChange={(e) => setCookTime(e.target.value)}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
             </div>
             <div>
@@ -444,7 +444,7 @@ export function AddRecipePage() {
                 value={totalTime}
                 onChange={(e) => setTotalTime(e.target.value)}
                 placeholder={totalHint}
-                className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+                className="w-full input-dark px-4 h-12 text-white/80 "
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ export function AddRecipePage() {
               min="0"
               value={calories}
               onChange={(e) => setCalories(e.target.value)}
-              className="w-full bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-4 h-12 text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors"
+              className="w-full input-dark px-4 h-12 text-white/80 "
             />
           </div>
         </section>
@@ -536,21 +536,21 @@ export function AddRecipePage() {
                   value={ing.amount}
                   onChange={(e) => updateIngredient(idx, { amount: e.target.value })}
                   placeholder="Кол-во"
-                  className="w-20 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-20 input-dark px-2 h-10 text-sm"
                 />
                 <input
                   type="text"
                   value={ing.unit}
                   onChange={(e) => updateIngredient(idx, { unit: e.target.value })}
                   placeholder="ед."
-                  className="w-16 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-16 input-dark px-2 h-10 text-sm"
                 />
                 <input
                   type="text"
                   value={ing.name}
                   onChange={(e) => updateIngredient(idx, { name: e.target.value })}
                   placeholder="Название (обязательно)"
-                  className="flex-1 min-w-[180px] bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="flex-1 min-w-[180px] input-dark px-3 h-10 text-sm"
                 />
                 <input
                   type="text"
@@ -559,7 +559,7 @@ export function AddRecipePage() {
                     updateIngredient(idx, { groupName: e.target.value })
                   }
                   placeholder="Группа"
-                  className="w-28 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-2 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-28 input-dark px-2 h-10 text-sm"
                 />
                 <div className="flex items-center gap-0.5">
                   <button
@@ -628,7 +628,7 @@ export function AddRecipePage() {
                     }
                     rows={3}
                     placeholder="Что делать на этом шаге"
-                    className="flex-1 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 py-2 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
+                    className="flex-1 input-dark px-3 py-2 text-sm resize-none"
                   />
                   <div className="flex flex-col gap-0.5">
                     <button
@@ -667,7 +667,7 @@ export function AddRecipePage() {
                       updateStep(idx, { imageUrl: e.target.value })
                     }
                     placeholder="Ссылка на фото шага (опционально)"
-                    className="flex-1 min-w-[200px] bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                    className="flex-1 min-w-[200px] input-dark px-3 h-10 text-sm"
                   />
                   <input
                     type="number"
@@ -677,7 +677,7 @@ export function AddRecipePage() {
                       updateStep(idx, { timerMinutes: e.target.value })
                     }
                     placeholder="Таймер, мин"
-                    className="w-32 bg-white/[0.04] border border-[var(--color-line)] rounded-xl px-3 h-10 text-white/80 placeholder-white/25 text-sm focus:outline-none focus:border-[var(--color-primary)]/50"
+                    className="w-32 input-dark px-3 h-10 text-sm"
                   />
                 </div>
               </div>
