@@ -77,6 +77,18 @@ export function ShoppingPage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const checkMinQuantity = trpc.inventory.checkMinQuantity.useMutation({
+    onSuccess: (data) => {
+      if (data.added > 0) {
+        utils.shopping.list.invalidate();
+        toast.success(`Добавлено ${data.added} товаров с низким остатком`);
+      } else {
+        toast.success('Все продукты в норме — ниже минимума ничего нет');
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   // --- Computed data ---
 
   const total = items.length;
@@ -145,6 +157,8 @@ export function ShoppingPage() {
           checkedCount={checked}
           onAddToInventory={openPreview}
           addToInventoryPending={addBulkSmart.isPending || clearChecked.isPending}
+          onCheckMinQuantity={() => checkMinQuantity.mutate()}
+          checkMinPending={checkMinQuantity.isPending}
         />
 
         {/* KPI */}
