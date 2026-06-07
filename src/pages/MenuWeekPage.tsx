@@ -58,7 +58,13 @@ export function MenuWeekPage() {
   });
 
   const removeItem = trpc.menu.removeItem.useMutation({
-    onSuccess: () => utils.menu.getWeek.invalidate({ weekStart }),
+    onSuccess: (data) => {
+      utils.menu.getWeek.invalidate({ weekStart });
+      utils.shopping.list.invalidate();
+      if (data.removedFromShopping > 0) {
+        toast.success(`Блюдо удалено из меню, из покупок убрано ${data.removedFromShopping} ингредиентов`);
+      }
+    },
     onError: (err) => toast.error(err.message),
   });
 
