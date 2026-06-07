@@ -21,14 +21,14 @@ export function MenuWeekHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       {/* Title */}
       <div>
-        <h1 className="font-serif text-3xl text-white font-extrabold">Меню недели</h1>
+        <h1 className="font-serif text-3xl text-white font-semibold">Меню недели</h1>
         <p className="text-white/50 text-sm mt-1">Планируйте питание, экономьте время и продукты</p>
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Week navigation */}
-        <div className="flex items-center gap-1 px-3 py-2 rounded-xl border border-white/[0.06] bg-white/[0.03]">
+        <div className="flex items-center gap-1 px-3 py-2 rounded-xl border border-[var(--color-line)] bg-white/[0.03]">
           <button
             onClick={onPrev}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
@@ -49,7 +49,7 @@ export function MenuWeekHeader({
         {/* Today */}
         <button
           onClick={onToday}
-          className="px-4 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 text-sm font-semibold hover:border-white/[0.15] hover:text-white/80 transition-all duration-200"
+          className="px-4 py-2 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 text-sm font-semibold hover:border-white/[0.15] hover:text-white/80 transition-all duration-200"
         >
           Сегодня
         </button>
@@ -59,7 +59,7 @@ export function MenuWeekHeader({
           <button
             onClick={onToShopping}
             disabled={toShoppingPending}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#c9a84c] text-[#0a0c10] text-sm font-semibold hover:bg-[#d4b55a] transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-60"
           >
             <ShoppingCart size={15} />
             {toShoppingPending ? 'Добавляю...' : 'В покупки'}

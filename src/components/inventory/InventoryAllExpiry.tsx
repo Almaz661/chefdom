@@ -32,8 +32,8 @@ export function InventoryAllExpiry({
         onClick={onToggle}
         className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-200 ${
           isOpen
-            ? 'border-[#c9a84c]/30 bg-[#c9a84c]/[0.06] text-[#c9a84c]'
-            : 'border-white/[0.06] bg-[#080c18]/60 text-white/50 hover:text-[#c9a84c] hover:border-[#c9a84c]/20'
+            ? 'border-[var(--color-primary)]/30 bg-[var(--color-primary)]/[0.06] text-[var(--color-primary)]'
+            : 'border-[var(--color-line)] bg-[var(--color-cream)]/60 text-white/50 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/20'
         }`}
       >
         <span className="text-base font-bold">
@@ -67,7 +67,7 @@ export function InventoryAllExpiry({
                         ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]'
                         : isSoon
                         ? 'bg-[#f97316] shadow-[0_0_6px_rgba(249,115,22,0.5)]'
-                        : 'bg-[#c9a84c]/40'
+                        : 'bg-[var(--color-primary)]/40'
                     }`}
                   />
                   <div className="flex-1 min-w-0">

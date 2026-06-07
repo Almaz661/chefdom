@@ -11,7 +11,7 @@ export function InventoryKpiRow({
   basicCount: number;
 }) {
   const KPI_DATA = [
-    { icon: Package, value: String(totalItems), label: 'Продуктов', accent: '#c9a84c' },
+    { icon: Package, value: String(totalItems), label: 'Продуктов', accent: 'var(--color-primary)' },
     { icon: AlertTriangle, value: String(expiringCount), label: 'Истекает скоро', accent: '#f97316' },
     { icon: Pin, value: String(basicCount), label: 'Базовых', accent: '#60a5fa' },
   ];
@@ -30,7 +30,7 @@ export function InventoryKpiRow({
             <Icon size={24} style={{ color: accent }} strokeWidth={1.7} />
           </div>
           <div className="min-w-0">
-            <p className="text-white font-extrabold text-3xl leading-tight truncate">{value}</p>
+            <p className="text-white font-semibold text-3xl leading-tight truncate">{value}</p>
             <p className="text-white/40 text-sm font-semibold mt-0.5 truncate">{label}</p>
           </div>
         </GlassCard>

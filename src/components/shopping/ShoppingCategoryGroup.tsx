@@ -15,7 +15,7 @@ export function ShoppingCategoryGroup({
 }) {
   return (
     <section>
-      <h3 className="text-sm font-extrabold text-white/40 uppercase tracking-wider mb-2.5 ml-1">
+      <h3 className="text-sm font-semibold text-white/40 uppercase tracking-wider mb-2.5 ml-1">
         {category}
       </h3>
       <GlassCard className="p-3">

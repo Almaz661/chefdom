@@ -103,7 +103,7 @@ export function PreservesPage() {
   const TabIconComp = tabIcon;
 
   return (
-    <div className="min-h-screen bg-[#05070A]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
     <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-serif text-3xl font-bold text-white/80">
@@ -111,7 +111,7 @@ export function PreservesPage() {
         </h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="w-9 h-9 rounded-lg bg-[#c9a84c] text-[#0a0c10] flex items-center justify-center hover:bg-[#d4b55a] transition-colors"
+          className="w-9 h-9 rounded-lg bg-[var(--color-primary)] text-[#0a0c10] flex items-center justify-center hover:brightness-110 transition-colors"
           aria-label="Добавить заготовку"
         >
           <Plus size={16} />
@@ -126,7 +126,7 @@ export function PreservesPage() {
             onClick={() => setTab(key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-base font-semibold transition-colors ${
               tab === key
-                ? "bg-[#c9a84c] text-[#0a0c10] font-bold"
+                ? "bg-[var(--color-primary)] text-[#0a0c10] font-bold"
                 : "text-white/50 hover:text-white/80"
             }`}
           >
@@ -138,7 +138,7 @@ export function PreservesPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-[#c9a84c]" />
+          <Loader2 size={32} className="animate-spin text-[var(--color-primary)]" />
         </div>
       ) : (
         <>
@@ -199,7 +199,7 @@ export function PreservesPage() {
                         <button
                           onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                           disabled={consumeServings.isPending}
-                          className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors shrink-0 border border-[#c9a84c]/40 rounded-lg"
+                          className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors shrink-0 border border-[var(--color-primary)]/40 rounded-lg"
                           aria-label="Съели порцию"
                           title="Списать 1 съеденную порцию"
                         >
@@ -223,7 +223,7 @@ export function PreservesPage() {
 
           {/* Основной список */}
           {items.length === 0 ? (
-            <div className="bg-white/[0.03] border border-white/[0.06] border-dashed rounded-2xl p-8 text-center">
+            <div className="bg-white/[0.03] border border-[var(--color-line)] border-dashed rounded-2xl p-8 text-center">
               <TabIconComp
                 size={32}
                 className="text-white/[0.06] mx-auto mb-3"
@@ -245,7 +245,7 @@ export function PreservesPage() {
               {normal.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-center gap-3 bg-white/[0.03] rounded-lg px-4 py-3 border border-white/[0.06]"
+                  className="flex items-center gap-3 bg-white/[0.03] rounded-lg px-4 py-3 border border-[var(--color-line)]"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-semibold text-white/80 truncate">
@@ -273,7 +273,7 @@ export function PreservesPage() {
                     <button
                       onClick={() => consumeServings.mutate({ id: item.id, count: 1 })}
                       disabled={consumeServings.isPending}
-                      className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[#c9a84c] hover:bg-[#c9a84c]/10 transition-colors shrink-0 border border-[#c9a84c]/40 rounded-lg"
+                      className="flex items-center gap-1 px-2.5 h-8 text-sm font-bold text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors shrink-0 border border-[var(--color-primary)]/40 rounded-lg"
                       aria-label="Съели порцию"
                       title="Списать 1 съеденную порцию"
                     >
@@ -432,11 +432,11 @@ function AddPreserveDialog({
       onClick={onClose}
     >
       <div
-        className="bg-[#0c1021] border border-white/[0.08] rounded-2xl w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
+        className="bg-[var(--color-paper)] border border-[var(--color-line)] rounded-2xl w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-serif text-lg font-semibold text-white/80 mb-1 inline-flex items-center gap-2">
-          <TitleIcon size={20} className="text-[#c9a84c]" />
+          <TitleIcon size={20} className="text-[var(--color-primary)]" />
           Добавить: {config.label}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-3 mt-4">
@@ -447,7 +447,7 @@ function AddPreserveDialog({
             placeholder={namePlaceholder}
             autoFocus
             required
-            className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
+            className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
           />
           <div className="flex gap-2">
             <input
@@ -457,14 +457,14 @@ function AddPreserveDialog({
               placeholder="Кол-во"
               step="any"
               min="0"
-              className="flex-1 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
+              className="flex-1 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
             />
             <input
               type="text"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Ед. (кг, г, шт)"
-              className="w-28 h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
+              className="w-28 h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
             />
           </div>
           {(preserveType === "frozen" || preserveType === "cooked") && (
@@ -475,7 +475,7 @@ function AddPreserveDialog({
               placeholder="Порций (необязательно)"
               step="1"
               min="1"
-              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50"
             />
           )}
           <label className="block">
@@ -486,7 +486,7 @@ function AddPreserveDialog({
               type="date"
               value={preparedAt}
               onChange={(e) => setPreparedAt(e.target.value)}
-              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 [color-scheme:dark]"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 [color-scheme:dark]"
             />
           </label>
           <label className="block">
@@ -500,7 +500,7 @@ function AddPreserveDialog({
                 setExpiryDate(e.target.value);
                 setExpiryDirty(true);
               }}
-              className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[#c9a84c]/50 [color-scheme:dark]"
+              className="w-full h-12 px-4 bg-white/[0.04] border border-[var(--color-line)] rounded-xl text-white/80 placeholder-white/25 focus:outline-none focus:border-[var(--color-primary)]/50 [color-scheme:dark]"
             />
             {/* Шеф-подсказка: показываем только для frozen и если справочник
                 нашёл совпадение. Если пользователь сам ввёл дату — мягко
@@ -521,7 +521,7 @@ function AddPreserveDialog({
                       setExpiryDate(base.toISOString().slice(0, 10));
                       setExpiryDirty(false);
                     }}
-                    className="ml-1 text-[#c9a84c] underline"
+                    className="ml-1 text-[var(--color-primary)] underline"
                   >
                     применить
                   </button>
@@ -534,14 +534,14 @@ function AddPreserveDialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
+              className="flex-1 h-12 rounded-xl bg-white/[0.04] border border-[var(--color-line)] text-white/60 font-medium hover:border-white/[0.15] hover:text-white/80 transition-colors"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={!name.trim() || add.isPending}
-              className="flex-1 h-12 rounded-xl bg-[#c9a84c] text-[#0a0c10] font-semibold hover:bg-[#d4b55a] disabled:opacity-50 transition-colors"
+              className="flex-1 h-12 rounded-xl bg-[var(--color-primary)] text-[#0a0c10] font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
             >
               {add.isPending ? "Добавляю…" : "Добавить"}
             </button>
