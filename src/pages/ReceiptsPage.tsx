@@ -120,7 +120,7 @@ export function ReceiptsPage() {
     e.target.value = "";
     if (!file) return;
     setPhotoError(null);
-    setPhotoStatus("Распознаю чек… Это займёт 5–15 секунд.");
+    setPhotoStatus("Распознаю чек… Автоматически повторяю при перегрузке (до 1 мин).");
     try {
       const base64 = await fileToBase64(file);
       createFromPhoto.mutate({ imageBase64: base64 });

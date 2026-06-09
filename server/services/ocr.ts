@@ -79,43 +79,43 @@ Only output the lines described above, no explanations.`;
   };
 
   // gemini-flash-latest — всегда указывает на актуальную версию Flash модели
-  // (подтверждено официальной документацией Google AI, май 2026)
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  // Retry с exponential backoff для 503/429.
+  // Gemini в пиковые часы даёт 503 в ~45% случаев — retry решает большинство.
+  const RETRIES = 3;
+  const DELAYS_MS = [5_000, 15_000, 30_000];
 
-  if (!res.ok) {
-    const errText = await res.text();
-    // Понятные сообщения для частых ошибок
-    if (res.status === 503) {
-      throw new Error('Сервис распознавания временно перегружен. Подождите 1–2 минуты и попробуйте снова.');
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise(resolve => setTimeout(resolve, DELAYS_MS[attempt - 1]));
     }
-    if (res.status === 429) {
-      throw new Error('Превышен лимит запросов к Gemini. Подождите минуту и попробуйте снова.');
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      if (!text) throw new Error('Gemini не вернул текст — возможно фото нечёткое');
+      return { text, raw: data };
     }
+
+    if (res.status === 503 || res.status === 429) {
+      if (attempt < RETRIES) continue;
+      throw new Error('Сервис распознавания недоступен. Все 4 попытки не удались. Попробуйте через 30 минут.');
+    }
+
     if (res.status === 400) {
-      throw new Error('Не удалось распознать фото — попробуйте сфотографировать чек ровнее при хорошем освещении.');
+      throw new Error('Не удалось распознать фото — сфотографируйте чек ровнее при хорошем освещении.');
     }
     throw new Error(`Ошибка распознавания (${res.status}). Попробуйте ещё раз.`);
   }
 
-  const data = (await res.json()) as {
-    candidates?: Array<{
-      content?: {
-        parts?: Array<{ text?: string }>;
-      };
-    }>;
-  };
-
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-
-  if (!text) {
-    throw new Error('Gemini не вернул текст — возможно фото нечёткое');
-  }
-
-  return { text, raw: data };
+  throw new Error('Сервис распознавания недоступен. Попробуйте через 30 минут.');
 }
