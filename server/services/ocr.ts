@@ -90,7 +90,17 @@ Only output the lines described above, no explanations.`;
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini API ошибка ${res.status}: ${errText}`);
+    // Понятные сообщения для частых ошибок
+    if (res.status === 503) {
+      throw new Error('Сервис распознавания временно перегружен. Подождите 1–2 минуты и попробуйте снова.');
+    }
+    if (res.status === 429) {
+      throw new Error('Превышен лимит запросов к Gemini. Подождите минуту и попробуйте снова.');
+    }
+    if (res.status === 400) {
+      throw new Error('Не удалось распознать фото — попробуйте сфотографировать чек ровнее при хорошем освещении.');
+    }
+    throw new Error(`Ошибка распознавания (${res.status}). Попробуйте ещё раз.`);
   }
 
   const data = (await res.json()) as {

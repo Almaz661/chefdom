@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Camera, Plus, ScrollText, Receipt as ReceiptIcon, X } from "lucide-react";
+import { Camera, Plus, ScrollText, Receipt as ReceiptIcon, X, Loader2, RefreshCw } from "lucide-react";
 import { trpc } from "../utils/trpc";
 
 // G.19 — список чеков. Главный сценарий: «Сфотографировать чек»
@@ -46,12 +46,14 @@ function fileToBase64(file: File): Promise<string> {
 export function ReceiptsPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const retryInputRef = useRef<HTMLInputElement>(null);
   const [showManual, setShowManual] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [currency, setCurrency] = useState<"EUR" | "RUB">("EUR");
   const [photoStatus, setPhotoStatus] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [reparsing, setReparsing] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
   const list = trpc.receipts.list.useQuery();
@@ -89,18 +91,53 @@ export function ReceiptsPage() {
     },
   });
 
+  const reparse = trpc.receipts.reparse.useMutation({
+    onSuccess: (res) => {
+      utils.receipts.list.invalidate();
+      setReparsing(null);
+      navigate(`/receipts/${res.id}`);
+    },
+    onError: (err) => {
+      setReparsing(null);
+      setPhotoError(err.message);
+    },
+  });
+
+  const reparseFresh = trpc.receipts.createFromPhoto.useMutation({
+    onSuccess: (res) => {
+      utils.receipts.list.invalidate();
+      setReparsing(null);
+      navigate(`/receipts/${res.id}`);
+    },
+    onError: (err) => {
+      setReparsing(null);
+      setPhotoError(err.message);
+    },
+  });
+
   async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    e.target.value = ""; // чтобы повторный выбор того же файла сработал
+    e.target.value = "";
     if (!file) return;
     setPhotoError(null);
     setPhotoStatus("Распознаю чек… Это займёт 5–15 секунд.");
     try {
       const base64 = await fileToBase64(file);
-      // Язык: пользователь может настроить позже. По умолчанию eng.
-      // OCR.space всё равно неплохо разбирает кириллицу в режиме eng,
-      // но если в Render задана переменная OCR_LANG=rus — фронт пришлёт rus.
-      // На старте — eng (большинство голландских чеков).
+      createFromPhoto.mutate({ imageBase64: base64 });
+    } catch (err) {
+      setPhotoStatus(null);
+      setPhotoError(err instanceof Error ? err.message : "Ошибка чтения файла");
+    }
+  }
+
+  async function onRetryFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPhotoError(null);
+    setPhotoStatus("Повторяю распознавание…");
+    try {
+      const base64 = await fileToBase64(file);
       createFromPhoto.mutate({ imageBase64: base64 });
     } catch (err) {
       setPhotoStatus(null);
@@ -152,10 +189,25 @@ export function ReceiptsPage() {
             <p className="text-base text-white/50 text-center">{photoStatus}</p>
           )}
           {photoError && (
-            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-              {photoError}
-            </p>
+            <div className="rounded-xl p-3 bg-red-500/10 border border-red-500/30 space-y-2">
+              <p className="text-sm text-red-400">{photoError}</p>
+              <button
+                type="button"
+                onClick={() => retryInputRef.current?.click()}
+                className="text-sm text-[var(--color-primary)] hover:underline"
+              >
+                Повторить с другим фото
+              </button>
+            </div>
           )}
+          <input
+            ref={retryInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onRetryFileSelected}
+            className="hidden"
+          />
         </div>
 
         {list.isLoading && <p className="text-white/30">Загрузка…</p>}
@@ -178,10 +230,10 @@ export function ReceiptsPage() {
         {list.data && list.data.length > 0 && (
           <ul className="space-y-2">
             {list.data.map((r) => (
-              <li key={r.id}>
+              <li key={r.id} className="flex items-center gap-2">
                 <Link
                   to={`/receipts/${r.id}`}
-                  className="list-row"
+                  className="list-row flex-1 min-w-0"
                 >
                   <ReceiptIcon
                     size={20}
@@ -203,6 +255,18 @@ export function ReceiptsPage() {
                     </span>
                   )}
                 </Link>
+                {/* Кнопка перераспознать для черновиков с ocrRaw */}
+                {r.status === "draft" && (r as any).ocrRaw && (
+                  <button
+                    onClick={() => { setReparsing(r.id); reparse.mutate({ id: r.id }); }}
+                    disabled={reparsing === r.id}
+                    className="shrink-0 h-10 px-3 rounded-xl btn-ghost text-sm flex items-center gap-1.5 disabled:opacity-50"
+                    title="Перераспознать чек из сохранённого текста"
+                  >
+                    {reparsing === r.id ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    <span className="hidden sm:inline">Повтор</span>
+                  </button>
+                )}
               </li>
             ))}
           </ul>
