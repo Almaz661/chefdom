@@ -1762,6 +1762,24 @@ const migrations: Migration[] = [
       await sql`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS planned_servings INTEGER`;
     },
   },
+  {
+    version: '035_receipts_backfill_final_status',
+    up: async (sql) => {
+      // Чеки распознанные через OCR всегда оставались в статусе 'draft'
+      // потому что createFromPhoto не выставлял status='final'.
+      // Теперь createFromPhoto сразу ставит 'final'.
+      // Эта миграция переводит все существующие 'draft' чеки у которых
+      // есть ocr_raw (т.е. были успешно распознаны) в статус 'final'.
+      // Чеки созданные вручную без OCR остаются 'draft'.
+      await sql`
+        UPDATE receipts
+        SET status = 'final'
+        WHERE status = 'draft'
+          AND ocr_raw IS NOT NULL
+          AND ocr_raw != ''
+      `;
+    },
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

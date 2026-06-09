@@ -222,6 +222,9 @@ export const receiptsRouter = router({
             totalAmount:
               parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
             currency: parsed.currency,
+            // OCR сработал — сразу ставим final, пользователь может
+            // отредактировать позиции, но статус уже не черновик.
+            status: 'final',
             notes: null,
             ocrRaw: recognized.text,
           })
@@ -303,6 +306,7 @@ export const receiptsRouter = router({
             totalAmount:
               parsed.totalAmount !== null ? String(parsed.totalAmount) : null,
             currency: parsed.currency,
+            status: 'final',
           })
           .where(eq(receipts.id, input.id));
 
