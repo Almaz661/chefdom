@@ -22,16 +22,63 @@ export interface OcrOptions {
   language?: string; // оставлено для совместимости, Gemini определяет сам
 }
 
-function getModelCandidates(): string[] {
-  const defaults = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-1.5-flash',
-  ];
+// Кэш актуальных моделей от Google API. Обновляется раз в 24 часа.
+// Позволяет подхватывать новые модели (Gemini 3, 4...) автоматически.
+let _cachedModels: string[] | null = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+async function fetchLiveFlashModels(apiKey: string): Promise<string[] | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`,
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      models?: Array<{ name: string; supportedGenerationMethods?: string[] }>;
+    };
+    const models = (data.models ?? [])
+      .filter(m =>
+        m.name.includes('flash') &&
+        !m.name.includes('image') &&
+        !m.name.includes('audio') &&
+        !m.name.includes('tts') &&
+        (m.supportedGenerationMethods ?? []).includes('generateContent'),
+      )
+      .map(m => m.name.replace('models/', ''))
+      .sort((a, b) => {
+        // Сортируем: gemini-3.x > gemini-2.5 > gemini-2.0 > gemini-1.5
+        // lite-модели чуть ниже основных той же версии
+        const score = (name: string) => {
+          const match = name.match(/gemini-(\d+)\.?(\d*)/);
+          if (!match) return 0;
+          return parseFloat(`${match[1]}.${match[2] || '0'}`) - (name.includes('lite') ? 0.05 : 0);
+        };
+        return score(b) - score(a);
+      });
+    return models.length > 0 ? models : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getModelCandidates(apiKey: string): Promise<string[]> {
+  const hardcoded = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash'];
   const envModel = process.env.GEMINI_MODEL;
-  if (!envModel) return defaults;
-  // env-модель ставим первой, убираем дубль если есть
-  return [envModel, ...defaults.filter(m => m !== envModel)];
+
+  // Обновляем кэш раз в 24 часа
+  if (!_cachedModels || Date.now() - _cacheTimestamp > CACHE_TTL_MS) {
+    const live = await fetchLiveFlashModels(apiKey);
+    if (live) {
+      _cachedModels = live;
+      _cacheTimestamp = Date.now();
+      console.log(`[OCR] Модели от Google API: ${live.slice(0, 4).join(', ')}`);
+    }
+  }
+
+  const base = _cachedModels ?? hardcoded;
+  if (envModel) return [envModel, ...base.filter(m => m !== envModel)];
+  return base;
 }
 
 const RECEIPT_PROMPT = `This is a photo of a grocery store receipt.
@@ -146,7 +193,7 @@ export async function recognizeImage(
     generationConfig: { temperature: 0, maxOutputTokens: 2048 },
   };
 
-  const models = getModelCandidates();
+  const models = await getModelCandidates(apiKey);
 
   for (const model of models) {
     const result = await tryModel(model, body, apiKey);
