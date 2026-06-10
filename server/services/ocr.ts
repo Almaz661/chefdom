@@ -78,8 +78,10 @@ Only output the lines described above, no explanations.`;
     },
   };
 
-  // gemini-flash-latest — всегда указывает на актуальную версию Flash модели
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+  // gemini-2.5-flash — актуальная модель (gemini-2.0-flash выключена Google 1 июня 2026,
+  // алиас gemini-flash-latest перестал работать вместе с ней → 503 на все запросы)
+  const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
   // Retry с exponential backoff для 503/429.
   // Gemini в пиковые часы даёт 503 в ~45% случаев — retry решает большинство.
