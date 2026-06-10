@@ -22,16 +22,86 @@ export interface OcrOptions {
   language?: string; // оставлено для совместимости, Gemini определяет сам
 }
 
-function getModelCandidates(): string[] {
-  const defaults = [
+// Кэш актуальных моделей от Google API. Обновляется раз в 24 часа.
+let cachedModels: string[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 часа
+
+// Запрашивает список доступных Flash-моделей напрямую у Google.
+// Если запрос не удался — возвращает null (используем fallback-список).
+async function fetchAvailableFlashModels(apiKey: string): Promise<string[] | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=50`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json' } },
+    );
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as {
+      models?: Array<{ name: string; supportedGenerationMethods?: string[] }>;
+    };
+
+    // Отбираем только Flash-модели которые поддерживают generateContent
+    const flashModels = (data.models ?? [])
+      .filter(m =>
+        m.name.includes('flash') &&
+        !m.name.includes('image') &&
+        !m.name.includes('audio') &&
+        !m.name.includes('tts') &&
+        (m.supportedGenerationMethods ?? []).includes('generateContent'),
+      )
+      .map(m => m.name.replace('models/', ''))
+      // Сортируем: более новые версии первыми
+      // gemini-3.x > gemini-2.5 > gemini-2.0 > gemini-1.5
+      .sort((a, b) => {
+        const versionScore = (name: string) => {
+          const m = name.match(/gemini-(\d+)\.?(\d*)/);
+          if (!m) return 0;
+          return parseFloat(`${m[1]}.${m[2] || '0'}`);
+        };
+        // lite-модели чуть хуже основных
+        const score = (name: string) =>
+          versionScore(name) - (name.includes('lite') ? 0.05 : 0);
+        return score(b) - score(a);
+      });
+
+    return flashModels.length > 0 ? flashModels : null;
+  } catch {
+    return null;
+  }
+}
+
+// Возвращает список кандидатов: сначала живые модели от API, потом hardcoded резерв.
+async function getModelCandidates(apiKey: string): Promise<string[]> {
+  const hardcoded = [
     'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
     'gemini-1.5-flash',
   ];
+
+  // env-модель всегда первая если задана
   const envModel = process.env.GEMINI_MODEL;
-  if (!envModel) return defaults;
-  // env-модель ставим первой, убираем дубль если есть
-  return [envModel, ...defaults.filter(m => m !== envModel)];
+
+  // Обновляем кэш раз в 24 часа
+  const now = Date.now();
+  if (!cachedModels || now - cacheTimestamp > CACHE_TTL_MS) {
+    const live = await fetchAvailableFlashModels(apiKey);
+    if (live) {
+      cachedModels = live;
+      cacheTimestamp = now;
+      console.log(`[OCR] Актуальные модели от Google API: ${live.slice(0, 5).join(', ')}`);
+    } else {
+      // Не смогли получить — используем hardcoded, сбрасываем кэш
+      cachedModels = null;
+    }
+  }
+
+  const base = cachedModels ?? hardcoded;
+
+  if (envModel) {
+    return [envModel, ...base.filter(m => m !== envModel)];
+  }
+  return base;
 }
 
 const RECEIPT_PROMPT = `This is a photo of a grocery store receipt.
@@ -146,7 +216,7 @@ export async function recognizeImage(
     generationConfig: { temperature: 0, maxOutputTokens: 2048 },
   };
 
-  const models = getModelCandidates();
+  const models = await getModelCandidates(apiKey);
 
   for (const model of models) {
     const result = await tryModel(model, body, apiKey);
