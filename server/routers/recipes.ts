@@ -312,7 +312,7 @@ export const recipesRouter = router({
   // не трогаются (детектится по наличию кириллицы).
   importFromUrl: protectedProcedure
     .input(z.object({ url: z.string().url('Некорректный URL') }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       let scraped;
       try {
         scraped = await scrapeRecipe(input.url);
